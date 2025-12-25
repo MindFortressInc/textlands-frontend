@@ -1,0 +1,134 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+:root {
+  /* Default colors - overridden by theme */
+  --void: #0a0a0a;
+  --shadow: #111111;
+  --stone: #1a1a1a;
+  --slate: #2a2a2a;
+  --text: #e5e5e5;
+  --text-dim: #a3a3a3;
+  --amber: #f59e0b;
+  --amber-dim: #92400e;
+  --crimson: #ef4444;
+  --arcane: #22d3ee;
+  --mist: #6b7280;
+  --font: ui-monospace, 'SF Mono', Menlo, Monaco, monospace;
+}
+
+@theme inline {
+  --color-void: var(--void);
+  --color-shadow: var(--shadow);
+  --color-stone: var(--stone);
+  --color-slate: var(--slate);
+  --color-amber: var(--amber);
+  --color-amber-dim: var(--amber-dim);
+  --color-crimson: var(--crimson);
+  --color-arcane: var(--arcane);
+  --color-mist: var(--mist);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--slate) var(--void);
+}
+
+*::-webkit-scrollbar { width: 6px; }
+*::-webkit-scrollbar-track { background: var(--void); }
+*::-webkit-scrollbar-thumb { background: var(--slate); }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: var(--void);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* Blinking cursor */
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+/* Input focus */
+.command-input:focus { outline: none; }
+
+/* Selection */
+::selection {
+  background: var(--amber-dim);
+  color: var(--text);
+}
+
+/* Stat bars */
+.stat-bar {
+  height: 6px;
+  background: var(--shadow);
+  border: 1px solid var(--slate);
+}
+
+.stat-bar-fill {
+  height: 100%;
+  transition: width 0.3s ease-out;
+}
+
+.hp-bar .stat-bar-fill { background: var(--crimson); }
+.mana-bar .stat-bar-fill { background: var(--arcane); }
+.xp-bar .stat-bar-fill { background: var(--amber); }
+
+/* ========== THEME EFFECTS ========== */
+
+/* Glow effects - only when theme-glow class is present */
+.theme-glow .text-glow {
+  text-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+}
+
+.theme-glow .hp-bar .stat-bar-fill {
+  box-shadow: 0 0 8px var(--crimson);
+}
+
+.theme-glow .mana-bar .stat-bar-fill {
+  box-shadow: 0 0 8px var(--arcane);
+}
+
+.theme-glow .xp-bar .stat-bar-fill {
+  box-shadow: 0 0 8px var(--amber);
+}
+
+/* Scanlines overlay */
+.theme-scanlines::before {
+  content: '';
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.03) 0px,
+    rgba(0, 0, 0, 0.03) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  z-index: 9999;
+}
+
+/* Vignette */
+.theme-vignette::after {
+  content: '';
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 0%,
+    transparent 50%,
+    rgba(0, 0, 0, 0.4) 100%
+  );
+  z-index: 9998;
+}
+
