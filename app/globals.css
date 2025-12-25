@@ -15,6 +15,12 @@
   --arcane: #22d3ee;
   --mist: #6b7280;
   --font: ui-monospace, 'SF Mono', Menlo, Monaco, monospace;
+
+  /* Safe area insets for mobile */
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-inset-left: env(safe-area-inset-left, 0px);
+  --safe-area-inset-right: env(safe-area-inset-right, 0px);
 }
 
 @theme inline {
@@ -130,5 +136,95 @@ body {
     rgba(0, 0, 0, 0.4) 100%
   );
   z-index: 9998;
+}
+
+/* ========== MOBILE STYLES ========== */
+
+/* Quick action buttons */
+.quick-btn {
+  background: var(--stone);
+  border: 1px solid var(--slate);
+  border-radius: 8px;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+}
+
+.quick-btn:active:not(:disabled) {
+  background: var(--slate);
+  transform: scale(0.95);
+}
+
+/* Theme glow effect for quick buttons */
+.theme-glow .quick-btn {
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+}
+
+.theme-glow .quick-btn:active:not(:disabled) {
+  box-shadow: 0 0 12px var(--amber);
+}
+
+/* Slide down animation */
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-down {
+  animation: slide-down 0.2s ease-out;
+}
+
+/* Mobile-specific adjustments */
+@media (max-width: 767px) {
+  body {
+    font-size: 15px;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* Prevent zoom on input focus */
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+
+  /* Larger touch targets */
+  button, .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Safe area padding for notched devices */
+  .safe-area-top {
+    padding-top: var(--safe-area-inset-top);
+  }
+
+  .safe-area-bottom {
+    padding-bottom: var(--safe-area-inset-bottom);
+  }
+}
+
+/* Desktop hover states */
+@media (hover: hover) {
+  .quick-btn:hover:not(:disabled) {
+    background: var(--slate);
+    border-color: var(--amber);
+  }
+}
+
+/* Disable animations for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .animate-slide-down {
+    animation: none;
+  }
+
+  .quick-btn {
+    transition: none;
+  }
 }
 

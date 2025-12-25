@@ -23,13 +23,13 @@ export function GameLog({ entries }: GameLogProps) {
   }, [entries]);
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-[var(--void)]">
+    <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-2 md:space-y-2 bg-[var(--void)] overscroll-contain">
       {entries.length === 0 && (
         <div className="text-[var(--mist)]">Awaiting input...</div>
       )}
 
       {entries.map((entry) => (
-        <div key={entry.id} className={`${typeStyles[entry.type]} leading-relaxed`}>
+        <div key={entry.id} className={`${typeStyles[entry.type]} leading-relaxed text-[15px] md:text-sm`}>
           {entry.type === "dialogue" && entry.actor && (
             <span className="text-[var(--arcane)] font-bold">{entry.actor}: </span>
           )}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { GameLog, CommandInput, CharacterPanel } from "@/components/game";
+import { GameLog, CommandInput, CharacterPanel, QuickActions, MobileStats } from "@/components/game";
 import { ThemePicker } from "@/components/ThemePicker";
 import type { Character, GameLogEntry } from "@/types/game";
 import * as api from "@/lib/api";
@@ -118,24 +118,42 @@ export default function GamePage() {
   }, [character, addLog]);
 
   return (
-    <main className="h-screen flex flex-col bg-[var(--void)]">
-      {/* Header */}
-      <header className="bg-[var(--shadow)] border-b border-[var(--slate)] px-4 py-2 flex items-center justify-between">
-        <span className="text-[var(--amber)] font-bold tracking-wider">TEXTLANDS</span>
-        <ThemePicker />
+    <main className="h-dvh flex flex-col bg-[var(--void)]">
+      {/* Header - compact on mobile */}
+      <header className="bg-[var(--shadow)] border-b border-[var(--slate)] px-3 py-2 md:px-4 flex items-center justify-between shrink-0">
+        <span className="text-[var(--amber)] font-bold tracking-wider text-sm md:text-base">TEXTLANDS</span>
+        <div className="flex items-center gap-2">
+          <span className="text-[var(--mist)] text-xs hidden sm:block">{zoneName}</span>
+          <ThemePicker />
+        </div>
       </header>
 
-      {/* Main */}
-      <div className="flex-1 flex overflow-hidden">
-        <div className="flex-1 flex flex-col">
+      {/* Mobile stats bar - visible only on mobile */}
+      <MobileStats character={character} zoneName={zoneName} />
+
+      {/* Main content area */}
+      <div className="flex-1 flex overflow-hidden min-h-0">
+        {/* Game log - full width on mobile */}
+        <div className="flex-1 flex flex-col min-w-0">
           <GameLog entries={entries} />
+
+          {/* Quick actions - mobile only */}
+          <QuickActions
+            onCommand={handleCommand}
+            disabled={processing}
+          />
+
           <CommandInput
             onSubmit={handleCommand}
             disabled={processing}
             placeholder={processing ? "..." : "What do you do?"}
           />
         </div>
-        <CharacterPanel character={character} zoneName={zoneName} />
+
+        {/* Desktop sidebar - hidden on mobile */}
+        <div className="hidden md:block">
+          <CharacterPanel character={character} zoneName={zoneName} />
+        </div>
       </div>
     </main>
   );

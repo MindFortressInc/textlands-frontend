@@ -55,8 +55,8 @@ export function CommandInput({
   };
 
   return (
-    <div className="bg-[var(--shadow)] border-t border-[var(--slate)] p-3 flex items-center gap-2">
-      <span className="text-[var(--amber)] font-bold">&gt;</span>
+    <div className="bg-[var(--shadow)] border-t border-[var(--slate)] p-3 md:p-3 flex items-center gap-2 shrink-0 safe-area-bottom">
+      <span className="text-[var(--amber)] font-bold text-lg md:text-base">&gt;</span>
       <input
         ref={inputRef}
         type="text"
@@ -68,14 +68,27 @@ export function CommandInput({
         onKeyDown={handleKeyDown}
         disabled={disabled}
         placeholder={placeholder}
-        className="command-input flex-1 bg-transparent text-[var(--text)] placeholder:text-[var(--mist)] placeholder:opacity-50 disabled:opacity-50"
+        className="command-input flex-1 bg-transparent text-[var(--text)] placeholder:text-[var(--mist)] placeholder:opacity-50 disabled:opacity-50 py-1 md:py-0"
         autoComplete="off"
         spellCheck={false}
+        autoCapitalize="off"
+        autoCorrect="off"
+        enterKeyHint="send"
       />
       {command === "" && !disabled && (
-        <span className="text-[var(--amber)]" style={{ animation: "blink 1s step-end infinite" }}>
+        <span className="text-[var(--amber)] hidden md:inline" style={{ animation: "blink 1s step-end infinite" }}>
           _
         </span>
+      )}
+      {/* Mobile send button */}
+      {command !== "" && (
+        <button
+          onClick={handleSubmit}
+          disabled={disabled}
+          className="md:hidden text-[var(--amber)] font-bold px-2 py-1 active:opacity-70 transition-opacity"
+        >
+          ↵
+        </button>
       )}
     </div>
   );
