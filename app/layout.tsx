@@ -28,7 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="safe-area-top">
+      <body>
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

@@ -119,8 +119,8 @@ export default function GamePage() {
 
   return (
     <main className="h-dvh flex flex-col bg-[var(--void)]">
-      {/* Header - compact on mobile */}
-      <header className="bg-[var(--shadow)] border-b border-[var(--slate)] px-3 py-2 md:px-4 flex items-center justify-between shrink-0">
+      {/* Header - compact on mobile, handles top safe area */}
+      <header className="bg-[var(--shadow)] border-b border-[var(--slate)] px-3 py-2 md:px-4 flex items-center justify-between shrink-0 pt-[max(0.5rem,env(safe-area-inset-top))]">
         <span className="text-[var(--amber)] font-bold tracking-wider text-sm md:text-base">TEXTLANDS</span>
         <div className="flex items-center gap-2">
           <span className="text-[var(--mist)] text-xs hidden sm:block">{zoneName}</span>

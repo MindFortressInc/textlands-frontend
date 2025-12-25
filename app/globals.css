@@ -198,15 +198,15 @@ body {
     min-height: 44px;
     min-width: 44px;
   }
+}
 
-  /* Safe area padding for notched devices */
-  .safe-area-top {
-    padding-top: var(--safe-area-inset-top);
-  }
+/* Safe area padding - works on all screen sizes */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
 
-  .safe-area-bottom {
-    padding-bottom: var(--safe-area-inset-bottom);
-  }
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* Desktop hover states */
