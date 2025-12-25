@@ -55,7 +55,7 @@ export function CommandInput({
   };
 
   return (
-    <div className="bg-[var(--shadow)] border-t border-[var(--slate)] p-3 md:p-3 flex items-center gap-2 shrink-0 safe-area-bottom">
+    <div className="bg-[var(--shadow)] border-t border-[var(--slate)] p-3 md:p-3 flex items-center gap-2 shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
       <span className="text-[var(--amber)] font-bold text-lg md:text-base">&gt;</span>
       <input
         ref={inputRef}

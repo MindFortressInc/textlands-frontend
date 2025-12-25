@@ -39,23 +39,23 @@ export async function createCharacter(data: {
   race: string;
   class: string;
 }): Promise<Character> {
-  return fetchAPI<Character>("/game/characters", {
+  return fetchAPI<Character>("/characters", {
     method: "POST",
     body: JSON.stringify(data),
   });
 }
 
 export async function listCharacters(): Promise<Character[]> {
-  return fetchAPI<Character[]>("/game/characters");
+  return fetchAPI<Character[]>("/characters");
 }
 
 export async function getCharacter(characterId: string): Promise<Character> {
-  return fetchAPI<Character>(`/game/characters/${characterId}`);
+  return fetchAPI<Character>(`/characters/${characterId}`);
 }
 
 // Action endpoints
 export async function look(characterId: string): Promise<LookResponse> {
-  return fetchAPI<LookResponse>("/game/look", {
+  return fetchAPI<LookResponse>("/actions/look", {
     method: "POST",
     body: JSON.stringify({ character_id: characterId }),
   });
@@ -65,7 +65,7 @@ export async function move(
   characterId: string,
   destination: string
 ): Promise<MoveResponse> {
-  return fetchAPI<MoveResponse>("/game/move", {
+  return fetchAPI<MoveResponse>("/actions/move", {
     method: "POST",
     body: JSON.stringify({ character_id: characterId, destination }),
   });
@@ -76,7 +76,7 @@ export async function talk(
   npcId: string,
   message?: string
 ): Promise<TalkResponse> {
-  return fetchAPI<TalkResponse>(`/game/talk/${npcId}`, {
+  return fetchAPI<TalkResponse>(`/actions/talk/${npcId}`, {
     method: "POST",
     body: JSON.stringify({ character_id: characterId, message }),
   });
@@ -86,7 +86,7 @@ export async function performAction(
   characterId: string,
   action: string
 ): Promise<ActionResponse> {
-  return fetchAPI<ActionResponse>("/game/action", {
+  return fetchAPI<ActionResponse>("/actions/action", {
     method: "POST",
     body: JSON.stringify({ character_id: characterId, action }),
   });
@@ -97,14 +97,14 @@ export async function startCombat(
   characterId: string,
   enemyIds: string[]
 ): Promise<CombatSession> {
-  return fetchAPI<CombatSession>("/game/combat/start", {
+  return fetchAPI<CombatSession>("/combat/start", {
     method: "POST",
     body: JSON.stringify({ character_id: characterId, enemy_ids: enemyIds }),
   });
 }
 
 export async function getCombatState(sessionId: string): Promise<CombatSession> {
-  return fetchAPI<CombatSession>(`/game/combat/${sessionId}`);
+  return fetchAPI<CombatSession>(`/combat/${sessionId}`);
 }
 
 export async function combatAction(
@@ -114,7 +114,7 @@ export async function combatAction(
   targetId?: string,
   skillName?: string
 ): Promise<CombatActionResponse> {
-  return fetchAPI<CombatActionResponse>(`/game/combat/${sessionId}/action`, {
+  return fetchAPI<CombatActionResponse>(`/combat/${sessionId}/action`, {
     method: "POST",
     body: JSON.stringify({
       character_id: characterId,
@@ -128,5 +128,5 @@ export async function combatAction(
 export async function getActiveCombat(
   characterId: string
 ): Promise<CombatSession | null> {
-  return fetchAPI<CombatSession | null>(`/game/combat/active/${characterId}`);
+  return fetchAPI<CombatSession | null>(`/combat/active/${characterId}`);
 }
