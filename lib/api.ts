@@ -8,10 +8,15 @@ import type {
   ActionResponse,
   CombatSession,
   CombatActionResponse,
+  Genre,
+  World,
+  CampfireResponse,
+  DoActionResponse,
 } from "@/types/game";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
 
+// TODO: Integrate Clerk auth - for now uses cookie-based guest sessions
 async function fetchAPI<T>(
   endpoint: string,
   options: RequestInit = {}
@@ -19,7 +24,7 @@ async function fetchAPI<T>(
   const url = `${API_BASE}${endpoint}`;
   const response = await fetch(url, {
     ...options,
-    credentials: "include", // Send cookies for session auth
+    credentials: "include", // Send cookies for guest session auth
     headers: {
       "Content-Type": "application/json",
       ...options.headers,
@@ -44,9 +49,15 @@ export interface SessionInfo {
   character_name: string | null;
 }
 
+export interface StartSessionRequest {
+  world_id?: string;
+  character_id?: string;
+}
+
 export interface StartSessionResponse {
   session: SessionInfo;
   message: string;
+  opening_narrative?: string;
 }
 
 // Session endpoints
@@ -54,8 +65,11 @@ export async function getSession(): Promise<SessionInfo> {
   return fetchAPI<SessionInfo>("/session/current");
 }
 
-export async function startSession(): Promise<StartSessionResponse> {
-  return fetchAPI<StartSessionResponse>("/session/start", { method: "POST" });
+export async function startSession(params?: StartSessionRequest): Promise<StartSessionResponse> {
+  return fetchAPI<StartSessionResponse>("/session/start", {
+    method: "POST",
+    body: params ? JSON.stringify(params) : undefined,
+  });
 }
 
 export async function checkHealth(): Promise<boolean> {
@@ -68,6 +82,28 @@ export async function checkHealth(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+// Preferences endpoints
+export interface UserPreferences {
+  show_reasoning: boolean;
+  show_on_failure: boolean;
+}
+
+export async function getPreferences(): Promise<UserPreferences> {
+  return fetchAPI<UserPreferences>("/session/preferences");
+}
+
+export async function updatePreferences(prefs: Partial<UserPreferences>): Promise<UserPreferences> {
+  return fetchAPI<UserPreferences>("/session/preferences", {
+    method: "POST",
+    body: JSON.stringify(prefs),
+  });
+}
+
+// Get explanation for a past action (on-demand)
+export async function explainAction(actionId: string): Promise<{ reasoning: import("@/types/game").ReasoningInfo }> {
+  return fetchAPI(`/actions/${actionId}/explain`);
 }
 
 // Character endpoints
@@ -166,4 +202,25 @@ export async function getActiveCombat(
   characterId: string
 ): Promise<CombatSession | null> {
   return fetchAPI<CombatSession | null>(`/combat/active/${characterId}`);
+}
+
+// World selection endpoints
+export async function getGenres(): Promise<Genre[]> {
+  return fetchAPI<Genre[]>("/worlds/genres");
+}
+
+export async function getWorlds(): Promise<World[]> {
+  return fetchAPI<World[]>("/worlds");
+}
+
+export async function getCampfire(worldId: string): Promise<CampfireResponse> {
+  return fetchAPI<CampfireResponse>(`/worlds/${worldId}/campfire`);
+}
+
+// Natural language action endpoint
+export async function doAction(action: string): Promise<DoActionResponse> {
+  return fetchAPI<DoActionResponse>("/actions/do", {
+    method: "POST",
+    body: JSON.stringify({ action }),
+  });
 }

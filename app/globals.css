@@ -181,6 +181,16 @@ body {
   animation: slide-down 0.2s ease-out;
 }
 
+/* Fade in animation */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
 /* Mobile-specific adjustments */
 @media (max-width: 767px) {
   body {

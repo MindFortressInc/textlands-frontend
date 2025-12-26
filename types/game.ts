@@ -1,5 +1,56 @@
 // Game types matching the World Forge backend API
 
+// World selection types
+export interface Genre {
+  genre: string;
+  count: number;
+}
+
+export interface World {
+  id: string;
+  name: string;
+  genre: string;
+  subgenre?: string;
+  description: string;
+}
+
+export interface WorldsByGenre {
+  genre: string;
+  worlds: World[];
+}
+
+export interface WorldDetail {
+  id: string;
+  name: string;
+  tagline: string;
+  description: string;
+  genre_id: string;
+}
+
+export interface CharacterOption {
+  id: string;
+  name: string;
+  race: string;
+  character_class: string;
+  backstory: string;
+}
+
+export interface CampfireResponse {
+  world: WorldDetail;
+  intro_text: string;
+  characters: CharacterOption[];
+}
+
+export interface DoActionResponse {
+  narrative: string;
+  state_changes: Record<string, unknown>;
+  suggested_actions: string[];
+  mood?: string;
+  character?: Character;
+  error?: string;
+}
+
+// Character types
 export interface CharacterStats {
   hp: number;
   max_hp: number;
@@ -57,11 +108,33 @@ export interface TalkResponse {
   quest_offered: { hook: string; npc_id: string } | null;
 }
 
+// Invisible mechanics - D&D-style rolls shown optionally
+export interface ReasoningInfo {
+  action_id: string;
+  factors: {
+    name: string;
+    value: number;
+    source: string;
+  }[];
+  roll: number;
+  total: number;
+  dc: number;
+  success: boolean;
+  summary: string;
+}
+
 export interface ActionResponse {
   narrative: string;
   success: boolean;
   state_changes: Record<string, unknown>;
   options: string[];
+  reasoning?: ReasoningInfo; // Present based on user preferences
+}
+
+// User preferences for mechanics display
+export interface UserPreferences {
+  show_reasoning: boolean;
+  show_on_failure: boolean;
 }
 
 export type CombatState = "active" | "victory" | "defeat" | "fled";
