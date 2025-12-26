@@ -19,6 +19,7 @@ async function fetchAPI<T>(
   const url = `${API_BASE}${endpoint}`;
   const response = await fetch(url, {
     ...options,
+    credentials: "include", // Send cookies for session auth
     headers: {
       "Content-Type": "application/json",
       ...options.headers,
@@ -31,6 +32,42 @@ async function fetchAPI<T>(
   }
 
   return response.json();
+}
+
+// Session types
+export interface SessionInfo {
+  player_id: string;
+  is_guest: boolean;
+  display_name: string;
+  can_save: boolean;
+  character_id: string | null;
+  character_name: string | null;
+}
+
+export interface StartSessionResponse {
+  session: SessionInfo;
+  message: string;
+}
+
+// Session endpoints
+export async function getSession(): Promise<SessionInfo> {
+  return fetchAPI<SessionInfo>("/session/current");
+}
+
+export async function startSession(): Promise<StartSessionResponse> {
+  return fetchAPI<StartSessionResponse>("/session/start", { method: "POST" });
+}
+
+export async function checkHealth(): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_BASE}/health`, {
+      credentials: "include",
+      cache: "no-store"
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
 }
 
 // Character endpoints
