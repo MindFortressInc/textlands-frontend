@@ -48,6 +48,8 @@ export interface DoActionResponse {
   mood?: string;
   character?: Character;
   error?: string;
+  action_id?: string;
+  reasoning?: ReasoningInfo;
 }
 
 // Character types
@@ -108,19 +110,24 @@ export interface TalkResponse {
   quest_offered: { hook: string; npc_id: string } | null;
 }
 
-// Invisible mechanics - D&D-style rolls shown optionally
+// Invisible mechanics - shown optionally based on user preferences
 export interface ReasoningInfo {
-  action_id: string;
+  action_type: string;
+  outcome: "success" | "exceptional success" | "failure" | "significant setback";
+  your_strengths: string[];
+  challenges: string[];
+  success_chance: string;
+  consequence: string;
+}
+
+// Explain endpoint response (for querying past actions)
+export interface ExplainResponse {
+  outcome: string;
   factors: {
-    name: string;
-    value: number;
-    source: string;
-  }[];
-  roll: number;
-  total: number;
-  dc: number;
-  success: boolean;
-  summary: string;
+    in_your_favor: string[];
+    against_you: string[];
+  };
+  consequence: string;
 }
 
 export interface ActionResponse {
@@ -180,8 +187,96 @@ export interface CombatActionResponse {
 // Game log entry for the scrolling text interface
 export interface GameLogEntry {
   id: string;
-  type: "narrative" | "action" | "combat" | "system" | "dialogue";
+  type: "narrative" | "action" | "combat" | "system" | "dialogue" | "intimate";
   content: string;
   timestamp: Date;
   actor?: string;
+  action_id?: string;
+  reasoning?: ReasoningInfo;
+}
+
+// Relationship dynamics / Intimacy system types
+
+export type RelationshipLevel =
+  | "stranger"
+  | "acquaintance"
+  | "friendly"
+  | "close"
+  | "intimate"
+  | "bonded";
+
+export type ScenePhase =
+  | "initiating"
+  | "negotiating"
+  | "active"
+  | "aftercare"
+  | "complete";
+
+export type IntensityLevel = "gentle" | "moderate" | "passionate" | "intense";
+
+export type PlayerRole = "dominant" | "submissive" | "switch" | "equal";
+
+export interface RelationshipStatus {
+  npc_id: string;
+  npc_name: string;
+  level: RelationshipLevel;
+  trust: number; // 0-100
+  attraction: number; // 0-100
+  history_summary?: string;
+  last_interaction?: string;
+  can_initiate_scene: boolean;
+}
+
+export interface IntimacyPreferences {
+  inferred_preferences: string[];
+  comfort_level: IntensityLevel;
+  preferred_roles: PlayerRole[];
+  boundaries: string[];
+}
+
+export interface SceneNegotiation {
+  player_role: PlayerRole;
+  intensity: IntensityLevel;
+  boundaries: string[];
+  safeword: string;
+}
+
+export interface ActiveScene {
+  id: string;
+  npc_id: string;
+  npc_name: string;
+  phase: ScenePhase;
+  intensity: IntensityLevel;
+  player_role: PlayerRole;
+  safeword: string;
+  narrative: string;
+  suggested_actions: string[];
+  mood?: string;
+}
+
+export interface IntimacyResponse {
+  success: boolean;
+  narrative?: string;
+  relationship?: RelationshipStatus;
+  scene?: ActiveScene;
+  preferences?: IntimacyPreferences;
+  suggested_actions?: string[];
+  error?: string;
+}
+
+export interface StartSceneRequest {
+  npc_id: string;
+}
+
+export interface NegotiationRequest {
+  scene_id: string;
+  player_role: PlayerRole;
+  intensity: IntensityLevel;
+  boundaries: string[];
+  safeword: string;
+}
+
+export interface SceneActionRequest {
+  action: string;
+  scene_id?: string;
 }

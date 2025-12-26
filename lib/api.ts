@@ -13,6 +13,10 @@ import type {
   WorldsByGenre,
   CampfireResponse,
   DoActionResponse,
+  IntimacyResponse,
+  NegotiationRequest,
+  SceneActionRequest,
+  ExplainResponse,
 } from "@/types/game";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
@@ -103,8 +107,8 @@ export async function updatePreferences(prefs: Partial<UserPreferences>): Promis
 }
 
 // Get explanation for a past action (on-demand)
-export async function explainAction(actionId: string): Promise<{ reasoning: import("@/types/game").ReasoningInfo }> {
-  return fetchAPI(`/actions/${actionId}/explain`);
+export async function explainAction(actionId: string): Promise<ExplainResponse> {
+  return fetchAPI<ExplainResponse>(`/actions/${actionId}/explain`);
 }
 
 // Character endpoints
@@ -224,4 +228,58 @@ export async function doAction(action: string): Promise<DoActionResponse> {
     method: "POST",
     body: JSON.stringify({ action }),
   });
+}
+
+// Intimacy / Relationship dynamics endpoints
+
+export async function getRelationshipStatus(npcId: string): Promise<IntimacyResponse> {
+  return fetchAPI<IntimacyResponse>(`/intimacy/relationship/${npcId}`);
+}
+
+export async function getIntimacyPreferences(): Promise<IntimacyResponse> {
+  return fetchAPI<IntimacyResponse>("/intimacy/preferences");
+}
+
+export async function startScene(npcId: string): Promise<IntimacyResponse> {
+  return fetchAPI<IntimacyResponse>("/intimacy/scene/start", {
+    method: "POST",
+    body: JSON.stringify({ npc_id: npcId }),
+  });
+}
+
+export async function negotiateScene(
+  negotiation: NegotiationRequest
+): Promise<IntimacyResponse> {
+  return fetchAPI<IntimacyResponse>("/intimacy/scene/negotiate", {
+    method: "POST",
+    body: JSON.stringify(negotiation),
+  });
+}
+
+export async function sceneAction(
+  request: SceneActionRequest
+): Promise<IntimacyResponse> {
+  return fetchAPI<IntimacyResponse>("/intimacy/scene/action", {
+    method: "POST",
+    body: JSON.stringify(request),
+  });
+}
+
+export async function invokeSafeword(): Promise<IntimacyResponse> {
+  return fetchAPI<IntimacyResponse>("/intimacy/scene/safeword", {
+    method: "POST",
+  });
+}
+
+export async function completeScene(
+  aftercareQuality: "minimal" | "standard" | "extended" = "standard"
+): Promise<IntimacyResponse> {
+  return fetchAPI<IntimacyResponse>(
+    `/intimacy/scene/complete?aftercare_quality=${aftercareQuality}`,
+    { method: "POST" }
+  );
+}
+
+export async function getActiveScene(): Promise<IntimacyResponse> {
+  return fetchAPI<IntimacyResponse>("/intimacy/active");
 }

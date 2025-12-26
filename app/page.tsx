@@ -1,20 +1,28 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { GameLog, CommandInput, CharacterPanel, QuickActions, MobileStats } from "@/components/game";
+import { GameLog, CommandInput, CharacterPanel, QuickActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel } from "@/components/game";
 import { ThemePicker } from "@/components/ThemePicker";
-import type { Character, GameLogEntry, Genre, World, WorldsByGenre, CampfireResponse, CharacterOption } from "@/types/game";
+import type { Character, GameLogEntry, Genre, World, WorldsByGenre, CampfireResponse, CharacterOption, ActiveScene as ActiveSceneType, NegotiationRequest, CombatSession, ReasoningInfo } from "@/types/game";
 import * as api from "@/lib/api";
 
 // ========== HELPERS ==========
 
 let logId = 0;
-const log = (type: GameLogEntry["type"], content: string, actor?: string): GameLogEntry => ({
+const log = (
+  type: GameLogEntry["type"],
+  content: string,
+  actor?: string,
+  reasoning?: ReasoningInfo,
+  action_id?: string
+): GameLogEntry => ({
   id: `${++logId}`,
   type,
   content,
   timestamp: new Date(),
   actor,
+  reasoning,
+  action_id,
 });
 
 // Genre icons for visual flair
@@ -367,6 +375,18 @@ export default function GamePage() {
   const [zoneName, setZoneName] = useState("...");
   const [processing, setProcessing] = useState(false);
 
+  // Scene/Intimacy state
+  const [activeScene, setActiveScene] = useState<ActiveSceneType | null>(null);
+  const [negotiating, setNegotiating] = useState<{ npc_id: string; scene_id: string; npc_name: string } | null>(null);
+
+  // Combat state
+  const [activeCombat, setActiveCombat] = useState<CombatSession | null>(null);
+  const [combatNarrative, setCombatNarrative] = useState<string>("");
+
+  // Settings state
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [showReasoning, setShowReasoning] = useState(false);
+
   // ========== INITIALIZATION ==========
 
   useEffect(() => {
@@ -382,10 +402,14 @@ export default function GamePage() {
         return;
       }
 
-      // Fetch genres
+      // Fetch genres and preferences in parallel
       try {
-        const genreData = await api.getGenres();
+        const [genreData, prefs] = await Promise.all([
+          api.getGenres(),
+          api.getPreferences().catch(() => ({ show_reasoning: false, show_on_failure: true })),
+        ]);
         setGenres(genreData);
+        setShowReasoning(prefs.show_reasoning);
       } catch {
         setIsDemo(true);
         setGenres(DEMO_GENRES);
@@ -524,7 +548,12 @@ export default function GamePage() {
       } else {
         // Real API - use natural language endpoint
         const result = await api.doAction(command);
-        addLog("narrative", result.narrative);
+
+        // Add narrative with reasoning if available
+        setEntries((prev) => [
+          ...prev,
+          log("narrative", result.narrative, undefined, result.reasoning, result.action_id),
+        ]);
 
         if (result.suggested_actions?.length) {
           addLog("system", `Try: ${result.suggested_actions.join(", ")}`);
@@ -575,6 +604,178 @@ export default function GamePage() {
     }
   }, [addLog]);
 
+  // ========== SCENE HANDLERS ==========
+
+  const handleStartScene = useCallback(async (npcId: string, npcName: string) => {
+    if (isDemo) {
+      addLog("system", "Intimate scenes not available in demo mode.");
+      return;
+    }
+
+    setProcessing(true);
+    try {
+      const result = await api.startScene(npcId);
+      if (result.success && result.scene) {
+        setNegotiating({
+          npc_id: npcId,
+          scene_id: result.scene.id,
+          npc_name: npcName,
+        });
+        if (result.narrative) {
+          addLog("intimate", result.narrative);
+        }
+      } else {
+        addLog("system", result.error || "Cannot initiate scene with this character.");
+      }
+    } catch (error) {
+      addLog("system", `Error: ${error instanceof Error ? error.message : "Unknown"}`);
+    }
+    setProcessing(false);
+  }, [isDemo, addLog]);
+
+  const handleNegotiationComplete = useCallback(async (negotiation: NegotiationRequest) => {
+    setProcessing(true);
+    try {
+      const result = await api.negotiateScene(negotiation);
+      setNegotiating(null);
+
+      if (result.success && result.scene) {
+        setActiveScene(result.scene);
+        if (result.narrative) {
+          addLog("intimate", result.narrative);
+        }
+      } else {
+        addLog("system", result.error || "Negotiation failed.");
+      }
+    } catch (error) {
+      addLog("system", `Error: ${error instanceof Error ? error.message : "Unknown"}`);
+    }
+    setProcessing(false);
+  }, [addLog]);
+
+  const handleNegotiationCancel = useCallback(() => {
+    setNegotiating(null);
+    addLog("system", "Scene cancelled.");
+  }, [addLog]);
+
+  const handleSceneAction = useCallback(async (action: string) => {
+    if (!activeScene) return;
+
+    setProcessing(true);
+    try {
+      const result = await api.sceneAction({ action, scene_id: activeScene.id });
+
+      if (result.success && result.scene) {
+        setActiveScene(result.scene);
+        if (result.narrative) {
+          addLog("intimate", result.narrative);
+        }
+      } else {
+        addLog("system", result.error || "Action failed.");
+      }
+    } catch (error) {
+      addLog("system", `Error: ${error instanceof Error ? error.message : "Unknown"}`);
+    }
+    setProcessing(false);
+  }, [activeScene, addLog]);
+
+  const handleSafeword = useCallback(async () => {
+    setProcessing(true);
+    try {
+      const result = await api.invokeSafeword();
+      setActiveScene(null);
+
+      if (result.narrative) {
+        addLog("system", result.narrative);
+      } else {
+        addLog("system", "Scene ended safely.");
+      }
+    } catch (error) {
+      addLog("system", `Error: ${error instanceof Error ? error.message : "Unknown"}`);
+      setActiveScene(null);
+    }
+    setProcessing(false);
+  }, [addLog]);
+
+  const handleSceneComplete = useCallback(async (aftercareQuality: "minimal" | "standard" | "extended") => {
+    setProcessing(true);
+    try {
+      const result = await api.completeScene(aftercareQuality);
+      setActiveScene(null);
+
+      if (result.narrative) {
+        addLog("intimate", result.narrative);
+      }
+      if (result.relationship) {
+        addLog("system", `Your bond with ${result.relationship.npc_name} has ${result.relationship.level === "bonded" ? "deepened into something profound" : "grown stronger"}.`);
+      }
+    } catch (error) {
+      addLog("system", `Error: ${error instanceof Error ? error.message : "Unknown"}`);
+      setActiveScene(null);
+    }
+    setProcessing(false);
+  }, [addLog]);
+
+  // ========== COMBAT HANDLERS ==========
+
+  const handleCombatAction = useCallback(async (
+    action: "attack" | "defend" | "skill" | "item" | "flee",
+    targetId?: string
+  ) => {
+    if (!activeCombat || !character) return;
+
+    setProcessing(true);
+    try {
+      const result = await api.combatAction(
+        activeCombat.id,
+        character.id,
+        action,
+        targetId
+      );
+
+      setCombatNarrative(result.narrative);
+      addLog("combat", result.narrative);
+
+      // Update combat state
+      const updatedCombat = await api.getCombatState(activeCombat.id);
+      setActiveCombat(updatedCombat);
+
+      // Check if combat ended
+      if (updatedCombat.state !== "active") {
+        setTimeout(() => {
+          setActiveCombat(null);
+          setCombatNarrative("");
+        }, 3000);
+      }
+    } catch (error) {
+      addLog("system", `Combat error: ${error instanceof Error ? error.message : "Unknown"}`);
+    }
+    setProcessing(false);
+  }, [activeCombat, character, addLog]);
+
+  // Check for active scene/combat on game start
+  useEffect(() => {
+    if (phase === "game" && !isDemo) {
+      // Check for active scene
+      if (!activeScene) {
+        api.getActiveScene().then((result) => {
+          if (result.scene) {
+            setActiveScene(result.scene);
+          }
+        }).catch(() => {});
+      }
+
+      // Check for active combat
+      if (!activeCombat && character) {
+        api.getActiveCombat(character.id).then((combat) => {
+          if (combat) {
+            setActiveCombat(combat);
+          }
+        }).catch(() => {});
+      }
+    }
+  }, [phase, isDemo, activeScene, activeCombat, character]);
+
   // ========== RENDER BY PHASE ==========
 
   if (phase === "loading") {
@@ -620,32 +821,87 @@ export default function GamePage() {
   // Game phase
   return (
     <main className="h-dvh flex flex-col bg-[var(--void)]">
+      {/* Modals */}
+      {negotiating && (
+        <SceneNegotiation
+          npcName={negotiating.npc_name}
+          sceneId={negotiating.scene_id}
+          onConfirm={handleNegotiationComplete}
+          onCancel={handleNegotiationCancel}
+        />
+      )}
+      <SettingsPanel
+        isOpen={settingsOpen}
+        onClose={() => {
+          setSettingsOpen(false);
+          // Refresh preferences when closing
+          if (!isDemo) {
+            api.getPreferences().then((prefs) => setShowReasoning(prefs.show_reasoning)).catch(() => {});
+          }
+        }}
+        isDemo={isDemo}
+      />
+
       {/* Header */}
       <header className="bg-[var(--shadow)] border-b border-[var(--slate)] px-3 py-2 md:px-4 flex items-center justify-between shrink-0 pt-[max(0.5rem,env(safe-area-inset-top))]">
         <div className="flex items-center gap-2">
           <span className="text-[var(--amber)] font-bold tracking-wider text-sm md:text-base">TEXTLANDS</span>
           {isDemo && <span className="text-[var(--crimson)] text-[10px] uppercase tracking-wide">Demo</span>}
+          {activeScene && <span className="text-[var(--crimson)] text-[10px] uppercase tracking-wide animate-pulse">Scene</span>}
+          {activeCombat && <span className="text-[var(--crimson)] text-[10px] uppercase tracking-wide animate-pulse">Combat</span>}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <span className="text-[var(--mist)] text-xs hidden sm:block">{zoneName}</span>
+          <button
+            onClick={() => setSettingsOpen(true)}
+            className="text-[var(--mist)] hover:text-[var(--amber)] transition-colors text-sm"
+            title="Settings"
+          >
+            *
+          </button>
           <ThemePicker />
         </div>
       </header>
 
-      {/* Mobile stats bar */}
-      <MobileStats character={character} zoneName={zoneName} />
+      {/* Mobile stats bar - hidden during active scene or combat */}
+      {!activeScene && !activeCombat && <MobileStats character={character} zoneName={zoneName} />}
 
       {/* Main content */}
       <div className="flex-1 flex overflow-hidden min-h-0">
-        <div className="flex-1 flex flex-col min-w-0">
-          <GameLog entries={entries} />
-          <QuickActions onCommand={handleCommand} disabled={processing} />
-          <CommandInput
-            onSubmit={handleCommand}
-            disabled={processing}
-            placeholder={processing ? "..." : "What do you do?"}
-          />
-        </div>
+        {activeCombat ? (
+          /* Combat Interface */
+          <div className="flex-1 flex flex-col min-w-0">
+            <CombatPanel
+              combat={activeCombat}
+              playerId={character?.id || ""}
+              onAction={handleCombatAction}
+              isProcessing={processing}
+              lastNarrative={combatNarrative}
+            />
+          </div>
+        ) : activeScene ? (
+          /* Active Scene Interface */
+          <div className="flex-1 flex flex-col min-w-0">
+            <ActiveScene
+              scene={activeScene}
+              onAction={handleSceneAction}
+              onSafeword={handleSafeword}
+              onComplete={handleSceneComplete}
+              isProcessing={processing}
+            />
+          </div>
+        ) : (
+          /* Normal Game Interface */
+          <div className="flex-1 flex flex-col min-w-0">
+            <GameLog entries={entries} showReasoning={showReasoning} />
+            <QuickActions onCommand={handleCommand} disabled={processing} />
+            <CommandInput
+              onSubmit={handleCommand}
+              disabled={processing}
+              placeholder={processing ? "..." : "What do you do?"}
+            />
+          </div>
+        )}
 
         {/* Desktop sidebar */}
         <div className="hidden md:block">
