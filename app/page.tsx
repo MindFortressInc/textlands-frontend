@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { GameLog, CommandInput, CharacterPanel, QuickActions, MobileStats } from "@/components/game";
 import { ThemePicker } from "@/components/ThemePicker";
-import type { Character, GameLogEntry, Genre, World, CampfireResponse, CharacterOption } from "@/types/game";
+import type { Character, GameLogEntry, Genre, World, WorldsByGenre, CampfireResponse, CharacterOption } from "@/types/game";
 import * as api from "@/lib/api";
 
 // ========== HELPERS ==========
@@ -17,32 +17,51 @@ const log = (type: GameLogEntry["type"], content: string, actor?: string): GameL
   actor,
 });
 
+// Genre icons for visual flair
+const GENRE_ICONS: Record<string, string> = {
+  fantasy: "⚔",
+  scifi: "◈",
+  horror: "☠",
+  mystery: "◎",
+  western: "☆",
+  romance: "♡",
+  historical: "⚜",
+  urban: "◇",
+  contemporary: "▣",
+  thriller: "◆",
+};
+
 // ========== DEMO DATA ==========
 
 const DEMO_GENRES: Genre[] = [
-  { id: "fantasy", name: "Fantasy", description: "Swords, sorcery & dragons", world_count: 12 },
-  { id: "scifi", name: "Sci-Fi", description: "Space & technology", world_count: 10 },
-  { id: "horror", name: "Horror", description: "Fear & the unknown", world_count: 8 },
-  { id: "mystery", name: "Mystery", description: "Puzzles & intrigue", world_count: 11 },
-  { id: "western", name: "Western", description: "Frontier & outlaws", world_count: 9 },
-  { id: "romance", name: "Romance", description: "Love & drama", world_count: 10 },
-  { id: "historical", name: "Historical", description: "Past eras", world_count: 14 },
-  { id: "urban", name: "Urban Fantasy", description: "Magic in modern times", world_count: 14 },
+  { genre: "fantasy", count: 18 },
+  { genre: "scifi", count: 19 },
+  { genre: "horror", count: 13 },
+  { genre: "mystery", count: 8 },
+  { genre: "western", count: 6 },
+  { genre: "romance", count: 13 },
+  { genre: "historical", count: 8 },
+  { genre: "contemporary", count: 5 },
 ];
 
-const DEMO_WORLDS: World[] = [
-  { id: "demo-crossroads", name: "The Crossroads", tagline: "Where all paths converge", genre_id: "fantasy" },
-  { id: "demo-elderwood", name: "Elderwood", tagline: "Ancient forest of whispers", genre_id: "fantasy" },
-  { id: "demo-ironhold", name: "Ironhold", tagline: "A fortress city besieged", genre_id: "fantasy" },
+const DEMO_WORLDS_BY_GENRE: WorldsByGenre[] = [
+  {
+    genre: "fantasy",
+    worlds: [
+      { id: "demo-crossroads", name: "The Crossroads", genre: "fantasy", subgenre: "adventure", description: "Where all paths converge in mystery" },
+      { id: "demo-elderwood", name: "Elderwood", genre: "fantasy", subgenre: "dark", description: "Ancient forest of whispers and secrets" },
+      { id: "demo-ironhold", name: "Ironhold", genre: "fantasy", subgenre: "siege", description: "A fortress city besieged by darkness" },
+    ],
+  },
 ];
 
 const DEMO_CAMPFIRE: CampfireResponse = {
   world: {
     id: "demo-crossroads",
     name: "The Crossroads",
-    tagline: "Where all paths converge",
+    genre: "fantasy",
+    subgenre: "adventure",
     description: "A mystical nexus where travelers from all realms meet.",
-    genre_id: "fantasy",
   },
   intro_text: "The fire crackles warmly as shadows dance across weathered faces. Three figures sit around the flames, each carrying stories untold. The innkeeper watches from the doorway, knowing that tonight, one of these souls will embark on a journey that will change everything.\n\nWho will you become?",
   characters: [
@@ -72,7 +91,7 @@ type AppPhase = "loading" | "landing" | "genres" | "worlds" | "campfire" | "game
 function LoadingView() {
   return (
     <main className="h-dvh flex flex-col items-center justify-center bg-[var(--void)]">
-      <div className="text-[var(--amber)] font-bold tracking-wider text-lg mb-4">TEXTLANDS</div>
+      <div className="text-[var(--amber)] font-bold tracking-[0.3em] text-lg mb-4 title-glow">TEXTLANDS</div>
       <div className="text-[var(--mist)] text-sm animate-pulse">Connecting...</div>
     </main>
   );
@@ -80,27 +99,54 @@ function LoadingView() {
 
 function LandingView({ onEnter, isDemo }: { onEnter: () => void; isDemo: boolean }) {
   return (
-    <main className="h-dvh flex flex-col items-center justify-center bg-[var(--void)] p-4 pt-[max(1rem,env(safe-area-inset-top))] animate-fade-in">
-      <div className="text-center space-y-6 max-w-md">
-        <h1 className="text-[var(--amber)] text-2xl md:text-4xl font-bold tracking-wider">
-          TEXTLANDS
-        </h1>
-        <p className="text-[var(--text-dim)] text-sm md:text-base">
+    <main className="h-dvh flex flex-col items-center justify-center bg-atmospheric p-4 pt-[max(1rem,env(safe-area-inset-top))] animate-fade-in">
+      {/* Decorative top line */}
+      <div className="absolute top-8 left-1/2 -translate-x-1/2 w-32 h-px bg-gradient-to-r from-transparent via-[var(--amber-dim)] to-transparent opacity-50" />
+
+      <div className="text-center space-y-8 max-w-md corner-brackets p-8">
+        {/* Title */}
+        <div className="space-y-2">
+          <div className="text-[var(--mist)] text-[10px] tracking-[0.5em] uppercase">Welcome to</div>
+          <h1 className="text-[var(--amber)] text-3xl md:text-5xl font-bold tracking-[0.2em] title-glow">
+            TEXTLANDS
+          </h1>
+          <div className="text-[var(--mist)] text-[10px] tracking-[0.3em] uppercase">Est. MMXXV</div>
+        </div>
+
+        {/* Tagline */}
+        <p className="text-[var(--text-dim)] text-sm md:text-base italic">
           Choose your world. Become your character.
         </p>
+
         {isDemo && (
-          <p className="text-[var(--crimson)] text-xs uppercase tracking-wide">Demo Mode</p>
+          <div className="flex items-center justify-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[var(--crimson)] animate-pulse" />
+            <span className="text-[var(--crimson)] text-xs uppercase tracking-widest">Offline Mode</span>
+          </div>
         )}
+
+        {/* CTA Button */}
         <button
           onClick={onEnter}
-          className="quick-btn px-8 py-4 text-[var(--amber)] font-bold text-base md:text-lg min-h-[48px]"
+          className="group relative px-10 py-4 text-[var(--amber)] font-bold text-base md:text-lg min-h-[52px] bg-[var(--shadow)] border border-[var(--slate)] rounded transition-all duration-200 hover:border-[var(--amber)] hover:bg-[var(--stone)] active:scale-95"
         >
-          Begin Your Journey
+          <span className="relative z-10">Begin Your Journey</span>
+          <span className="absolute inset-0 rounded bg-gradient-to-r from-transparent via-[var(--amber)] to-transparent opacity-0 group-hover:opacity-10 transition-opacity" />
         </button>
+
+        {/* Decorative text */}
+        <div className="text-[var(--slate)] text-[10px] tracking-widest">
+          ═══ ENTER THE REALM ═══
+        </div>
       </div>
+
+      {/* Theme picker */}
       <div className="absolute bottom-4 right-4 pb-[env(safe-area-inset-bottom)]">
         <ThemePicker />
       </div>
+
+      {/* Decorative bottom line */}
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-32 h-px bg-gradient-to-r from-transparent via-[var(--amber-dim)] to-transparent opacity-50" />
     </main>
   );
 }
@@ -111,28 +157,45 @@ function GenreGrid({ genres, onSelect, onBack }: {
   onBack: () => void;
 }) {
   return (
-    <main className="h-dvh flex flex-col bg-[var(--void)] pt-[max(0.5rem,env(safe-area-inset-top))] animate-fade-in">
+    <main className="h-dvh flex flex-col bg-atmospheric pt-[max(0.5rem,env(safe-area-inset-top))] animate-fade-in">
       <header className="flex items-center justify-between px-4 py-3 border-b border-[var(--slate)] shrink-0">
-        <button onClick={onBack} className="text-[var(--mist)] text-sm min-w-[44px] min-h-[44px] flex items-center">
-          &larr; Back
+        <button onClick={onBack} className="text-[var(--mist)] text-sm min-w-[44px] min-h-[44px] flex items-center gap-1 hover:text-[var(--text)] transition-colors">
+          <span className="text-lg">‹</span> Back
         </button>
-        <span className="text-[var(--amber)] font-bold tracking-wide">Choose a Genre</span>
+        <div className="text-center">
+          <span className="text-[var(--amber)] font-bold tracking-wider">SELECT GENRE</span>
+          <div className="text-[var(--mist)] text-[10px] tracking-widest">{genres.length} REALMS AVAILABLE</div>
+        </div>
         <ThemePicker />
       </header>
 
       <div className="flex-1 overflow-y-auto p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-4xl mx-auto">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-4xl mx-auto stagger-fade-in">
           {genres.map((genre) => (
             <button
-              key={genre.id}
+              key={genre.genre}
               onClick={() => onSelect(genre)}
-              className="quick-btn p-4 text-left flex flex-col gap-2 min-h-[100px] md:min-h-[120px]"
+              className="genre-card p-4 text-left flex flex-col gap-3 min-h-[120px] md:min-h-[140px]"
             >
-              <span className="text-[var(--amber)] font-bold text-sm md:text-base">{genre.name}</span>
-              <span className="text-[var(--text-dim)] text-xs line-clamp-2">{genre.description}</span>
-              <span className="text-[var(--mist)] text-[10px] mt-auto">
-                {genre.world_count} worlds
-              </span>
+              {/* Genre icon */}
+              <div className="text-2xl md:text-3xl text-[var(--amber)] opacity-80">
+                {GENRE_ICONS[genre.genre] || "◇"}
+              </div>
+
+              {/* Genre name */}
+              <div className="flex-1">
+                <span className="text-[var(--amber)] font-bold text-sm md:text-base capitalize block">
+                  {genre.genre}
+                </span>
+              </div>
+
+              {/* World count */}
+              <div className="flex items-center gap-2">
+                <span className="w-1 h-1 rounded-full bg-[var(--amber-dim)]" />
+                <span className="text-[var(--mist)] text-[10px] tracking-wide">
+                  {genre.count} WORLDS
+                </span>
+              </div>
             </button>
           ))}
         </div>
@@ -141,37 +204,58 @@ function GenreGrid({ genres, onSelect, onBack }: {
   );
 }
 
-function WorldList({ genre, worlds, onSelect, onBack }: {
+function WorldList({ genre, worldsByGenre, onSelect, onBack }: {
   genre: Genre;
-  worlds: World[];
+  worldsByGenre: WorldsByGenre[];
   onSelect: (world: World) => void;
   onBack: () => void;
 }) {
-  const filteredWorlds = worlds.filter(w => w.genre_id === genre.id);
+  // Find worlds for this genre
+  const genreData = worldsByGenre.find(wg => wg.genre === genre.genre);
+  const worlds = genreData?.worlds || [];
 
   return (
-    <main className="h-dvh flex flex-col bg-[var(--void)] pt-[max(0.5rem,env(safe-area-inset-top))] animate-fade-in">
+    <main className="h-dvh flex flex-col bg-atmospheric pt-[max(0.5rem,env(safe-area-inset-top))] animate-fade-in">
       <header className="flex items-center justify-between px-4 py-3 border-b border-[var(--slate)] shrink-0">
-        <button onClick={onBack} className="text-[var(--mist)] text-sm min-w-[44px] min-h-[44px] flex items-center">
-          &larr; Back
+        <button onClick={onBack} className="text-[var(--mist)] text-sm min-w-[44px] min-h-[44px] flex items-center gap-1 hover:text-[var(--text)] transition-colors">
+          <span className="text-lg">‹</span> Back
         </button>
-        <span className="text-[var(--amber)] font-bold tracking-wide">{genre.name}</span>
+        <div className="text-center">
+          <div className="flex items-center justify-center gap-2">
+            <span className="text-xl text-[var(--amber)] opacity-70">{GENRE_ICONS[genre.genre] || "◇"}</span>
+            <span className="text-[var(--amber)] font-bold tracking-wider uppercase">{genre.genre}</span>
+          </div>
+          <div className="text-[var(--mist)] text-[10px] tracking-widest">{worlds.length} WORLDS</div>
+        </div>
         <ThemePicker />
       </header>
 
       <div className="flex-1 overflow-y-auto p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-        <div className="space-y-3 max-w-2xl mx-auto">
-          {filteredWorlds.length === 0 ? (
-            <p className="text-[var(--mist)] text-center py-8">No worlds available in this genre yet.</p>
+        <div className="space-y-3 max-w-2xl mx-auto stagger-fade-in">
+          {worlds.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-[var(--mist)] text-2xl mb-2">◌</div>
+              <p className="text-[var(--mist)]">No worlds available yet.</p>
+              <p className="text-[var(--slate)] text-sm mt-1">Check back soon...</p>
+            </div>
           ) : (
-            filteredWorlds.map((world) => (
+            worlds.map((world) => (
               <button
                 key={world.id}
                 onClick={() => onSelect(world)}
-                className="quick-btn w-full p-4 text-left min-h-[72px]"
+                className="world-card w-full p-4 text-left min-h-[80px]"
               >
-                <span className="text-[var(--amber)] font-bold block">{world.name}</span>
-                <span className="text-[var(--text-dim)] text-sm mt-1 block">{world.tagline}</span>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <span className="text-[var(--amber)] font-bold block">{world.name}</span>
+                    <span className="text-[var(--text-dim)] text-sm mt-1 block line-clamp-2">{world.description}</span>
+                  </div>
+                  {world.subgenre && (
+                    <span className="text-[var(--mist)] text-[10px] tracking-wider uppercase shrink-0 mt-1">
+                      {world.subgenre}
+                    </span>
+                  )}
+                </div>
               </button>
             ))
           )}
@@ -188,45 +272,72 @@ function CampfireView({ campfire, onSelect, onBack, loading }: {
   loading: boolean;
 }) {
   return (
-    <main className="h-dvh flex flex-col bg-[var(--void)] pt-[max(0.5rem,env(safe-area-inset-top))] animate-fade-in">
+    <main className="h-dvh flex flex-col bg-atmospheric pt-[max(0.5rem,env(safe-area-inset-top))] animate-fade-in">
       <header className="flex items-center justify-between px-4 py-3 border-b border-[var(--slate)] shrink-0">
-        <button onClick={onBack} className="text-[var(--mist)] text-sm min-w-[44px] min-h-[44px] flex items-center">
-          &larr; Back
+        <button onClick={onBack} className="text-[var(--mist)] text-sm min-w-[44px] min-h-[44px] flex items-center gap-1 hover:text-[var(--text)] transition-colors">
+          <span className="text-lg">‹</span> Back
         </button>
-        <span className="text-[var(--amber)] font-bold tracking-wide">{campfire.world.name}</span>
+        <div className="text-center">
+          <span className="text-[var(--amber)] font-bold tracking-wider">{campfire.world.name}</span>
+          <div className="text-[var(--mist)] text-[10px] tracking-widest">THE CAMPFIRE</div>
+        </div>
         <ThemePicker />
       </header>
 
       <div className="flex-1 overflow-y-auto">
-        {/* Intro narrative */}
-        <div className="p-4 border-b border-[var(--slate)]">
-          <p className="text-[var(--amber)] leading-relaxed whitespace-pre-wrap max-w-2xl mx-auto text-sm md:text-base">
-            {campfire.intro_text}
-          </p>
+        {/* Campfire scene - intro narrative */}
+        <div className="p-6 border-b border-[var(--slate)] bg-gradient-to-b from-[var(--shadow)] to-transparent">
+          <div className="max-w-2xl mx-auto">
+            {/* Fire decoration */}
+            <div className="text-center mb-4 fire-flicker">
+              <span className="text-2xl text-[var(--amber)]">🔥</span>
+            </div>
+
+            <p className="text-[var(--amber)] leading-relaxed whitespace-pre-wrap text-sm md:text-base campfire-text text-center italic">
+              {campfire.intro_text}
+            </p>
+          </div>
         </div>
 
         {/* Character selection */}
         <div className="p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-          <p className="text-[var(--mist)] text-sm text-center mb-4">
-            Choose your character
-          </p>
-          <div className="space-y-3 max-w-2xl mx-auto">
+          <div className="text-center mb-6">
+            <div className="text-[var(--mist)] text-[10px] tracking-[0.3em] uppercase mb-1">Choose Your</div>
+            <div className="text-[var(--amber)] font-bold tracking-wider">CHARACTER</div>
+          </div>
+
+          <div className="space-y-4 max-w-2xl mx-auto stagger-fade-in">
             {campfire.characters.map((char) => (
               <button
                 key={char.id}
                 onClick={() => onSelect(char)}
                 disabled={loading}
-                className="quick-btn w-full p-4 text-left min-h-[88px] disabled:opacity-50"
+                className="character-card w-full p-5 text-left disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <div className="flex justify-between items-start">
-                  <span className="text-[var(--amber)] font-bold">{char.name}</span>
-                  <span className="text-[var(--mist)] text-xs capitalize">
-                    {char.race} {char.character_class}
-                  </span>
+                <div className="flex items-start gap-4">
+                  {/* Character portrait placeholder */}
+                  <div className="w-12 h-12 rounded bg-[var(--slate)] flex items-center justify-center text-[var(--amber)] text-xl shrink-0">
+                    {char.name.charAt(0)}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className="text-[var(--amber)] font-bold">{char.name}</span>
+                      <span className="text-[var(--arcane)] text-[10px] tracking-wider uppercase">
+                        {char.race} {char.character_class}
+                      </span>
+                    </div>
+                    <p className="text-[var(--text-dim)] text-sm line-clamp-2">
+                      {char.backstory}
+                    </p>
+                  </div>
                 </div>
-                <p className="text-[var(--text-dim)] text-sm mt-2 line-clamp-2">
-                  {char.backstory}
-                </p>
+
+                {/* Selection indicator */}
+                <div className="mt-3 pt-3 border-t border-[var(--slate)] flex items-center justify-between">
+                  <span className="text-[var(--mist)] text-[10px] tracking-wider">SELECT TO PLAY</span>
+                  <span className="text-[var(--amber)] text-sm">→</span>
+                </div>
               </button>
             ))}
           </div>
@@ -245,7 +356,7 @@ export default function GamePage() {
 
   // World selection state
   const [genres, setGenres] = useState<Genre[]>([]);
-  const [worlds, setWorlds] = useState<World[]>([]);
+  const [worldsByGenre, setWorldsByGenre] = useState<WorldsByGenre[]>([]);
   const [selectedGenre, setSelectedGenre] = useState<Genre | null>(null);
   const [campfireData, setCampfireData] = useState<CampfireResponse | null>(null);
   const [selectedWorldId, setSelectedWorldId] = useState<string | null>(null);
@@ -266,7 +377,7 @@ export default function GamePage() {
         // API unavailable - demo mode
         setIsDemo(true);
         setGenres(DEMO_GENRES);
-        setWorlds(DEMO_WORLDS);
+        setWorldsByGenre(DEMO_WORLDS_BY_GENRE);
         setPhase("landing");
         return;
       }
@@ -278,7 +389,7 @@ export default function GamePage() {
       } catch {
         setIsDemo(true);
         setGenres(DEMO_GENRES);
-        setWorlds(DEMO_WORLDS);
+        setWorldsByGenre(DEMO_WORLDS_BY_GENRE);
       }
 
       setPhase("landing");
@@ -295,12 +406,12 @@ export default function GamePage() {
     setSelectedGenre(genre);
 
     // Fetch worlds if not cached
-    if (!isDemo && worlds.length === 0) {
+    if (!isDemo && worldsByGenre.length === 0) {
       try {
         const worldData = await api.getWorlds();
-        setWorlds(worldData);
+        setWorldsByGenre(worldData);
       } catch {
-        setWorlds(DEMO_WORLDS);
+        setWorldsByGenre(DEMO_WORLDS_BY_GENRE);
       }
     }
 
@@ -367,7 +478,7 @@ export default function GamePage() {
           log("narrative", opening_narrative || message),
           log("system", "Type 'help' for commands, or just describe what you want to do"),
         ]);
-      } catch (error) {
+      } catch {
         // Fallback to demo on error
         setCharacter(DEMO_CHARACTER);
         setZoneName("The Crossroads");
@@ -488,7 +599,7 @@ export default function GamePage() {
     return (
       <WorldList
         genre={selectedGenre}
-        worlds={worlds}
+        worldsByGenre={worldsByGenre}
         onSelect={selectWorld}
         onBack={() => setPhase("genres")}
       />

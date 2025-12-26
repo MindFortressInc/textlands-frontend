@@ -22,9 +22,9 @@ export interface WorldsByGenre {
 export interface WorldDetail {
   id: string;
   name: string;
-  tagline: string;
+  genre: string;
+  subgenre?: string;
   description: string;
-  genre_id: string;
 }
 
 export interface CharacterOption {

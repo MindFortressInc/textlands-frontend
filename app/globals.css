@@ -191,6 +191,189 @@ body {
   animation: fade-in 0.3s ease-out;
 }
 
+/* Staggered fade in for lists */
+.stagger-fade-in > * {
+  opacity: 0;
+  animation: fade-in 0.4s ease-out forwards;
+}
+.stagger-fade-in > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger-fade-in > *:nth-child(2) { animation-delay: 0.1s; }
+.stagger-fade-in > *:nth-child(3) { animation-delay: 0.15s; }
+.stagger-fade-in > *:nth-child(4) { animation-delay: 0.2s; }
+.stagger-fade-in > *:nth-child(5) { animation-delay: 0.25s; }
+.stagger-fade-in > *:nth-child(6) { animation-delay: 0.3s; }
+.stagger-fade-in > *:nth-child(7) { animation-delay: 0.35s; }
+.stagger-fade-in > *:nth-child(8) { animation-delay: 0.4s; }
+
+/* Genre card styling */
+.genre-card {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--stone) 0%, var(--shadow) 100%);
+  border: 1px solid var(--slate);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.genre-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--amber), transparent);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.genre-card:hover::before,
+.genre-card:active::before {
+  opacity: 1;
+}
+
+.genre-card:active {
+  transform: scale(0.97);
+  background: var(--slate);
+}
+
+@media (hover: hover) {
+  .genre-card:hover {
+    border-color: var(--amber);
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.1);
+    transform: translateY(-2px);
+  }
+}
+
+/* World card styling */
+.world-card {
+  position: relative;
+  background: var(--shadow);
+  border: 1px solid var(--slate);
+  border-left: 3px solid var(--amber-dim);
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.world-card:active {
+  transform: scale(0.98);
+  border-left-color: var(--amber);
+}
+
+@media (hover: hover) {
+  .world-card:hover {
+    background: var(--stone);
+    border-left-color: var(--amber);
+    box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* Character card styling */
+.character-card {
+  position: relative;
+  background: linear-gradient(180deg, var(--stone) 0%, var(--shadow) 100%);
+  border: 1px solid var(--slate);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.character-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(transparent, rgba(245, 158, 11, 0.05));
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.character-card:hover::after,
+.character-card:active::after {
+  opacity: 1;
+}
+
+.character-card:active {
+  transform: scale(0.98);
+  border-color: var(--amber);
+}
+
+@media (hover: hover) {
+  .character-card:hover {
+    border-color: var(--amber);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  }
+}
+
+/* Campfire glow effect */
+.campfire-text {
+  text-shadow: 0 0 30px rgba(245, 158, 11, 0.2);
+}
+
+/* Flickering fire animation */
+@keyframes fireflicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+  75% { opacity: 0.95; }
+}
+
+.fire-flicker {
+  animation: fireflicker 3s ease-in-out infinite;
+}
+
+/* Title glow pulse */
+@keyframes title-pulse {
+  0%, 100% {
+    text-shadow: 0 0 10px var(--amber-dim), 0 0 20px rgba(245, 158, 11, 0.3);
+  }
+  50% {
+    text-shadow: 0 0 15px var(--amber), 0 0 30px rgba(245, 158, 11, 0.5);
+  }
+}
+
+.title-glow {
+  animation: title-pulse 4s ease-in-out infinite;
+}
+
+/* Decorative corner brackets */
+.corner-brackets {
+  position: relative;
+}
+
+.corner-brackets::before,
+.corner-brackets::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: var(--amber-dim);
+  opacity: 0.5;
+}
+
+.corner-brackets::before {
+  top: -4px;
+  left: -4px;
+  border-top: 1px solid;
+  border-left: 1px solid;
+}
+
+.corner-brackets::after {
+  bottom: -4px;
+  right: -4px;
+  border-bottom: 1px solid;
+  border-right: 1px solid;
+}
+
+/* Atmospheric background gradient */
+.bg-atmospheric {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(245, 158, 11, 0.03) 0%, transparent 50%),
+    var(--void);
+}
+
 /* Mobile-specific adjustments */
 @media (max-width: 767px) {
   body {

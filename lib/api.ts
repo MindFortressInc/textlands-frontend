@@ -10,6 +10,7 @@ import type {
   CombatActionResponse,
   Genre,
   World,
+  WorldsByGenre,
   CampfireResponse,
   DoActionResponse,
 } from "@/types/game";
@@ -209,8 +210,8 @@ export async function getGenres(): Promise<Genre[]> {
   return fetchAPI<Genre[]>("/worlds/genres");
 }
 
-export async function getWorlds(): Promise<World[]> {
-  return fetchAPI<World[]>("/worlds");
+export async function getWorlds(): Promise<WorldsByGenre[]> {
+  return fetchAPI<WorldsByGenre[]>("/worlds");
 }
 
 export async function getCampfire(worldId: string): Promise<CampfireResponse> {
