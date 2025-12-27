@@ -24,6 +24,7 @@ import type {
   PlayerWorldStats,
   LeaderboardEntry,
   InfiniteCampfireResponse,
+  InfiniteCampfireCharacter,
 } from "@/types/game";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
@@ -300,6 +301,21 @@ export async function getInfiniteWorlds(): Promise<InfiniteWorld[]> {
   return fetchAPI<InfiniteWorld[]>("/infinite/worlds");
 }
 
+// Realm group from grouped endpoint
+export interface RealmGroup {
+  realm: string;
+  display_name: string;
+  description: string;
+  world_count: number;
+  is_locked: boolean;
+  worlds: InfiniteWorld[];
+}
+
+// List worlds grouped by realm (preferred over getInfiniteWorlds)
+export async function getInfiniteWorldsGrouped(): Promise<RealmGroup[]> {
+  return fetchAPI<RealmGroup[]>("/infinite/worlds/grouped");
+}
+
 // Get world details
 export async function getInfiniteWorld(worldId: string): Promise<InfiniteWorld> {
   return fetchAPI<InfiniteWorld>(`/infinite/worlds/${worldId}`);
@@ -402,6 +418,209 @@ export async function startInfiniteSession(
   return fetchAPI<InfiniteSessionResponse>("/infinite/session/start", {
     method: "POST",
     body: JSON.stringify(request),
+  });
+}
+
+// Create custom character at campfire
+export interface CreateCharacterRequest {
+  name: string;
+  occupation?: string;
+  physical_description?: string;
+  personality_traits?: string[];
+  backstory_hook?: string;
+}
+
+export interface CreateCharacterResponse {
+  success: boolean;
+  character: InfiniteCampfireCharacter;
+  message?: string;
+}
+
+export async function createCampfireCharacter(
+  worldId: string,
+  request: CreateCharacterRequest
+): Promise<CreateCharacterResponse> {
+  return fetchAPI<CreateCharacterResponse>(
+    `/infinite/worlds/${worldId}/campfire/create`,
+    {
+      method: "POST",
+      body: JSON.stringify(request),
+    }
+  );
+}
+
+// ============ PLAYER PREFERENCES API ============
+
+export interface PlayerNsfwPreferences {
+  nsfw_enabled: boolean;
+  age_verified: boolean;
+  rejection_count: number;
+  auto_blocked: boolean;
+}
+
+export async function getPlayerPreferences(playerId: string): Promise<PlayerNsfwPreferences> {
+  return fetchAPI<PlayerNsfwPreferences>(`/infinite/player/${playerId}/preferences`);
+}
+
+export async function updatePlayerPreferences(
+  playerId: string,
+  prefs: Partial<PlayerNsfwPreferences>
+): Promise<PlayerNsfwPreferences> {
+  return fetchAPI<PlayerNsfwPreferences>(`/infinite/player/${playerId}/preferences`, {
+    method: "POST",
+    body: JSON.stringify(prefs),
+  });
+}
+
+export interface NsfwPromptResponse {
+  allowed: boolean;
+  requires_verification: boolean;
+  auto_blocked: boolean;
+  message?: string;
+}
+
+export async function handleNsfwPrompt(
+  playerId: string,
+  accepted: boolean
+): Promise<NsfwPromptResponse> {
+  return fetchAPI<NsfwPromptResponse>(`/infinite/player/${playerId}/nsfw-prompt`, {
+    method: "POST",
+    body: JSON.stringify({ accepted }),
+  });
+}
+
+// ============ LOCATION INTERACTION API ============
+
+export interface LocationFootprint {
+  player_id: string;
+  display_name: string;
+  visited_at: string;
+  message?: string;
+}
+
+export async function getLocationFootprints(entityId: string): Promise<LocationFootprint[]> {
+  return fetchAPI<LocationFootprint[]>(`/infinite/entities/${entityId}/footprints`);
+}
+
+export interface LeaveMessageRequest {
+  message: string;
+}
+
+export interface LeaveMessageResponse {
+  success: boolean;
+  message_id: string;
+}
+
+export async function leaveLocationMessage(
+  entityId: string,
+  message: string
+): Promise<LeaveMessageResponse> {
+  return fetchAPI<LeaveMessageResponse>(`/infinite/entities/${entityId}/messages`, {
+    method: "POST",
+    body: JSON.stringify({ message }),
+  });
+}
+
+export async function recordLocationVisit(entityId: string): Promise<{ success: boolean }> {
+  return fetchAPI<{ success: boolean }>(`/infinite/entities/${entityId}/visit`, {
+    method: "POST",
+  });
+}
+
+// ============ ENTITY TIMELINE API ============
+
+export interface TimelineEvent {
+  id: string;
+  event_type: string;
+  description: string;
+  occurred_at: string;
+  caused_by_player_id?: string;
+}
+
+export async function getEntityTimeline(entityId: string): Promise<TimelineEvent[]> {
+  return fetchAPI<TimelineEvent[]>(`/infinite/entities/${entityId}/timeline`);
+}
+
+export interface AddTimelineEventRequest {
+  event_type: string;
+  description: string;
+}
+
+export async function addEntityTimelineEvent(
+  entityId: string,
+  event: AddTimelineEventRequest
+): Promise<TimelineEvent> {
+  return fetchAPI<TimelineEvent>(`/infinite/entities/${entityId}/timeline`, {
+    method: "POST",
+    body: JSON.stringify(event),
+  });
+}
+
+export async function updateEntityState(
+  entityId: string,
+  state: Record<string, unknown>
+): Promise<{ success: boolean }> {
+  return fetchAPI<{ success: boolean }>(`/infinite/entities/${entityId}/state`, {
+    method: "PATCH",
+    body: JSON.stringify(state),
+  });
+}
+
+// ============ PLAYER INFLUENCE API ============
+
+export interface PlayerInfluence {
+  world_id: string;
+  player_id: string;
+  influence_score: number;
+  contributions: number;
+  rank?: number;
+}
+
+export async function getPlayerInfluence(
+  worldId: string,
+  playerId: string
+): Promise<PlayerInfluence> {
+  return fetchAPI<PlayerInfluence>(`/infinite/worlds/${worldId}/player/${playerId}/influence`);
+}
+
+// ============ SESSION MANAGEMENT API ============
+
+export interface ClaimSessionRequest {
+  email?: string;
+  provider?: string;
+  provider_id?: string;
+}
+
+export interface ClaimSessionResponse {
+  success: boolean;
+  player_id: string;
+  message: string;
+}
+
+export async function claimGuestSession(request: ClaimSessionRequest): Promise<ClaimSessionResponse> {
+  return fetchAPI<ClaimSessionResponse>("/session/claim", {
+    method: "POST",
+    body: JSON.stringify(request),
+  });
+}
+
+export async function endGuestSession(): Promise<{ success: boolean }> {
+  return fetchAPI<{ success: boolean }>("/session/guest", {
+    method: "DELETE",
+  });
+}
+
+// ============ ADDITIONAL ACTIONS API ============
+
+export async function restAction(): Promise<DoActionResponse> {
+  return fetchAPI<DoActionResponse>("/actions/rest", {
+    method: "POST",
+  });
+}
+
+export async function inventoryAction(): Promise<DoActionResponse> {
+  return fetchAPI<DoActionResponse>("/actions/inventory", {
+    method: "POST",
   });
 }
 

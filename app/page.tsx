@@ -5,6 +5,7 @@ import { GameLog, CommandInput, CharacterPanel, QuickActions, MobileStats, Scene
 import { ThemePicker } from "@/components/ThemePicker";
 import type { Character, GameLogEntry, Genre, World, WorldsByGenre, CampfireResponse, CharacterOption, ActiveScene as ActiveSceneType, NegotiationRequest, CombatSession, ReasoningInfo, InfiniteWorld, InfiniteCampfireResponse, InfiniteCampfireCharacter } from "@/types/game";
 import * as api from "@/lib/api";
+import type { RealmGroup } from "@/lib/api";
 
 // ========== HELPERS ==========
 
@@ -48,58 +49,76 @@ const TONE_ICONS: Record<string, string> = {
 
 // ========== DEMO DATA ==========
 
-// Demo infinite worlds for offline mode
-const DEMO_INFINITE_WORLDS: InfiniteWorld[] = [
+// Demo realm groups for offline mode
+const DEMO_REALM_GROUPS: RealmGroup[] = [
   {
-    id: "demo-thornwood",
-    slug: "thornwood-vale",
-    name: "Thornwood Vale",
-    tagline: "Dark secrets lurk beneath ancient boughs",
-    description: "A dark medieval fantasy realm where magic has a terrible cost and the old gods still hunger.",
-    creator_id: "system",
-    is_public: true,
     realm: "fantasy",
-    is_nsfw: false,
-    governance: { type: "autocracy" },
-    physics_rules: { magic_exists: true, magic_system: "hard", tech_level: "medieval" },
-    society_rules: { class_system: "rigid", economy_type: "feudal" },
-    content_rules: { violence_level: "graphic", romance_level: "fade_to_black", nsfw_allowed: false },
-    tone_rules: { primary_tone: "grimdark", stakes_level: "personal", moral_complexity: "grey" },
-    player_count: 42,
+    display_name: "Fantasy Realms",
+    description: "Magic, medieval kingdoms, and mythical creatures",
+    world_count: 2,
+    is_locked: false,
+    worlds: [
+      {
+        id: "demo-thornwood",
+        slug: "thornwood-vale",
+        name: "Thornwood Vale",
+        tagline: "Dark secrets lurk beneath ancient boughs",
+        description: "A dark medieval fantasy realm where magic has a terrible cost and the old gods still hunger.",
+        creator_id: "system",
+        is_public: true,
+        realm: "fantasy",
+        is_nsfw: false,
+        governance: { type: "autocracy" },
+        physics_rules: { magic_exists: true, magic_system: "hard", tech_level: "medieval" },
+        society_rules: { class_system: "rigid", economy_type: "feudal" },
+        content_rules: { violence_level: "graphic", romance_level: "fade_to_black", nsfw_allowed: false },
+        tone_rules: { primary_tone: "grimdark", stakes_level: "personal", moral_complexity: "grey" },
+        player_count: 42,
+      },
+      {
+        id: "demo-willowmere",
+        slug: "willowmere",
+        name: "Willowmere",
+        tagline: "A cozy corner of the realm",
+        description: "Low-stakes wholesome fantasy focused on community, crafting, and found family.",
+        creator_id: "system",
+        is_public: true,
+        realm: "fantasy",
+        is_nsfw: false,
+        governance: { type: "democracy" },
+        physics_rules: { magic_exists: true, magic_system: "soft", tech_level: "medieval" },
+        society_rules: { class_system: "fluid", economy_type: "mercantile" },
+        content_rules: { violence_level: "mild", romance_level: "fade_to_black", nsfw_allowed: false },
+        tone_rules: { primary_tone: "slice_of_life", stakes_level: "personal", moral_complexity: "grey" },
+        player_count: 15,
+      },
+    ],
   },
   {
-    id: "demo-neon",
-    slug: "neon-sprawl",
-    name: "Neon Sprawl",
-    tagline: "Jack in. Fight back. Survive.",
-    description: "Cyberpunk megacity where megacorps rule and hackers fight for freedom in the digital shadows.",
-    creator_id: "system",
-    is_public: true,
     realm: "scifi",
-    is_nsfw: false,
-    governance: { type: "council" },
-    physics_rules: { magic_exists: false, tech_level: "futuristic" },
-    society_rules: { class_system: "fluid", economy_type: "capitalist" },
-    content_rules: { violence_level: "graphic", romance_level: "suggestive", nsfw_allowed: false },
-    tone_rules: { primary_tone: "noir", stakes_level: "personal", moral_complexity: "grey" },
-    player_count: 28,
-  },
-  {
-    id: "demo-willowmere",
-    slug: "willowmere",
-    name: "Willowmere",
-    tagline: "A cozy corner of the realm",
-    description: "Low-stakes wholesome fantasy focused on community, crafting, and found family.",
-    creator_id: "system",
-    is_public: true,
-    realm: "fantasy",
-    is_nsfw: false,
-    governance: { type: "democracy" },
-    physics_rules: { magic_exists: true, magic_system: "soft", tech_level: "medieval" },
-    society_rules: { class_system: "fluid", economy_type: "mercantile" },
-    content_rules: { violence_level: "mild", romance_level: "fade_to_black", nsfw_allowed: false },
-    tone_rules: { primary_tone: "slice_of_life", stakes_level: "personal", moral_complexity: "grey" },
-    player_count: 15,
+    display_name: "Sci-Fi Worlds",
+    description: "Future technology, space exploration, and cyberpunk",
+    world_count: 1,
+    is_locked: false,
+    worlds: [
+      {
+        id: "demo-neon",
+        slug: "neon-sprawl",
+        name: "Neon Sprawl",
+        tagline: "Jack in. Fight back. Survive.",
+        description: "Cyberpunk megacity where megacorps rule and hackers fight for freedom in the digital shadows.",
+        creator_id: "system",
+        is_public: true,
+        realm: "scifi",
+        is_nsfw: false,
+        governance: { type: "council" },
+        physics_rules: { magic_exists: false, tech_level: "futuristic" },
+        society_rules: { class_system: "fluid", economy_type: "capitalist" },
+        content_rules: { violence_level: "graphic", romance_level: "suggestive", nsfw_allowed: false },
+        tone_rules: { primary_tone: "noir", stakes_level: "personal", moral_complexity: "grey" },
+        player_count: 28,
+      },
+    ],
   },
 ];
 
@@ -349,8 +368,8 @@ const REALM_INFO: Record<string, { name: string; icon: string }> = {
 };
 
 // New Infinite Worlds browser - grouped by realm
-function WorldBrowser({ worlds, onSelect, onBack, nsfwEnabled, onRequestNsfw }: {
-  worlds: InfiniteWorld[];
+function WorldBrowser({ realmGroups, onSelect, onBack, nsfwEnabled, onRequestNsfw }: {
+  realmGroups: RealmGroup[];
   onSelect: (world: InfiniteWorld) => void;
   onBack: () => void;
   nsfwEnabled: boolean;
@@ -358,37 +377,28 @@ function WorldBrowser({ worlds, onSelect, onBack, nsfwEnabled, onRequestNsfw }: 
 }) {
   const [expandedRealm, setExpandedRealm] = useState<string | null>(null);
 
-  // Group worlds by realm
-  const realmGroups = worlds.reduce((acc, world) => {
-    const realm = world.realm || "other";
-    if (!acc[realm]) acc[realm] = [];
-    acc[realm].push(world);
-    return acc;
-  }, {} as Record<string, InfiniteWorld[]>);
-
-  // Separate SFW and NSFW realms
-  const sfwRealms = Object.entries(realmGroups).filter(
-    ([, realmWorlds]) => !realmWorlds.every(w => w.is_nsfw)
-  );
-  const nsfwRealms = Object.entries(realmGroups).filter(
-    ([, realmWorlds]) => realmWorlds.every(w => w.is_nsfw)
-  );
+  // Separate SFW and locked/NSFW realms
+  const sfwRealms = realmGroups.filter(g => !g.is_locked);
+  const nsfwRealms = realmGroups.filter(g => g.is_locked);
 
   // Filter worlds based on NSFW setting
-  const filterWorlds = (realmWorlds: InfiniteWorld[]) => {
-    if (nsfwEnabled) return realmWorlds;
-    return realmWorlds.filter(w => !w.is_nsfw);
+  const filterWorlds = (worlds: InfiniteWorld[]) => {
+    if (nsfwEnabled) return worlds;
+    return worlds.filter(w => !w.is_nsfw);
   };
 
-  const handleRealmClick = (realm: string, isNsfwRealm: boolean) => {
-    if (isNsfwRealm && !nsfwEnabled) {
+  const handleRealmClick = (realm: string, isLocked: boolean) => {
+    if (isLocked && !nsfwEnabled) {
       onRequestNsfw();
       return;
     }
     setExpandedRealm(expandedRealm === realm ? null : realm);
   };
 
-  const totalWorlds = nsfwEnabled ? worlds.length : worlds.filter(w => !w.is_nsfw).length;
+  const totalWorlds = realmGroups.reduce((sum, g) => {
+    if (nsfwEnabled) return sum + g.world_count;
+    return sum + g.worlds.filter(w => !w.is_nsfw).length;
+  }, 0);
 
   return (
     <main className="h-dvh flex flex-col bg-atmospheric pt-[max(0.5rem,env(safe-area-inset-top))] animate-fade-in">
@@ -408,22 +418,22 @@ function WorldBrowser({ worlds, onSelect, onBack, nsfwEnabled, onRequestNsfw }: 
           {/* Realm grid - 2 columns on desktop */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 stagger-fade-in">
             {/* SFW Realms */}
-            {sfwRealms.map(([realm, realmWorlds]) => {
-              const info = REALM_INFO[realm] || { name: realm, icon: "◇" };
-              const filteredWorlds = filterWorlds(realmWorlds);
-              const isExpanded = expandedRealm === realm;
+            {sfwRealms.map((group) => {
+              const info = REALM_INFO[group.realm] || { name: group.display_name, icon: "◇" };
+              const filteredWorlds = filterWorlds(group.worlds);
+              const isExpanded = expandedRealm === group.realm;
 
               return (
-                <div key={realm} className={`realm-group ${isExpanded ? "md:col-span-2 lg:col-span-3" : ""}`}>
+                <div key={group.realm} className={`realm-group ${isExpanded ? "md:col-span-2 lg:col-span-3" : ""}`}>
                   {/* Realm Header */}
                   <button
-                    onClick={() => handleRealmClick(realm, false)}
+                    onClick={() => handleRealmClick(group.realm, false)}
                     className="w-full p-4 bg-[var(--shadow)] border border-[var(--slate)] rounded-lg flex items-center justify-between hover:border-[var(--amber-dim)] transition-colors group"
                   >
                     <div className="flex items-center gap-3">
                       <span className="text-2xl text-[var(--amber)] opacity-80 group-hover:opacity-100 transition-opacity">{info.icon}</span>
                       <div className="text-left">
-                        <span className="text-[var(--amber)] font-bold block">{info.name}</span>
+                        <span className="text-[var(--amber)] font-bold block">{group.display_name}</span>
                         <span className="text-[var(--mist)] text-xs">{filteredWorlds.length} worlds</span>
                       </div>
                     </div>
@@ -459,26 +469,26 @@ function WorldBrowser({ worlds, onSelect, onBack, nsfwEnabled, onRequestNsfw }: 
               );
             })}
 
-            {/* NSFW Realms Section */}
+            {/* NSFW/Locked Realms Section */}
             {nsfwRealms.length > 0 && (
               <>
                 {nsfwEnabled ? (
-                  // Show NSFW realms normally
-                  nsfwRealms.map(([realm, realmWorlds]) => {
-                    const info = REALM_INFO[realm] || { name: realm, icon: "◇" };
-                    const isExpanded = expandedRealm === realm;
+                  // Show NSFW realms normally when unlocked
+                  nsfwRealms.map((group) => {
+                    const info = REALM_INFO[group.realm] || { name: group.display_name, icon: "◇" };
+                    const isExpanded = expandedRealm === group.realm;
 
                     return (
-                      <div key={realm} className={`realm-group ${isExpanded ? "md:col-span-2 lg:col-span-3" : ""}`}>
+                      <div key={group.realm} className={`realm-group ${isExpanded ? "md:col-span-2 lg:col-span-3" : ""}`}>
                         <button
-                          onClick={() => handleRealmClick(realm, false)}
+                          onClick={() => handleRealmClick(group.realm, false)}
                           className="w-full p-4 bg-[var(--shadow)] border border-[var(--crimson)]/30 rounded-lg flex items-center justify-between hover:border-[var(--crimson)] transition-colors group"
                         >
                           <div className="flex items-center gap-3">
                             <span className="text-2xl text-[var(--crimson)] opacity-80 group-hover:opacity-100 transition-opacity">{info.icon}</span>
                             <div className="text-left">
-                              <span className="text-[var(--crimson)] font-bold block">{info.name}</span>
-                              <span className="text-[var(--mist)] text-xs">{realmWorlds.length} worlds · 18+</span>
+                              <span className="text-[var(--crimson)] font-bold block">{group.display_name}</span>
+                              <span className="text-[var(--mist)] text-xs">{group.world_count} worlds · 18+</span>
                             </div>
                           </div>
                           <span className="text-[var(--mist)] text-lg">{isExpanded ? "−" : "+"}</span>
@@ -486,7 +496,7 @@ function WorldBrowser({ worlds, onSelect, onBack, nsfwEnabled, onRequestNsfw }: 
 
                         {isExpanded && (
                           <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2">
-                            {realmWorlds.map((world) => (
+                            {group.worlds.map((world) => (
                               <button
                                 key={world.id}
                                 onClick={() => onSelect(world)}
@@ -519,7 +529,7 @@ function WorldBrowser({ worlds, onSelect, onBack, nsfwEnabled, onRequestNsfw }: 
                       <span className="text-2xl">🔒</span>
                       <div className="text-left">
                         <span className="text-[var(--mist)] font-bold block">Adults Only</span>
-                        <span className="text-[var(--slate)] text-xs">{nsfwRealms.reduce((sum, [, w]) => sum + w.length, 0)} worlds · Tap to verify age</span>
+                        <span className="text-[var(--slate)] text-xs">{nsfwRealms.reduce((sum, g) => sum + g.world_count, 0)} worlds · Tap to verify age</span>
                       </div>
                     </div>
                   </button>
@@ -714,7 +724,7 @@ export default function GamePage() {
   const [isDemo, setIsDemo] = useState(false);
 
   // Infinite Worlds state (new system)
-  const [infiniteWorlds, setInfiniteWorlds] = useState<InfiniteWorld[]>([]);
+  const [realmGroups, setRealmGroups] = useState<RealmGroup[]>([]);
   const [selectedWorld, setSelectedWorld] = useState<InfiniteWorld | null>(null);
   const [infiniteCampfire, setInfiniteCampfire] = useState<InfiniteCampfireResponse | null>(null);
 
@@ -758,7 +768,7 @@ export default function GamePage() {
 
   // ========== INITIALIZATION ==========
 
-  // Load NSFW preferences from localStorage
+  // Load NSFW preferences from localStorage (fallback for demo mode)
   useEffect(() => {
     const stored = localStorage.getItem("textlands_nsfw");
     if (stored) {
@@ -774,7 +784,7 @@ export default function GamePage() {
     }
   }, []);
 
-  // Save NSFW preferences to localStorage
+  // Cache NSFW preferences to localStorage (for offline/demo fallback)
   useEffect(() => {
     localStorage.setItem("textlands_nsfw", JSON.stringify({
       enabled: nsfwEnabled,
@@ -791,7 +801,7 @@ export default function GamePage() {
       if (!healthy) {
         // API unavailable - demo mode
         setIsDemo(true);
-        setInfiniteWorlds(DEMO_INFINITE_WORLDS);
+        setRealmGroups(DEMO_REALM_GROUPS);
         setGenres(DEMO_GENRES);
         setWorldsByGenre(DEMO_WORLDS_BY_GENRE);
         setPhase("landing");
@@ -800,21 +810,32 @@ export default function GamePage() {
 
       // Fetch session, worlds, and preferences in parallel
       try {
-        const [session, worldsData, prefs] = await Promise.all([
+        const [session, groupedData, prefs] = await Promise.all([
           api.getSession().catch(() => null),
-          api.getInfiniteWorlds(),
+          api.getInfiniteWorldsGrouped(),
           api.getPreferences().catch(() => ({ show_reasoning: false, show_on_failure: true })),
         ]);
 
         if (session) {
           setPlayerId(session.player_id);
+
+          // Fetch server-side NSFW preferences
+          try {
+            const nsfwPrefs = await api.getPlayerPreferences(session.player_id);
+            setNsfwEnabled(nsfwPrefs.nsfw_enabled);
+            setNsfwVerified(nsfwPrefs.age_verified);
+            setNsfwRejections(nsfwPrefs.rejection_count);
+            setNsfwAutoBlocked(nsfwPrefs.auto_blocked);
+          } catch {
+            // Keep localStorage values as fallback
+          }
         }
-        setInfiniteWorlds(worldsData);
+        setRealmGroups(groupedData);
         setShowReasoning(prefs.show_reasoning);
       } catch {
         // Fall back to demo mode on error
         setIsDemo(true);
-        setInfiniteWorlds(DEMO_INFINITE_WORLDS);
+        setRealmGroups(DEMO_REALM_GROUPS);
         setGenres(DEMO_GENRES);
         setWorldsByGenre(DEMO_WORLDS_BY_GENRE);
       }
@@ -848,11 +869,20 @@ export default function GamePage() {
     return false;
   }, [nsfwEnabled, nsfwAutoBlocked, requestAgeVerification]);
 
-  const handleAgeVerified = useCallback(() => {
+  const handleAgeVerified = useCallback(async () => {
     setNsfwVerified(true);
     setNsfwEnabled(true);
     setNsfwRejections(0); // Reset rejections on acceptance
     setShowAgeGate(false);
+
+    // Sync with server if we have a player ID
+    if (playerId && !isDemo) {
+      try {
+        await api.handleNsfwPrompt(playerId, true);
+      } catch {
+        // Server sync failed, local state already updated
+      }
+    }
 
     // Retry pending NSFW command if any
     if (pendingNsfwCommand) {
@@ -881,9 +911,9 @@ export default function GamePage() {
       ageGateCallback();
       setAgeGateCallback(null);
     }
-  }, [ageGateCallback, pendingNsfwCommand]);
+  }, [ageGateCallback, pendingNsfwCommand, playerId, isDemo]);
 
-  const handleAgeGateCancelled = useCallback(() => {
+  const handleAgeGateCancelled = useCallback(async () => {
     setShowAgeGate(false);
     setAgeGateCallback(null);
 
@@ -894,18 +924,39 @@ export default function GamePage() {
     if (newRejections >= 3) {
       // Auto-block after 3 rejections
       setNsfwAutoBlocked(true);
-      // Note: Message will be shown via game log when in game
     }
-  }, [nsfwRejections]);
 
-  const handleNsfwToggle = useCallback((enabled: boolean) => {
+    // Sync with server if we have a player ID
+    if (playerId && !isDemo) {
+      try {
+        await api.handleNsfwPrompt(playerId, false);
+      } catch {
+        // Server sync failed, local state already updated
+      }
+    }
+  }, [nsfwRejections, playerId, isDemo]);
+
+  const handleNsfwToggle = useCallback(async (enabled: boolean) => {
     if (enabled) {
       // Re-enabling clears auto-block
       setNsfwAutoBlocked(false);
       setNsfwRejections(0);
     }
     setNsfwEnabled(enabled);
-  }, []);
+
+    // Sync with server if we have a player ID
+    if (playerId && !isDemo) {
+      try {
+        await api.updatePlayerPreferences(playerId, {
+          nsfw_enabled: enabled,
+          auto_blocked: enabled ? false : undefined,
+          rejection_count: enabled ? 0 : undefined,
+        });
+      } catch {
+        // Server sync failed, local state already updated
+      }
+    }
+  }, [playerId, isDemo]);
 
   // ========== PHASE TRANSITIONS ==========
 
@@ -1409,7 +1460,7 @@ export default function GamePage() {
   if (phase === "worlds") {
     return (
       <WorldBrowser
-        worlds={infiniteWorlds}
+        realmGroups={realmGroups}
         onSelect={selectInfiniteWorld}
         onBack={() => setPhase("landing")}
         nsfwEnabled={nsfwEnabled}
