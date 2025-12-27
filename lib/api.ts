@@ -33,30 +33,21 @@ async function fetchAPI<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const url = `${API_BASE}${endpoint}`;
-  console.log("[API] Fetching:", url);
+  const response = await fetch(url, {
+    ...options,
+    credentials: "include", // Send cookies for guest session auth
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
 
-  try {
-    const response = await fetch(url, {
-      ...options,
-      credentials: "include", // Send cookies for guest session auth
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
-    });
-
-    console.log("[API] Response:", url, response.status, response.ok);
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: "Unknown error" }));
-      throw new Error(error.detail || `API error: ${response.status}`);
-    }
-
-    return response.json();
-  } catch (err) {
-    console.error("[API] Fetch error:", url, err);
-    throw err;
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: "Unknown error" }));
+    throw new Error(error.detail || `API error: ${response.status}`);
   }
+
+  return response.json();
 }
 
 // Session types
@@ -94,15 +85,12 @@ export async function startSession(params?: StartSessionRequest): Promise<StartS
 
 export async function checkHealth(): Promise<boolean> {
   try {
-    console.log("[API] Checking health at:", `${API_BASE}/health`);
     const response = await fetch(`${API_BASE}/health`, {
       credentials: "include",
       cache: "no-store"
     });
-    console.log("[API] Health response status:", response.status, response.ok);
     return response.ok;
-  } catch (err) {
-    console.error("[API] Health check error:", err);
+  } catch {
     return false;
   }
 }

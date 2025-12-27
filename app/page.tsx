@@ -536,14 +536,10 @@ export default function GamePage() {
 
   useEffect(() => {
     async function init() {
-      console.log("[TextLands] Starting init, API_BASE:", process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001");
-
       const healthy = await api.checkHealth();
-      console.log("[TextLands] Health check result:", healthy);
 
       if (!healthy) {
         // API unavailable - demo mode
-        console.log("[TextLands] Health check failed, entering demo mode");
         setIsDemo(true);
         setInfiniteWorlds(DEMO_INFINITE_WORLDS);
         setGenres(DEMO_GENRES);
@@ -554,17 +550,14 @@ export default function GamePage() {
 
       // Fetch infinite worlds and preferences in parallel
       try {
-        console.log("[TextLands] Fetching worlds and preferences...");
         const [worldsData, prefs] = await Promise.all([
           api.getInfiniteWorlds(),
           api.getPreferences().catch(() => ({ show_reasoning: false, show_on_failure: true })),
         ]);
-        console.log("[TextLands] Got worlds:", worldsData?.length, "prefs:", prefs);
         setInfiniteWorlds(worldsData);
         setShowReasoning(prefs.show_reasoning);
-      } catch (err) {
+      } catch {
         // Fall back to demo mode on error
-        console.error("[TextLands] Error fetching worlds:", err);
         setIsDemo(true);
         setInfiniteWorlds(DEMO_INFINITE_WORLDS);
         setGenres(DEMO_GENRES);
