@@ -59,6 +59,8 @@ export interface SessionInfo {
   can_save: boolean;
   character_id: string | null;
   character_name: string | null;
+  world_id: string | null;
+  world_name: string | null;
 }
 
 export interface StartSessionRequest {
@@ -359,4 +361,152 @@ export async function getGlobalLeaderboard(): Promise<LeaderboardEntry[]> {
 // Get infinite world campfire (character selection)
 export async function getInfiniteCampfire(worldId: string): Promise<InfiniteCampfireResponse> {
   return fetchAPI<InfiniteCampfireResponse>(`/infinite/worlds/${worldId}/campfire`);
+}
+
+// Claim a character from the campfire
+export interface ClaimCharacterResponse {
+  success: boolean;
+  character_id: string;
+  world_id: string;
+  opening_narrative?: string;
+  message?: string;
+}
+
+export async function claimCharacter(
+  worldId: string,
+  characterId: string,
+  playerId: string
+): Promise<ClaimCharacterResponse> {
+  return fetchAPI<ClaimCharacterResponse>(
+    `/infinite/worlds/${worldId}/campfire/claim/${characterId}?player_id=${playerId}`,
+    { method: "POST" }
+  );
+}
+
+// ============ BILLING API ============
+
+// Subscription types
+export interface SubscriptionStatus {
+  is_active: boolean;
+  plan: "free" | "plus";
+  status: string;
+  current_period_end?: string;
+  cancel_at_period_end?: boolean;
+}
+
+export interface TokenBalance {
+  balance: number;
+  lifetime_purchased: number;
+}
+
+export interface PlaytimeStatus {
+  remaining_seconds: number;
+  daily_limit_seconds: number;
+  is_subscriber: boolean;
+  resets_at: string;
+}
+
+export interface FreeUsesStatus {
+  fate_rerolls_remaining: number;
+  death_recoveries_remaining: number;
+  nsfw_unlocks_remaining: number;
+}
+
+export interface UsageStatus {
+  death_recoveries_used: number;
+  death_recoveries_limit: number;
+  fate_rerolls_used: number;
+  fate_rerolls_limit: number;
+}
+
+export interface CheckoutResponse {
+  checkout_url: string;
+}
+
+export interface UnlockResponse {
+  success: boolean;
+  used_free: boolean;
+  tokens_spent: number;
+  message: string;
+}
+
+// Get subscription status
+export async function getSubscription(): Promise<SubscriptionStatus> {
+  return fetchAPI<SubscriptionStatus>("/billing/subscription");
+}
+
+// Start subscription checkout
+export async function createSubscription(): Promise<CheckoutResponse> {
+  return fetchAPI<CheckoutResponse>("/billing/subscription/create", {
+    method: "POST",
+  });
+}
+
+// Cancel subscription
+export async function cancelSubscription(): Promise<{ success: boolean; message: string }> {
+  return fetchAPI<{ success: boolean; message: string }>("/billing/subscription/cancel", {
+    method: "POST",
+  });
+}
+
+// Get token balance
+export async function getTokenBalance(): Promise<TokenBalance> {
+  return fetchAPI<TokenBalance>("/billing/tokens");
+}
+
+// Purchase tokens
+export type TokenPack = "starter" | "standard" | "value";
+
+export async function purchaseTokens(pack: TokenPack): Promise<CheckoutResponse> {
+  return fetchAPI<CheckoutResponse>(`/billing/tokens/purchase?pack=${pack}`, {
+    method: "POST",
+  });
+}
+
+// Get playtime remaining
+export async function getPlaytime(): Promise<PlaytimeStatus> {
+  return fetchAPI<PlaytimeStatus>("/billing/playtime");
+}
+
+// Get free uses remaining
+export async function getFreeUses(): Promise<FreeUsesStatus> {
+  return fetchAPI<FreeUsesStatus>("/billing/free-uses");
+}
+
+// Get monthly usage
+export async function getUsage(): Promise<UsageStatus> {
+  return fetchAPI<UsageStatus>("/billing/usage");
+}
+
+// Unlock features
+export interface UnlockRequest {
+  use_free?: boolean;
+  action_id?: string;
+}
+
+export async function unlockNsfw(request?: UnlockRequest): Promise<UnlockResponse> {
+  return fetchAPI<UnlockResponse>("/billing/unlock/nsfw", {
+    method: "POST",
+    body: request ? JSON.stringify(request) : undefined,
+  });
+}
+
+export async function unlockDeathRecovery(request?: UnlockRequest): Promise<UnlockResponse> {
+  return fetchAPI<UnlockResponse>("/billing/unlock/death-recovery", {
+    method: "POST",
+    body: request ? JSON.stringify(request) : undefined,
+  });
+}
+
+export async function unlockFateReroll(request?: UnlockRequest): Promise<UnlockResponse> {
+  return fetchAPI<UnlockResponse>("/billing/unlock/fate-reroll", {
+    method: "POST",
+    body: request ? JSON.stringify(request) : undefined,
+  });
+}
+
+export async function unlockPlaytime(): Promise<UnlockResponse> {
+  return fetchAPI<UnlockResponse>("/billing/unlock/playtime", {
+    method: "POST",
+  });
 }

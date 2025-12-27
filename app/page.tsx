@@ -752,6 +752,9 @@ export default function GamePage() {
   const [ageGateCallback, setAgeGateCallback] = useState<(() => void) | null>(null);
   const [pendingNsfwCommand, setPendingNsfwCommand] = useState<string | null>(null);
 
+  // Session state
+  const [playerId, setPlayerId] = useState<string | null>(null);
+
   // ========== INITIALIZATION ==========
 
   // Load NSFW preferences from localStorage
@@ -794,12 +797,17 @@ export default function GamePage() {
         return;
       }
 
-      // Fetch infinite worlds and preferences in parallel
+      // Fetch session, worlds, and preferences in parallel
       try {
-        const [worldsData, prefs] = await Promise.all([
+        const [session, worldsData, prefs] = await Promise.all([
+          api.getSession().catch(() => null),
           api.getInfiniteWorlds(),
           api.getPreferences().catch(() => ({ show_reasoning: false, show_on_failure: true })),
         ]);
+
+        if (session) {
+          setPlayerId(session.player_id);
+        }
         setInfiniteWorlds(worldsData);
         setShowReasoning(prefs.show_reasoning);
       } catch {
@@ -946,28 +954,71 @@ export default function GamePage() {
 
     setProcessing(true);
 
-    // For infinite worlds, we skip the legacy session/start call
-    // The session will be established implicitly when the player takes their first action
-    // TODO: Backend should add /infinite/session/start that handles entity IDs
+    // For non-demo mode, claim the character via the API
+    if (!isDemo && playerId) {
+      try {
+        const result = await api.claimCharacter(selectedWorld.id, char.id, playerId);
 
-    setCharacter({
-      id: char.id,
-      name: char.name,
-      race: "Unknown",
-      character_class: char.occupation || "Wanderer",
-      stats: { hp: 100, max_hp: 100, mana: 50, max_mana: 50, gold: 0, xp: 0, level: 1 },
-      current_zone_id: null,
-      inventory: [],
-      equipped: {},
-    });
+        setCharacter({
+          id: char.id,
+          name: char.name,
+          race: "Unknown",
+          character_class: char.occupation || "Wanderer",
+          stats: { hp: 100, max_hp: 100, mana: 50, max_mana: 50, gold: 0, xp: 0, level: 1 },
+          current_zone_id: null,
+          inventory: [],
+          equipped: {},
+        });
 
-    setZoneName(selectedWorld.name);
-    setEntries([
-      log("system", isDemo ? "Demo Mode" : `Entering ${selectedWorld.name}`),
-      log("narrative", infiniteCampfire.intro_text),
-      log("system", "Type 'help' for commands, or just describe what you want to do"),
-    ]);
-    setPhase("game");
+        setZoneName(selectedWorld.name);
+        setEntries([
+          log("system", `Entering ${selectedWorld.name}`),
+          log("narrative", result.opening_narrative || infiniteCampfire.intro_text),
+          log("system", "Type 'help' for commands, or just describe what you want to do"),
+        ]);
+        setPhase("game");
+      } catch (err) {
+        // If claim fails, fall back to starting without claim
+        console.warn("Character claim failed, starting without claim:", err);
+        setCharacter({
+          id: char.id,
+          name: char.name,
+          race: "Unknown",
+          character_class: char.occupation || "Wanderer",
+          stats: { hp: 100, max_hp: 100, mana: 50, max_mana: 50, gold: 0, xp: 0, level: 1 },
+          current_zone_id: null,
+          inventory: [],
+          equipped: {},
+        });
+        setZoneName(selectedWorld.name);
+        setEntries([
+          log("system", `Entering ${selectedWorld.name}`),
+          log("narrative", infiniteCampfire.intro_text),
+          log("system", "Type 'help' for commands, or just describe what you want to do"),
+        ]);
+        setPhase("game");
+      }
+    } else {
+      // Demo mode or no player ID
+      setCharacter({
+        id: char.id,
+        name: char.name,
+        race: "Unknown",
+        character_class: char.occupation || "Wanderer",
+        stats: { hp: 100, max_hp: 100, mana: 50, max_mana: 50, gold: 0, xp: 0, level: 1 },
+        current_zone_id: null,
+        inventory: [],
+        equipped: {},
+      });
+      setZoneName(selectedWorld.name);
+      setEntries([
+        log("system", isDemo ? "Demo Mode" : `Entering ${selectedWorld.name}`),
+        log("narrative", infiniteCampfire.intro_text),
+        log("system", "Type 'help' for commands, or just describe what you want to do"),
+      ]);
+      setPhase("game");
+    }
+
     setProcessing(false);
   };
 
