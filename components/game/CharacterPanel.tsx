@@ -1,10 +1,14 @@
 "use client";
 
 import type { Character } from "@/types/game";
+import type { PlayerInfluence } from "@/lib/api";
+import { InfluenceBadge } from "./InfluenceBadge";
 
 interface CharacterPanelProps {
   character: Character | null;
   zoneName?: string;
+  influence?: PlayerInfluence | null;
+  onLeaderboardClick?: () => void;
 }
 
 function StatBar({ current, max, type }: { current: number; max: number; type: "hp" | "mana" | "xp" }) {
@@ -16,7 +20,7 @@ function StatBar({ current, max, type }: { current: number; max: number; type: "
   );
 }
 
-export function CharacterPanel({ character, zoneName }: CharacterPanelProps) {
+export function CharacterPanel({ character, zoneName, influence, onLeaderboardClick }: CharacterPanelProps) {
   if (!character) {
     return (
       <div className="w-56 bg-[var(--shadow)] border-l border-[var(--slate)] p-4 text-[var(--mist)] text-sm">
@@ -69,6 +73,20 @@ export function CharacterPanel({ character, zoneName }: CharacterPanelProps) {
             <span className="text-[var(--amber)]">{stats.gold}</span>
           </div>
         </div>
+
+        {/* Influence */}
+        {influence && (
+          <div className="pt-2 border-t border-[var(--slate)]">
+            <div className="text-[var(--mist)] text-xs mb-2">Influence</div>
+            <InfluenceBadge
+              score={influence.influence_score}
+              rank={influence.rank}
+              showScore
+              showProgress
+              onClick={onLeaderboardClick}
+            />
+          </div>
+        )}
       </div>
 
       {/* Location */}

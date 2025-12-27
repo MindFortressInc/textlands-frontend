@@ -12,3 +12,6 @@ export { CombatPanel } from "./CombatPanel";
 export { CombatLog } from "./CombatLog";
 export { AgeGateModal } from "./AgeGateModal";
 export { BillingPanel } from "./BillingPanel";
+export { InfluenceBadge } from "./InfluenceBadge";
+export { LeaderboardModal } from "./LeaderboardModal";
+export { CharacterCreationModal } from "./CharacterCreationModal";

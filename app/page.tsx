@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { GameLog, CommandInput, CharacterPanel, QuickActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal, BillingPanel } from "@/components/game";
+import { GameLog, CommandInput, CharacterPanel, QuickActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal, BillingPanel, InfluenceBadge, LeaderboardModal, CharacterCreationModal } from "@/components/game";
 import { ThemePicker } from "@/components/ThemePicker";
 import type { Character, GameLogEntry, Genre, World, WorldsByGenre, CampfireResponse, CharacterOption, ActiveScene as ActiveSceneType, NegotiationRequest, CombatSession, ReasoningInfo, InfiniteWorld, InfiniteCampfireResponse, InfiniteCampfireCharacter } from "@/types/game";
 import * as api from "@/lib/api";
-import type { RealmGroup } from "@/lib/api";
+import type { RealmGroup, PlayerInfluence } from "@/lib/api";
 
 // ========== HELPERS ==========
 
@@ -626,11 +626,12 @@ function CampfireView({ campfire, onSelect, onBack, loading }: {
 }
 
 // Infinite Worlds character selection view
-function InfiniteCampfireView({ campfire, onSelect, onBack, loading }: {
+function InfiniteCampfireView({ campfire, onSelect, onBack, loading, onCreateOwn }: {
   campfire: InfiniteCampfireResponse;
   onSelect: (character: InfiniteCampfireCharacter) => void;
   onBack: () => void;
   loading: boolean;
+  onCreateOwn?: () => void;
 }) {
   return (
     <main className="h-dvh flex flex-col bg-atmospheric pt-[max(0.5rem,env(safe-area-inset-top))] animate-fade-in">
@@ -657,12 +658,31 @@ function InfiniteCampfireView({ campfire, onSelect, onBack, loading }: {
         {/* Character selection */}
         <div className="p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <div className="max-w-5xl mx-auto">
-            {campfire.characters.length === 0 ? (
+            {campfire.characters.length === 0 && !onCreateOwn ? (
               <div className="text-center py-8">
                 <p className="text-[var(--mist)]">No characters available.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 stagger-fade-in">
+                {/* Create Your Own option */}
+                {onCreateOwn && (
+                  <button
+                    onClick={onCreateOwn}
+                    disabled={loading}
+                    className="character-card w-full p-5 text-left disabled:opacity-50 disabled:cursor-not-allowed group border-dashed"
+                  >
+                    <div className="flex items-center justify-center gap-4 py-4">
+                      <div className="w-14 h-14 rounded-lg border-2 border-dashed border-[var(--slate)] flex items-center justify-center text-[var(--amber)] text-3xl group-hover:border-[var(--amber-dim)] transition-colors">
+                        +
+                      </div>
+                      <div>
+                        <span className="text-[var(--amber)] font-bold text-lg group-hover:text-[var(--text)] transition-colors">Create Your Own</span>
+                        <p className="text-[var(--mist)] text-sm">Design a custom character</p>
+                      </div>
+                    </div>
+                  </button>
+                )}
+
                 {campfire.characters.filter(c => c.is_playable).map((char) => (
                   <button
                     key={char.id}
@@ -765,6 +785,14 @@ export default function GamePage() {
 
   // Session state
   const [playerId, setPlayerId] = useState<string | null>(null);
+
+  // Influence & Leaderboard state
+  const [influence, setInfluence] = useState<PlayerInfluence | null>(null);
+  const [leaderboardOpen, setLeaderboardOpen] = useState(false);
+
+  // Character creation state
+  const [charCreatorOpen, setCharCreatorOpen] = useState(false);
+  const [charCreatorLoading, setCharCreatorLoading] = useState(false);
 
   // ========== INITIALIZATION ==========
 
@@ -1009,14 +1037,14 @@ export default function GamePage() {
     // For non-demo mode, start session via the API
     if (!isDemo) {
       try {
-        const result = await api.startInfiniteSession({
+        const { session, opening_narrative } = await api.startSession({
           world_id: selectedWorld.id,
-          entity_id: char.id,
+          character_id: char.id,
         });
 
         setCharacter({
-          id: char.id,
-          name: char.name,
+          id: session.character_id || char.id,
+          name: session.character_name || char.name,
           race: "Unknown",
           character_class: char.occupation || "Wanderer",
           stats: { hp: 100, max_hp: 100, mana: 50, max_mana: 50, gold: 0, xp: 0, level: 1 },
@@ -1025,10 +1053,10 @@ export default function GamePage() {
           equipped: {},
         });
 
-        setZoneName(selectedWorld.name);
+        setZoneName(session.world_name || selectedWorld.name);
         setEntries([
-          log("system", `Entering ${selectedWorld.name}`),
-          log("narrative", result.opening_narrative),
+          log("system", `Entering ${session.world_name || selectedWorld.name}`),
+          log("narrative", opening_narrative || infiniteCampfire.intro_text),
           log("system", "Type 'help' for commands, or just describe what you want to do"),
         ]);
         setPhase("game");
@@ -1075,6 +1103,23 @@ export default function GamePage() {
     }
 
     setProcessing(false);
+  };
+
+  // Create custom character from modal
+  const handleCreateCharacter = async (request: api.CreateCharacterRequest) => {
+    if (!selectedWorld) return;
+
+    setCharCreatorLoading(true);
+    try {
+      const result = await api.createCampfireCharacter(selectedWorld.id, request);
+      setCharCreatorOpen(false);
+      // Select the newly created character
+      await selectInfiniteCharacter(result.character);
+    } catch (err) {
+      throw err; // Let modal handle error display
+    } finally {
+      setCharCreatorLoading(false);
+    }
   };
 
   // Legacy: Select genre (for old flow)
@@ -1190,7 +1235,17 @@ export default function GamePage() {
     try {
       // Local commands that don't need API
       if (action === "help") {
-        addLog("system", "Commands: look, go <dir>, talk <npc>, or just describe what you want to do naturally");
+        addLog("system", "Commands: look, go <dir>, talk <npc>, leave message \"text\", or describe what you want to do naturally");
+      } else if (action === "leave" && rest[0] === "message") {
+        // Leave a message at current location
+        const messageMatch = command.match(/leave\s+message\s+["'](.+)["']/i);
+        if (messageMatch) {
+          // TODO: When backend provides location_entity_id, call api.leaveLocationMessage
+          addLog("system", "You carve your message into the surroundings...");
+          addLog("narrative", `"${messageMatch[1]}" - Your words will be seen by future travelers.`);
+        } else {
+          addLog("system", "Usage: leave message \"your message here\"");
+        }
       } else if (action === "stats") {
         const { stats: s } = character;
         addLog("system", `${character.name} - Lv.${s.level} ${character.race} ${character.character_class}\nHP: ${s.hp}/${s.max_hp} | MP: ${s.mana}/${s.max_mana} | Gold: ${s.gold} | XP: ${s.xp}`);
@@ -1446,6 +1501,15 @@ export default function GamePage() {
     }
   }, [phase, isDemo, activeScene, activeCombat, character]);
 
+  // Fetch player influence on game start
+  useEffect(() => {
+    if (phase === "game" && !isDemo && playerId && selectedWorld) {
+      api.getPlayerInfluence(selectedWorld.id, playerId)
+        .then(setInfluence)
+        .catch(() => setInfluence(null));
+    }
+  }, [phase, isDemo, playerId, selectedWorld]);
+
   // ========== RENDER BY PHASE ==========
 
   if (phase === "loading") {
@@ -1469,15 +1533,25 @@ export default function GamePage() {
     );
   }
 
-  // New: Infinite Worlds campfire (character selection)
-  if (phase === "infinite-campfire" && infiniteCampfire) {
+  /// New: Infinite Worlds campfire (character selection)
+  if (phase === "infinite-campfire" && infiniteCampfire && selectedWorld) {
     return (
-      <InfiniteCampfireView
-        campfire={infiniteCampfire}
-        onSelect={selectInfiniteCharacter}
-        onBack={() => setPhase("worlds")}
-        loading={processing}
-      />
+      <>
+        <InfiniteCampfireView
+          campfire={infiniteCampfire}
+          onSelect={selectInfiniteCharacter}
+          onBack={() => setPhase("worlds")}
+          loading={processing}
+          onCreateOwn={() => setCharCreatorOpen(true)}
+        />
+        <CharacterCreationModal
+          isOpen={charCreatorOpen}
+          onClose={() => setCharCreatorOpen(false)}
+          onSubmit={handleCreateCharacter}
+          worldName={selectedWorld.name}
+          loading={charCreatorLoading}
+        />
+      </>
     );
   }
 
@@ -1541,6 +1615,14 @@ export default function GamePage() {
         onClose={() => setBillingOpen(false)}
         isDemo={isDemo}
       />
+      <LeaderboardModal
+        isOpen={leaderboardOpen}
+        onClose={() => setLeaderboardOpen(false)}
+        worldId={selectedWorld?.id || null}
+        worldName={selectedWorld?.name}
+        playerId={playerId}
+        isDemo={isDemo}
+      />
 
       {/* Header */}
       <header className="bg-[var(--shadow)] border-b border-[var(--slate)] px-3 py-2 md:px-4 flex items-center justify-between shrink-0 pt-[max(0.5rem,env(safe-area-inset-top))]">
@@ -1552,6 +1634,17 @@ export default function GamePage() {
         </div>
         <div className="flex items-center gap-3">
           <span className="text-[var(--mist)] text-xs hidden sm:block">{zoneName}</span>
+          {/* Influence badge - desktop only */}
+          {influence && (
+            <div className="hidden sm:block">
+              <InfluenceBadge
+                score={influence.influence_score}
+                rank={influence.rank}
+                size="sm"
+                onClick={() => setLeaderboardOpen(true)}
+              />
+            </div>
+          )}
           <button
             onClick={() => setBillingOpen(true)}
             className="text-[var(--mist)] hover:text-[var(--amber)] transition-colors text-xs hidden sm:block"
@@ -1571,7 +1664,14 @@ export default function GamePage() {
       </header>
 
       {/* Mobile stats bar - hidden during active scene or combat */}
-      {!activeScene && !activeCombat && <MobileStats character={character} zoneName={zoneName} />}
+      {!activeScene && !activeCombat && (
+        <MobileStats
+          character={character}
+          zoneName={zoneName}
+          influence={influence}
+          onLeaderboardClick={() => setLeaderboardOpen(true)}
+        />
+      )}
 
       {/* Main content */}
       <div className="flex-1 flex overflow-hidden min-h-0">
@@ -1612,7 +1712,12 @@ export default function GamePage() {
 
         {/* Desktop sidebar */}
         <div className="hidden md:block">
-          <CharacterPanel character={character} zoneName={zoneName} />
+          <CharacterPanel
+            character={character}
+            zoneName={zoneName}
+            influence={influence}
+            onLeaderboardClick={() => setLeaderboardOpen(true)}
+          />
         </div>
       </div>
     </main>

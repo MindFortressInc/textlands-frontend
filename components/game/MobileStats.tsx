@@ -2,10 +2,14 @@
 
 import { useState } from "react";
 import type { Character } from "@/types/game";
+import type { PlayerInfluence } from "@/lib/api";
+import { InfluenceBadge } from "./InfluenceBadge";
 
 interface MobileStatsProps {
   character: Character | null;
   zoneName?: string;
+  influence?: PlayerInfluence | null;
+  onLeaderboardClick?: () => void;
 }
 
 function MiniBar({ current, max, color }: { current: number; max: number; color: string }) {
@@ -20,7 +24,7 @@ function MiniBar({ current, max, color }: { current: number; max: number; color:
   );
 }
 
-export function MobileStats({ character, zoneName }: MobileStatsProps) {
+export function MobileStats({ character, zoneName, influence, onLeaderboardClick }: MobileStatsProps) {
   const [expanded, setExpanded] = useState(false);
 
   if (!character) return null;
@@ -123,6 +127,17 @@ export function MobileStats({ character, zoneName }: MobileStatsProps) {
                 <span className="text-[var(--mist)]">Gold</span>
                 <span className="text-[var(--amber)]">{stats.gold}</span>
               </div>
+              {influence && (
+                <div className="pt-2 border-t border-[var(--slate)]">
+                  <div className="text-[var(--mist)] mb-1">Influence</div>
+                  <InfluenceBadge
+                    score={influence.influence_score}
+                    rank={influence.rank}
+                    size="sm"
+                    onClick={onLeaderboardClick}
+                  />
+                </div>
+              )}
               {zoneName && (
                 <div className="pt-2 border-t border-[var(--slate)]">
                   <div className="text-[var(--mist)]">Location</div>
