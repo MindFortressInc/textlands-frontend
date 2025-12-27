@@ -404,116 +404,129 @@ function WorldBrowser({ worlds, onSelect, onBack, nsfwEnabled, onRequestNsfw }: 
       </header>
 
       <div className="flex-1 overflow-y-auto p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-        <div className="max-w-2xl mx-auto space-y-3 stagger-fade-in">
-          {/* SFW Realms */}
-          {sfwRealms.map(([realm, realmWorlds]) => {
-            const info = REALM_INFO[realm] || { name: realm, icon: "◇" };
-            const filteredWorlds = filterWorlds(realmWorlds);
-            const isExpanded = expandedRealm === realm;
+        <div className="max-w-6xl mx-auto">
+          {/* Realm grid - 2 columns on desktop */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 stagger-fade-in">
+            {/* SFW Realms */}
+            {sfwRealms.map(([realm, realmWorlds]) => {
+              const info = REALM_INFO[realm] || { name: realm, icon: "◇" };
+              const filteredWorlds = filterWorlds(realmWorlds);
+              const isExpanded = expandedRealm === realm;
 
-            return (
-              <div key={realm} className="realm-group">
-                {/* Realm Header */}
-                <button
-                  onClick={() => handleRealmClick(realm, false)}
-                  className="w-full p-4 bg-[var(--shadow)] border border-[var(--slate)] rounded-lg flex items-center justify-between hover:border-[var(--amber-dim)] transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl text-[var(--amber)] opacity-80">{info.icon}</span>
-                    <div className="text-left">
-                      <span className="text-[var(--amber)] font-bold block">{info.name}</span>
-                      <span className="text-[var(--mist)] text-xs">{filteredWorlds.length} worlds</span>
+              return (
+                <div key={realm} className={`realm-group ${isExpanded ? "md:col-span-2 lg:col-span-3" : ""}`}>
+                  {/* Realm Header */}
+                  <button
+                    onClick={() => handleRealmClick(realm, false)}
+                    className="w-full p-4 bg-[var(--shadow)] border border-[var(--slate)] rounded-lg flex items-center justify-between hover:border-[var(--amber-dim)] transition-colors group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl text-[var(--amber)] opacity-80 group-hover:opacity-100 transition-opacity">{info.icon}</span>
+                      <div className="text-left">
+                        <span className="text-[var(--amber)] font-bold block">{info.name}</span>
+                        <span className="text-[var(--mist)] text-xs">{filteredWorlds.length} worlds</span>
+                      </div>
                     </div>
-                  </div>
-                  <span className="text-[var(--mist)] text-lg">{isExpanded ? "−" : "+"}</span>
-                </button>
+                    <span className="text-[var(--mist)] text-lg">{isExpanded ? "−" : "+"}</span>
+                  </button>
 
-                {/* Expanded World List */}
-                {isExpanded && (
-                  <div className="mt-2 ml-4 space-y-2">
-                    {filteredWorlds.map((world) => (
-                      <button
-                        key={world.id}
-                        onClick={() => onSelect(world)}
-                        className="w-full p-4 bg-[var(--void)] border border-[var(--stone)] rounded-lg text-left hover:border-[var(--amber-dim)] transition-colors"
-                      >
-                        <div className="flex items-start justify-between gap-2 mb-1">
-                          <span className="text-[var(--amber)] font-bold">{world.name}</span>
-                          {world.is_nsfw && (
-                            <span className="text-[var(--crimson)] text-[10px] tracking-wider">18+</span>
-                          )}
-                        </div>
-                        <p className="text-[var(--text-dim)] text-sm italic">{world.tagline}</p>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-
-          {/* NSFW Realms Section */}
-          {nsfwRealms.length > 0 && (
-            <div className="pt-4 border-t border-[var(--slate)]">
-              {nsfwEnabled ? (
-                // Show NSFW realms normally
-                nsfwRealms.map(([realm, realmWorlds]) => {
-                  const info = REALM_INFO[realm] || { name: realm, icon: "◇" };
-                  const isExpanded = expandedRealm === realm;
-
-                  return (
-                    <div key={realm} className="realm-group">
-                      <button
-                        onClick={() => handleRealmClick(realm, false)}
-                        className="w-full p-4 bg-[var(--shadow)] border border-[var(--crimson)]/30 rounded-lg flex items-center justify-between hover:border-[var(--crimson)] transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="text-2xl text-[var(--crimson)] opacity-80">{info.icon}</span>
-                          <div className="text-left">
-                            <span className="text-[var(--crimson)] font-bold block">{info.name}</span>
-                            <span className="text-[var(--mist)] text-xs">{realmWorlds.length} worlds · 18+</span>
+                  {/* Expanded World List - also 2 columns on desktop */}
+                  {isExpanded && (
+                    <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {filteredWorlds.map((world) => (
+                        <button
+                          key={world.id}
+                          onClick={() => onSelect(world)}
+                          className="w-full p-4 bg-[var(--void)] border border-[var(--stone)] rounded-lg text-left hover:border-[var(--amber-dim)] hover:bg-[var(--shadow)] transition-colors"
+                        >
+                          <div className="flex items-start justify-between gap-2 mb-1">
+                            <span className="text-[var(--amber)] font-bold">{world.name}</span>
+                            {world.is_nsfw && (
+                              <span className="text-[var(--crimson)] text-[10px] tracking-wider">18+</span>
+                            )}
                           </div>
-                        </div>
-                        <span className="text-[var(--mist)] text-lg">{isExpanded ? "−" : "+"}</span>
-                      </button>
+                          <p className="text-[var(--text-dim)] text-sm italic line-clamp-2">{world.tagline}</p>
+                          {world.player_count > 0 && (
+                            <div className="mt-2 text-[var(--mist)] text-[10px] tracking-wider">
+                              {world.player_count} exploring
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
 
-                      {isExpanded && (
-                        <div className="mt-2 ml-4 space-y-2">
-                          {realmWorlds.map((world) => (
-                            <button
-                              key={world.id}
-                              onClick={() => onSelect(world)}
-                              className="w-full p-4 bg-[var(--void)] border border-[var(--stone)] rounded-lg text-left hover:border-[var(--crimson)] transition-colors"
-                            >
-                              <div className="flex items-start justify-between gap-2 mb-1">
-                                <span className="text-[var(--amber)] font-bold">{world.name}</span>
-                                <span className="text-[var(--crimson)] text-[10px] tracking-wider">18+</span>
-                              </div>
-                              <p className="text-[var(--text-dim)] text-sm italic">{world.tagline}</p>
-                            </button>
-                          ))}
-                        </div>
-                      )}
+            {/* NSFW Realms Section */}
+            {nsfwRealms.length > 0 && (
+              <>
+                {nsfwEnabled ? (
+                  // Show NSFW realms normally
+                  nsfwRealms.map(([realm, realmWorlds]) => {
+                    const info = REALM_INFO[realm] || { name: realm, icon: "◇" };
+                    const isExpanded = expandedRealm === realm;
+
+                    return (
+                      <div key={realm} className={`realm-group ${isExpanded ? "md:col-span-2 lg:col-span-3" : ""}`}>
+                        <button
+                          onClick={() => handleRealmClick(realm, false)}
+                          className="w-full p-4 bg-[var(--shadow)] border border-[var(--crimson)]/30 rounded-lg flex items-center justify-between hover:border-[var(--crimson)] transition-colors group"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-2xl text-[var(--crimson)] opacity-80 group-hover:opacity-100 transition-opacity">{info.icon}</span>
+                            <div className="text-left">
+                              <span className="text-[var(--crimson)] font-bold block">{info.name}</span>
+                              <span className="text-[var(--mist)] text-xs">{realmWorlds.length} worlds · 18+</span>
+                            </div>
+                          </div>
+                          <span className="text-[var(--mist)] text-lg">{isExpanded ? "−" : "+"}</span>
+                        </button>
+
+                        {isExpanded && (
+                          <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {realmWorlds.map((world) => (
+                              <button
+                                key={world.id}
+                                onClick={() => onSelect(world)}
+                                className="w-full p-4 bg-[var(--void)] border border-[var(--stone)] rounded-lg text-left hover:border-[var(--crimson)] hover:bg-[var(--shadow)] transition-colors"
+                              >
+                                <div className="flex items-start justify-between gap-2 mb-1">
+                                  <span className="text-[var(--amber)] font-bold">{world.name}</span>
+                                  <span className="text-[var(--crimson)] text-[10px] tracking-wider">18+</span>
+                                </div>
+                                <p className="text-[var(--text-dim)] text-sm italic line-clamp-2">{world.tagline}</p>
+                                {world.player_count > 0 && (
+                                  <div className="mt-2 text-[var(--mist)] text-[10px] tracking-wider">
+                                    {world.player_count} exploring
+                                  </div>
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                ) : (
+                  // Locked NSFW section
+                  <button
+                    onClick={onRequestNsfw}
+                    className="w-full p-4 bg-[var(--shadow)] border border-[var(--stone)] rounded-lg flex items-center justify-between hover:border-[var(--mist)] transition-colors opacity-60"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">🔒</span>
+                      <div className="text-left">
+                        <span className="text-[var(--mist)] font-bold block">Adults Only</span>
+                        <span className="text-[var(--slate)] text-xs">{nsfwRealms.reduce((sum, [, w]) => sum + w.length, 0)} worlds · Tap to verify age</span>
+                      </div>
                     </div>
-                  );
-                })
-              ) : (
-                // Locked NSFW section
-                <button
-                  onClick={onRequestNsfw}
-                  className="w-full p-4 bg-[var(--shadow)] border border-[var(--stone)] rounded-lg flex items-center justify-between hover:border-[var(--mist)] transition-colors opacity-60"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">🔒</span>
-                    <div className="text-left">
-                      <span className="text-[var(--mist)] font-bold block">Adults Only</span>
-                      <span className="text-[var(--slate)] text-xs">{nsfwRealms.reduce((sum, [, w]) => sum + w.length, 0)} worlds · Tap to verify age</span>
-                    </div>
-                  </div>
-                </button>
-              )}
-            </div>
-          )}
+                  </button>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
     </main>
@@ -633,54 +646,58 @@ function InfiniteCampfireView({ campfire, onSelect, onBack, loading }: {
 
         {/* Character selection */}
         <div className="p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-          <div className="space-y-4 max-w-2xl mx-auto stagger-fade-in">
+          <div className="max-w-5xl mx-auto">
             {campfire.characters.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-[var(--mist)]">No characters available.</p>
               </div>
             ) : (
-              campfire.characters.filter(c => c.is_playable).map((char) => (
-                <button
-                  key={char.id}
-                  onClick={() => onSelect(char)}
-                  disabled={loading}
-                  className="character-card w-full p-5 text-left disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <div className="flex items-start gap-4">
-                    {/* Character portrait placeholder */}
-                    <div className="w-12 h-12 rounded bg-[var(--slate)] flex items-center justify-center text-[var(--amber)] text-xl shrink-0">
-                      {char.name.charAt(0)}
-                    </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 stagger-fade-in">
+                {campfire.characters.filter(c => c.is_playable).map((char) => (
+                  <button
+                    key={char.id}
+                    onClick={() => onSelect(char)}
+                    disabled={loading}
+                    className="character-card w-full p-5 text-left disabled:opacity-50 disabled:cursor-not-allowed group"
+                  >
+                    <div className="flex items-start gap-4">
+                      {/* Character portrait placeholder */}
+                      <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-[var(--slate)] to-[var(--stone)] flex items-center justify-center text-[var(--amber)] text-2xl shrink-0 group-hover:from-[var(--amber-dim)] group-hover:to-[var(--slate)] transition-all">
+                        {char.name.charAt(0)}
+                      </div>
 
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <span className="text-[var(--amber)] font-bold">{char.name}</span>
-                        {char.occupation && (
-                          <span className="text-[var(--arcane)] text-[10px] tracking-wider uppercase">
-                            {char.occupation}
-                          </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <span className="text-[var(--amber)] font-bold text-lg group-hover:text-[var(--text)] transition-colors">{char.name}</span>
+                          {char.occupation && (
+                            <span className="text-[var(--arcane)] text-[10px] tracking-wider uppercase shrink-0 mt-1">
+                              {char.occupation}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[var(--text-dim)] text-sm mb-2 line-clamp-2">
+                          {char.physical_summary}
+                        </p>
+                        {char.backstory_hook && (
+                          <p className="text-[var(--mist)] text-xs italic line-clamp-2">
+                            {char.backstory_hook}
+                          </p>
                         )}
                       </div>
-                      <p className="text-[var(--text-dim)] text-sm mb-2">
-                        {char.physical_summary}
-                      </p>
-                      <p className="text-[var(--mist)] text-xs italic line-clamp-2">
-                        {char.backstory_hook}
-                      </p>
                     </div>
-                  </div>
 
-                  {/* Personality tags */}
-                  {char.personality_summary && (
-                    <div className="mt-3 pt-3 border-t border-[var(--slate)] flex items-center justify-between">
-                      <span className="text-[var(--mist)] text-[10px] tracking-wider">
-                        {char.personality_summary}
-                      </span>
-                      <span className="text-[var(--amber)] text-sm">→</span>
-                    </div>
-                  )}
-                </button>
-              ))
+                    {/* Personality tags */}
+                    {char.personality_summary && (
+                      <div className="mt-3 pt-3 border-t border-[var(--slate)] flex items-center justify-between">
+                        <span className="text-[var(--mist)] text-[10px] tracking-wider uppercase">
+                          {char.personality_summary}
+                        </span>
+                        <span className="text-[var(--amber)] text-sm group-hover:translate-x-1 transition-transform">→</span>
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
             )}
           </div>
         </div>
@@ -929,55 +946,28 @@ export default function GamePage() {
 
     setProcessing(true);
 
-    if (!isDemo) {
-      try {
-        const { session, opening_narrative } = await api.startSession({
-          world_id: selectedWorld.id,
-          character_id: char.id,
-        });
+    // For infinite worlds, we skip the legacy session/start call
+    // The session will be established implicitly when the player takes their first action
+    // TODO: Backend should add /infinite/session/start that handles entity IDs
 
-        setCharacter({
-          id: char.id,
-          name: char.name,
-          race: "Unknown",
-          character_class: char.occupation || "Wanderer",
-          stats: { hp: 100, max_hp: 100, mana: 50, max_mana: 50, gold: 0, xp: 0, level: 1 },
-          current_zone_id: null,
-          inventory: [],
-          equipped: {},
-        });
+    setCharacter({
+      id: char.id,
+      name: char.name,
+      race: "Unknown",
+      character_class: char.occupation || "Wanderer",
+      stats: { hp: 100, max_hp: 100, mana: 50, max_mana: 50, gold: 0, xp: 0, level: 1 },
+      current_zone_id: null,
+      inventory: [],
+      equipped: {},
+    });
 
-        setZoneName(selectedWorld.name);
-        setEntries([
-          log("system", `Entering ${selectedWorld.name}`),
-          log("narrative", opening_narrative || infiniteCampfire.intro_text),
-          log("system", "Type 'help' for commands, or just describe what you want to do"),
-        ]);
-        setPhase("game");
-      } catch (err) {
-        addLog("system", `Error: ${err instanceof Error ? err.message : "Failed to start session"}`);
-      }
-    } else {
-      // Demo mode
-      setCharacter({
-        id: char.id,
-        name: char.name,
-        race: "Unknown",
-        character_class: char.occupation || "Wanderer",
-        stats: { hp: 100, max_hp: 100, mana: 50, max_mana: 50, gold: 0, xp: 0, level: 1 },
-        current_zone_id: null,
-        inventory: [],
-        equipped: {},
-      });
-      setZoneName(selectedWorld.name);
-      setEntries([
-        log("system", "Demo Mode"),
-        log("narrative", infiniteCampfire.intro_text),
-        log("system", "Type 'help' for commands"),
-      ]);
-      setPhase("game");
-    }
-
+    setZoneName(selectedWorld.name);
+    setEntries([
+      log("system", isDemo ? "Demo Mode" : `Entering ${selectedWorld.name}`),
+      log("narrative", infiniteCampfire.intro_text),
+      log("system", "Type 'help' for commands, or just describe what you want to do"),
+    ]);
+    setPhase("game");
     setProcessing(false);
   };
 
