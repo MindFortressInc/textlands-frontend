@@ -733,6 +733,7 @@ export default function GamePage() {
   const [nsfwAutoBlocked, setNsfwAutoBlocked] = useState(false);
   const [showAgeGate, setShowAgeGate] = useState(false);
   const [ageGateCallback, setAgeGateCallback] = useState<(() => void) | null>(null);
+  const [pendingNsfwCommand, setPendingNsfwCommand] = useState<string | null>(null);
 
   // ========== INITIALIZATION ==========
 
@@ -826,11 +827,35 @@ export default function GamePage() {
     setNsfwEnabled(true);
     setNsfwRejections(0); // Reset rejections on acceptance
     setShowAgeGate(false);
+
+    // Retry pending NSFW command if any
+    if (pendingNsfwCommand) {
+      const commandToRetry = pendingNsfwCommand;
+      setPendingNsfwCommand(null);
+      // Retry after a brief delay to let state update
+      setTimeout(() => {
+        // Re-run the command - it will now succeed since nsfw is enabled
+        api.doAction(commandToRetry).then((result) => {
+          if (!result.nsfw_blocked) {
+            setEntries((prev) => [
+              ...prev,
+              log("narrative", result.narrative, undefined, result.reasoning, result.action_id),
+            ]);
+            if (result.suggested_actions?.length) {
+              setEntries((prev) => [...prev, log("system", `Try: ${result.suggested_actions.join(", ")}`)]);
+            }
+          }
+        }).catch(() => {
+          // Ignore retry errors
+        });
+      }, 100);
+    }
+
     if (ageGateCallback) {
       ageGateCallback();
       setAgeGateCallback(null);
     }
-  }, [ageGateCallback]);
+  }, [ageGateCallback, pendingNsfwCommand]);
 
   const handleAgeGateCancelled = useCallback(() => {
     setShowAgeGate(false);
@@ -1082,22 +1107,38 @@ export default function GamePage() {
         // Real API - use natural language endpoint
         const result = await api.doAction(command);
 
-        // Add narrative with reasoning if available
-        setEntries((prev) => [
-          ...prev,
-          log("narrative", result.narrative, undefined, result.reasoning, result.action_id),
-        ]);
+        // Check for NSFW block
+        if (result.nsfw_blocked) {
+          // Action was blocked due to NSFW content
+          if (nsfwAutoBlocked) {
+            // User has permanently blocked NSFW - show message
+            addLog("system", "This action requires adult content to be enabled. You can change this in Settings.");
+          } else {
+            // Prompt for age verification, retry if accepted
+            setPendingNsfwCommand(command);
+            addLog("narrative", result.narrative);
+            requestAgeVerification(() => {
+              // Will retry command after verification
+            });
+          }
+        } else {
+          // Normal response - add narrative with reasoning if available
+          setEntries((prev) => [
+            ...prev,
+            log("narrative", result.narrative, undefined, result.reasoning, result.action_id),
+          ]);
 
-        if (result.suggested_actions?.length) {
-          addLog("system", `Try: ${result.suggested_actions.join(", ")}`);
-        }
+          if (result.suggested_actions?.length) {
+            addLog("system", `Try: ${result.suggested_actions.join(", ")}`);
+          }
 
-        if (result.character) {
-          setCharacter(result.character);
-        }
+          if (result.character) {
+            setCharacter(result.character);
+          }
 
-        if (result.error) {
-          addLog("system", result.error);
+          if (result.error) {
+            addLog("system", result.error);
+          }
         }
       }
     } catch (error) {

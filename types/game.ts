@@ -247,6 +247,9 @@ export interface DoActionResponse {
   error?: string;
   action_id?: string;
   reasoning?: ReasoningInfo;
+  // NSFW content blocking
+  nsfw_blocked?: boolean;
+  nsfw_trigger?: string;
 }
 
 // Character types
