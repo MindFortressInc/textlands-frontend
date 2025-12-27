@@ -363,7 +363,7 @@ export async function getInfiniteCampfire(worldId: string): Promise<InfiniteCamp
   return fetchAPI<InfiniteCampfireResponse>(`/infinite/worlds/${worldId}/campfire`);
 }
 
-// Claim a character from the campfire
+// Claim a character from the campfire (legacy - use startInfiniteSession instead)
 export interface ClaimCharacterResponse {
   success: boolean;
   character_id: string;
@@ -381,6 +381,28 @@ export async function claimCharacter(
     `/infinite/worlds/${worldId}/campfire/claim/${characterId}?player_id=${playerId}`,
     { method: "POST" }
   );
+}
+
+// Start session in an infinite world with a selected entity
+export interface InfiniteSessionRequest {
+  world_id: string;
+  entity_id: string;
+}
+
+export interface InfiniteSessionResponse {
+  session_id: string;
+  world_id: string;
+  entity_id: string;
+  opening_narrative: string;
+}
+
+export async function startInfiniteSession(
+  request: InfiniteSessionRequest
+): Promise<InfiniteSessionResponse> {
+  return fetchAPI<InfiniteSessionResponse>("/infinite/session/start", {
+    method: "POST",
+    body: JSON.stringify(request),
+  });
 }
 
 // ============ BILLING API ============

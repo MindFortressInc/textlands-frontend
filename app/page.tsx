@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { GameLog, CommandInput, CharacterPanel, QuickActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal } from "@/components/game";
+import { GameLog, CommandInput, CharacterPanel, QuickActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal, BillingPanel } from "@/components/game";
 import { ThemePicker } from "@/components/ThemePicker";
 import type { Character, GameLogEntry, Genre, World, WorldsByGenre, CampfireResponse, CharacterOption, ActiveScene as ActiveSceneType, NegotiationRequest, CombatSession, ReasoningInfo, InfiniteWorld, InfiniteCampfireResponse, InfiniteCampfireCharacter } from "@/types/game";
 import * as api from "@/lib/api";
@@ -741,6 +741,7 @@ export default function GamePage() {
 
   // Settings state
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [billingOpen, setBillingOpen] = useState(false);
   const [showReasoning, setShowReasoning] = useState(false);
 
   // NSFW / Age gate state
@@ -1481,6 +1482,11 @@ export default function GamePage() {
         onConfirm={handleAgeVerified}
         onCancel={handleAgeGateCancelled}
       />
+      <BillingPanel
+        isOpen={billingOpen}
+        onClose={() => setBillingOpen(false)}
+        isDemo={isDemo}
+      />
 
       {/* Header */}
       <header className="bg-[var(--shadow)] border-b border-[var(--slate)] px-3 py-2 md:px-4 flex items-center justify-between shrink-0 pt-[max(0.5rem,env(safe-area-inset-top))]">
@@ -1492,6 +1498,13 @@ export default function GamePage() {
         </div>
         <div className="flex items-center gap-3">
           <span className="text-[var(--mist)] text-xs hidden sm:block">{zoneName}</span>
+          <button
+            onClick={() => setBillingOpen(true)}
+            className="text-[var(--mist)] hover:text-[var(--amber)] transition-colors text-xs hidden sm:block"
+            title="Account & Tokens"
+          >
+            $
+          </button>
           <button
             onClick={() => setSettingsOpen(true)}
             className="text-[var(--mist)] hover:text-[var(--amber)] transition-colors text-sm"
