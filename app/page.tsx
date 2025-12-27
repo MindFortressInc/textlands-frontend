@@ -955,10 +955,13 @@ export default function GamePage() {
 
     setProcessing(true);
 
-    // For non-demo mode, claim the character via the API
-    if (!isDemo && playerId) {
+    // For non-demo mode, start session via the API
+    if (!isDemo) {
       try {
-        const result = await api.claimCharacter(selectedWorld.id, char.id, playerId);
+        const result = await api.startInfiniteSession({
+          world_id: selectedWorld.id,
+          entity_id: char.id,
+        });
 
         setCharacter({
           id: char.id,
@@ -974,13 +977,13 @@ export default function GamePage() {
         setZoneName(selectedWorld.name);
         setEntries([
           log("system", `Entering ${selectedWorld.name}`),
-          log("narrative", result.opening_narrative || infiniteCampfire.intro_text),
+          log("narrative", result.opening_narrative),
           log("system", "Type 'help' for commands, or just describe what you want to do"),
         ]);
         setPhase("game");
       } catch (err) {
-        // If claim fails, fall back to starting without claim
-        console.warn("Character claim failed, starting without claim:", err);
+        // If session start fails, fall back to intro text
+        console.warn("Session start failed:", err);
         setCharacter({
           id: char.id,
           name: char.name,
@@ -1000,7 +1003,7 @@ export default function GamePage() {
         setPhase("game");
       }
     } else {
-      // Demo mode or no player ID
+      // Demo mode
       setCharacter({
         id: char.id,
         name: char.name,
@@ -1013,7 +1016,7 @@ export default function GamePage() {
       });
       setZoneName(selectedWorld.name);
       setEntries([
-        log("system", isDemo ? "Demo Mode" : `Entering ${selectedWorld.name}`),
+        log("system", "Demo Mode"),
         log("narrative", infiniteCampfire.intro_text),
         log("system", "Type 'help' for commands, or just describe what you want to do"),
       ]);
