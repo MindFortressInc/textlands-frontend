@@ -1,6 +1,178 @@
-// Game types matching the World Forge backend API
+// Game types matching the TextLands backend API
 
-// World selection types
+// ============ INFINITE WORLDS SYSTEM ============
+
+// World rule structures
+export interface PhysicsRules {
+  tech_level?: string;
+  magic_exists?: boolean;
+  magic_system?: string;
+  resurrection_possible?: boolean;
+  faster_than_light?: boolean;
+  time_travel?: boolean;
+}
+
+export interface SocietyRules {
+  class_system?: string;
+  economy_type?: string;
+  government_types?: string[];
+}
+
+export interface ContentRules {
+  nsfw_allowed?: boolean;
+  romance_level?: string;
+  violence_level?: string;
+}
+
+export interface ToneRules {
+  primary_tone?: string;
+  stakes_level?: string;
+  moral_complexity?: string;
+}
+
+export interface WorldGovernance {
+  type: string;
+  note?: string;
+  owner_id?: string;
+}
+
+// Infinite World (from /infinite/worlds)
+export interface InfiniteWorld {
+  id: string;
+  slug: string;
+  name: string;
+  tagline: string;
+  description: string;
+  creator_id: string;
+  is_public: boolean;
+  governance: WorldGovernance;
+  physics_rules: PhysicsRules;
+  society_rules: SocietyRules;
+  content_rules: ContentRules;
+  tone_rules: ToneRules;
+  player_count: number;
+}
+
+// World Template (from /infinite/templates)
+export interface WorldTemplate {
+  slug: string;
+  name: string;
+  description: string;
+  genre: string;
+  fork_count: number;
+}
+
+// Entity types
+export type EntityType = "npc" | "location" | "item" | "faction" | "quest" | "secret";
+
+export interface EntityIdentity {
+  species?: string;
+  gender?: string;
+  age_apparent?: string;
+  physical?: {
+    height?: string;
+    build?: string;
+    hair?: string;
+    eyes?: string;
+    distinguishing_features?: string[];
+    typical_clothing?: string;
+  };
+  personality_core?: string[];
+  backstory_summary?: string;
+  voice?: string;
+}
+
+export interface EntityState {
+  current_location?: string;
+  current_occupation?: string;
+  current_mood?: string;
+  current_goals?: string[];
+  current_problems?: string[];
+  wealth_level?: string;
+}
+
+export interface EntityRelationship {
+  type: string;
+  to_entity_id?: string;
+  to_name?: string;
+  to_type?: string;
+  strength?: number;
+  details?: string;
+}
+
+export interface TimelineEvent {
+  id: string;
+  event_type: string;
+  event_summary: string;
+  occurred_at: string;
+  importance: number;
+  event_details?: Record<string, unknown>;
+}
+
+// Trailblazer reward for generating content
+export interface TrailblazerReward {
+  governance_points: number;
+  currency: number;
+  trailblazer_points: number;
+  was_first_of_type: boolean;
+}
+
+// Generated entity response
+export interface GeneratedEntity {
+  id: string;
+  world_id: string;
+  entity_type: EntityType;
+  name: string;
+  slug?: string;
+  identity: EntityIdentity;
+  state: EntityState;
+  relationships: EntityRelationship[];
+  is_new: boolean;
+  reward?: TrailblazerReward;
+  generated_by?: string;
+  generation_context?: string;
+  canonical_level?: string;
+  content_rating?: string;
+  content_warnings?: string[];
+  timeline?: TimelineEvent[];
+}
+
+// Generate entity request
+export interface GenerateEntityRequest {
+  entity_type: EntityType;
+  context: string;
+  hints?: Record<string, string>;
+  force_new?: boolean;
+  player_id?: string;
+}
+
+// Player stats in a world
+export interface PlayerWorldStats {
+  player_id: string;
+  world_id: string;
+  governance_points: number;
+  currency: number;
+  trailblazer_score: number;
+  entities_created_count: number;
+  entities_created: string[];
+  total_playtime_minutes: number;
+  last_played_at: string;
+}
+
+// Leaderboard entry
+export interface LeaderboardEntry {
+  rank: number;
+  player_id: string;
+  trailblazer_score: number;
+  governance_points: number;
+  currency: number;
+  entities_created: number;
+  last_played_at: string;
+}
+
+// ============ LEGACY TYPES (for backwards compatibility) ============
+
+// World selection types (deprecated - use InfiniteWorld)
 export interface Genre {
   genre: string;
   count: number;

@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { GameLog, CommandInput, CharacterPanel, QuickActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel } from "@/components/game";
 import { ThemePicker } from "@/components/ThemePicker";
-import type { Character, GameLogEntry, Genre, World, WorldsByGenre, CampfireResponse, CharacterOption, ActiveScene as ActiveSceneType, NegotiationRequest, CombatSession, ReasoningInfo } from "@/types/game";
+import type { Character, GameLogEntry, Genre, World, WorldsByGenre, CampfireResponse, CharacterOption, ActiveScene as ActiveSceneType, NegotiationRequest, CombatSession, ReasoningInfo, InfiniteWorld } from "@/types/game";
 import * as api from "@/lib/api";
 
 // ========== HELPERS ==========
@@ -25,8 +25,8 @@ const log = (
   action_id,
 });
 
-// Genre icons for visual flair
-const GENRE_ICONS: Record<string, string> = {
+// Genre/tone icons for visual flair
+const TONE_ICONS: Record<string, string> = {
   fantasy: "⚔",
   scifi: "◈",
   horror: "☠",
@@ -37,10 +37,67 @@ const GENRE_ICONS: Record<string, string> = {
   urban: "◇",
   contemporary: "▣",
   thriller: "◆",
+  heroic: "⚔",
+  grimdark: "☠",
+  noir: "◆",
+  comedic: "☆",
+  slice_of_life: "♡",
+  satirical: "◎",
+  romantic: "♡",
 };
 
 // ========== DEMO DATA ==========
 
+// Demo infinite worlds for offline mode
+const DEMO_INFINITE_WORLDS: InfiniteWorld[] = [
+  {
+    id: "demo-thornwood",
+    slug: "thornwood-vale",
+    name: "Thornwood Vale",
+    tagline: "Dark secrets lurk beneath ancient boughs",
+    description: "A dark medieval fantasy realm where magic has a terrible cost and the old gods still hunger.",
+    creator_id: "system",
+    is_public: true,
+    governance: { type: "autocracy" },
+    physics_rules: { magic_exists: true, magic_system: "hard", tech_level: "medieval" },
+    society_rules: { class_system: "rigid", economy_type: "feudal" },
+    content_rules: { violence_level: "graphic", romance_level: "fade_to_black", nsfw_allowed: false },
+    tone_rules: { primary_tone: "grimdark", stakes_level: "personal", moral_complexity: "grey" },
+    player_count: 42,
+  },
+  {
+    id: "demo-neon",
+    slug: "neon-sprawl",
+    name: "Neon Sprawl",
+    tagline: "Jack in. Fight back. Survive.",
+    description: "Cyberpunk megacity where megacorps rule and hackers fight for freedom in the digital shadows.",
+    creator_id: "system",
+    is_public: true,
+    governance: { type: "council" },
+    physics_rules: { magic_exists: false, tech_level: "futuristic" },
+    society_rules: { class_system: "fluid", economy_type: "capitalist" },
+    content_rules: { violence_level: "graphic", romance_level: "suggestive", nsfw_allowed: false },
+    tone_rules: { primary_tone: "noir", stakes_level: "personal", moral_complexity: "grey" },
+    player_count: 28,
+  },
+  {
+    id: "demo-willowmere",
+    slug: "willowmere",
+    name: "Willowmere",
+    tagline: "A cozy corner of the realm",
+    description: "Low-stakes wholesome fantasy focused on community, crafting, and found family.",
+    creator_id: "system",
+    is_public: true,
+    governance: { type: "democracy" },
+    physics_rules: { magic_exists: true, magic_system: "soft", tech_level: "medieval" },
+    society_rules: { class_system: "fluid", economy_type: "mercantile" },
+    content_rules: { violence_level: "mild", romance_level: "fade_to_black", nsfw_allowed: false },
+    tone_rules: { primary_tone: "slice_of_life", stakes_level: "personal", moral_complexity: "grey" },
+    player_count: 15,
+  },
+];
+
+// Legacy demo data (for backwards compatibility)
 const DEMO_GENRES: Genre[] = [
   { genre: "fantasy", count: 18 },
   { genre: "scifi", count: 19 },
@@ -187,7 +244,7 @@ function GenreGrid({ genres, onSelect, onBack }: {
             >
               {/* Genre icon */}
               <div className="text-2xl md:text-3xl text-[var(--amber)] opacity-80">
-                {GENRE_ICONS[genre.genre] || "◇"}
+                {TONE_ICONS[genre.genre] || "◇"}
               </div>
 
               {/* Genre name */}
@@ -230,7 +287,7 @@ function WorldList({ genre, worldsByGenre, onSelect, onBack }: {
         </button>
         <div className="text-center">
           <div className="flex items-center justify-center gap-2">
-            <span className="text-xl text-[var(--amber)] opacity-70">{GENRE_ICONS[genre.genre] || "◇"}</span>
+            <span className="text-xl text-[var(--amber)] opacity-70">{TONE_ICONS[genre.genre] || "◇"}</span>
             <span className="text-[var(--amber)] font-bold tracking-wider uppercase">{genre.genre}</span>
           </div>
           <div className="text-[var(--mist)] text-[10px] tracking-widest">{worlds.length} WORLDS</div>
@@ -266,6 +323,90 @@ function WorldList({ genre, worldsByGenre, onSelect, onBack }: {
                 </div>
               </button>
             ))
+          )}
+        </div>
+      </div>
+    </main>
+  );
+}
+
+// New Infinite Worlds browser
+function WorldBrowser({ worlds, onSelect, onBack }: {
+  worlds: InfiniteWorld[];
+  onSelect: (world: InfiniteWorld) => void;
+  onBack: () => void;
+}) {
+  return (
+    <main className="h-dvh flex flex-col bg-atmospheric pt-[max(0.5rem,env(safe-area-inset-top))] animate-fade-in">
+      <header className="flex items-center justify-between px-4 py-3 border-b border-[var(--slate)] shrink-0">
+        <button onClick={onBack} className="text-[var(--mist)] text-sm min-w-[44px] min-h-[44px] flex items-center gap-1 hover:text-[var(--text)] transition-colors">
+          <span className="text-lg">‹</span> Back
+        </button>
+        <div className="text-center">
+          <span className="text-[var(--amber)] font-bold tracking-wider">CHOOSE YOUR WORLD</span>
+          <div className="text-[var(--mist)] text-[10px] tracking-widest">{worlds.length} REALMS AVAILABLE</div>
+        </div>
+        <ThemePicker />
+      </header>
+
+      <div className="flex-1 overflow-y-auto p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto stagger-fade-in">
+          {worlds.length === 0 ? (
+            <div className="col-span-full text-center py-12">
+              <div className="text-[var(--mist)] text-2xl mb-2">◌</div>
+              <p className="text-[var(--mist)]">No worlds available yet.</p>
+              <p className="text-[var(--slate)] text-sm mt-1">Check back soon...</p>
+            </div>
+          ) : (
+            worlds.map((world) => {
+              const tone = world.tone_rules?.primary_tone || "heroic";
+              const icon = TONE_ICONS[tone] || "◇";
+
+              return (
+                <button
+                  key={world.id}
+                  onClick={() => onSelect(world)}
+                  className="world-card p-5 text-left flex flex-col gap-3"
+                >
+                  {/* Header */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl text-[var(--amber)] opacity-80">{icon}</span>
+                      <span className="text-[var(--amber)] font-bold">{world.name}</span>
+                    </div>
+                    {world.player_count > 0 && (
+                      <span className="text-[var(--mist)] text-[10px] tracking-wider flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--arcane)]" />
+                        {world.player_count}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Tagline */}
+                  <p className="text-[var(--amber-dim)] text-sm italic">
+                    {world.tagline}
+                  </p>
+
+                  {/* Description */}
+                  <p className="text-[var(--text-dim)] text-sm line-clamp-3 flex-1">
+                    {world.description}
+                  </p>
+
+                  {/* Tags */}
+                  <div className="flex flex-wrap gap-2 mt-auto pt-2 border-t border-[var(--slate)]">
+                    {world.physics_rules?.magic_exists && (
+                      <span className="text-[var(--arcane)] text-[10px] tracking-wider uppercase">Magic</span>
+                    )}
+                    {world.physics_rules?.tech_level && (
+                      <span className="text-[var(--mist)] text-[10px] tracking-wider uppercase">{world.physics_rules.tech_level}</span>
+                    )}
+                    {world.content_rules?.violence_level && (
+                      <span className="text-[var(--crimson)] text-[10px] tracking-wider uppercase">{world.content_rules.violence_level}</span>
+                    )}
+                  </div>
+                </button>
+              );
+            })
           )}
         </div>
       </div>
@@ -362,7 +503,11 @@ export default function GamePage() {
   const [phase, setPhase] = useState<AppPhase>("loading");
   const [isDemo, setIsDemo] = useState(false);
 
-  // World selection state
+  // Infinite Worlds state (new system)
+  const [infiniteWorlds, setInfiniteWorlds] = useState<InfiniteWorld[]>([]);
+  const [selectedWorld, setSelectedWorld] = useState<InfiniteWorld | null>(null);
+
+  // Legacy world selection state (for backwards compatibility)
   const [genres, setGenres] = useState<Genre[]>([]);
   const [worldsByGenre, setWorldsByGenre] = useState<WorldsByGenre[]>([]);
   const [selectedGenre, setSelectedGenre] = useState<Genre | null>(null);
@@ -396,22 +541,25 @@ export default function GamePage() {
       if (!healthy) {
         // API unavailable - demo mode
         setIsDemo(true);
+        setInfiniteWorlds(DEMO_INFINITE_WORLDS);
         setGenres(DEMO_GENRES);
         setWorldsByGenre(DEMO_WORLDS_BY_GENRE);
         setPhase("landing");
         return;
       }
 
-      // Fetch genres and preferences in parallel
+      // Fetch infinite worlds and preferences in parallel
       try {
-        const [genreData, prefs] = await Promise.all([
-          api.getGenres(),
+        const [worldsData, prefs] = await Promise.all([
+          api.getInfiniteWorlds(),
           api.getPreferences().catch(() => ({ show_reasoning: false, show_on_failure: true })),
         ]);
-        setGenres(genreData);
+        setInfiniteWorlds(worldsData);
         setShowReasoning(prefs.show_reasoning);
       } catch {
+        // Fall back to demo mode on error
         setIsDemo(true);
+        setInfiniteWorlds(DEMO_INFINITE_WORLDS);
         setGenres(DEMO_GENRES);
         setWorldsByGenre(DEMO_WORLDS_BY_GENRE);
       }
@@ -424,6 +572,82 @@ export default function GamePage() {
 
   // ========== PHASE TRANSITIONS ==========
 
+  const enterWorlds = () => setPhase("worlds");
+
+  // New: Select an infinite world and go directly to game
+  const selectInfiniteWorld = async (world: InfiniteWorld) => {
+    setSelectedWorld(world);
+    setProcessing(true);
+
+    // Start session with world
+    if (!isDemo) {
+      try {
+        const { session, opening_narrative } = await api.startSession({
+          world_id: world.id,
+        });
+
+        // Create a default character for now
+        setCharacter({
+          id: session.character_id || "player",
+          name: session.display_name || "Traveler",
+          race: "Human",
+          character_class: "Explorer",
+          stats: { hp: 100, max_hp: 100, mana: 50, max_mana: 50, gold: 0, xp: 0, level: 1 },
+          current_zone_id: null,
+          inventory: [],
+          equipped: {},
+        });
+
+        setZoneName(world.name);
+        setEntries([
+          log("system", `Entering ${world.name}`),
+          log("narrative", opening_narrative || world.description),
+          log("system", "Type 'help' for commands, or just describe what you want to do"),
+        ]);
+      } catch {
+        // Demo fallback
+        setCharacter({
+          id: "player",
+          name: "Traveler",
+          race: "Human",
+          character_class: "Explorer",
+          stats: { hp: 100, max_hp: 100, mana: 50, max_mana: 50, gold: 0, xp: 0, level: 1 },
+          current_zone_id: null,
+          inventory: [],
+          equipped: {},
+        });
+        setZoneName(world.name);
+        setEntries([
+          log("system", `Entering ${world.name} (Demo)`),
+          log("narrative", world.description),
+          log("system", "Type 'help' for commands"),
+        ]);
+      }
+    } else {
+      // Demo mode
+      setCharacter({
+        id: "demo-player",
+        name: "Traveler",
+        race: "Human",
+        character_class: "Explorer",
+        stats: { hp: 100, max_hp: 100, mana: 50, max_mana: 50, gold: 0, xp: 0, level: 1 },
+        current_zone_id: null,
+        inventory: [],
+        equipped: {},
+      });
+      setZoneName(world.name);
+      setEntries([
+        log("system", "Demo Mode"),
+        log("narrative", world.description),
+        log("system", "Type 'help' for commands"),
+      ]);
+    }
+
+    setProcessing(false);
+    setPhase("game");
+  };
+
+  // Legacy: Select genre (for old flow)
   const enterGenres = () => setPhase("genres");
 
   const selectGenre = async (genre: Genre) => {
@@ -783,9 +1007,21 @@ export default function GamePage() {
   }
 
   if (phase === "landing") {
-    return <LandingView onEnter={enterGenres} isDemo={isDemo} />;
+    return <LandingView onEnter={enterWorlds} isDemo={isDemo} />;
   }
 
+  // New: Infinite Worlds browser (replaces genre grid + world list)
+  if (phase === "worlds") {
+    return (
+      <WorldBrowser
+        worlds={infiniteWorlds}
+        onSelect={selectInfiniteWorld}
+        onBack={() => setPhase("landing")}
+      />
+    );
+  }
+
+  // Legacy: Genre grid (kept for backwards compatibility)
   if (phase === "genres") {
     return (
       <GenreGrid
@@ -796,17 +1032,7 @@ export default function GamePage() {
     );
   }
 
-  if (phase === "worlds" && selectedGenre) {
-    return (
-      <WorldList
-        genre={selectedGenre}
-        worldsByGenre={worldsByGenre}
-        onSelect={selectWorld}
-        onBack={() => setPhase("genres")}
-      />
-    );
-  }
-
+  // Legacy: Campfire character selection
   if (phase === "campfire" && campfireData) {
     return (
       <CampfireView

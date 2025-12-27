@@ -1,4 +1,4 @@
-// World Forge API client
+// TextLands API client
 
 import type {
   Character,
@@ -17,6 +17,12 @@ import type {
   NegotiationRequest,
   SceneActionRequest,
   ExplainResponse,
+  InfiniteWorld,
+  WorldTemplate,
+  GeneratedEntity,
+  GenerateEntityRequest,
+  PlayerWorldStats,
+  LeaderboardEntry,
 } from "@/types/game";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
@@ -282,4 +288,69 @@ export async function completeScene(
 
 export async function getActiveScene(): Promise<IntimacyResponse> {
   return fetchAPI<IntimacyResponse>("/intimacy/active");
+}
+
+// ============ INFINITE WORLDS API ============
+
+// List public worlds
+export async function getInfiniteWorlds(): Promise<InfiniteWorld[]> {
+  return fetchAPI<InfiniteWorld[]>("/infinite/worlds");
+}
+
+// Get world details
+export async function getInfiniteWorld(worldId: string): Promise<InfiniteWorld> {
+  return fetchAPI<InfiniteWorld>(`/infinite/worlds/${worldId}`);
+}
+
+// List world templates
+export async function getWorldTemplates(): Promise<WorldTemplate[]> {
+  return fetchAPI<WorldTemplate[]>("/infinite/templates");
+}
+
+// Get template details
+export async function getWorldTemplate(slug: string): Promise<WorldTemplate> {
+  return fetchAPI<WorldTemplate>(`/infinite/templates/${slug}`);
+}
+
+// Generate entity in a world (earns trailblazer rewards!)
+export async function generateEntity(
+  worldId: string,
+  request: GenerateEntityRequest
+): Promise<GeneratedEntity> {
+  return fetchAPI<GeneratedEntity>(`/infinite/worlds/${worldId}/generate`, {
+    method: "POST",
+    body: JSON.stringify(request),
+  });
+}
+
+// List entities in a world
+export async function getWorldEntities(
+  worldId: string,
+  entityType?: string
+): Promise<GeneratedEntity[]> {
+  const params = entityType ? `?entity_type=${entityType}` : "";
+  return fetchAPI<GeneratedEntity[]>(`/infinite/worlds/${worldId}/entities${params}`);
+}
+
+// Get entity details with timeline
+export async function getEntity(entityId: string): Promise<GeneratedEntity> {
+  return fetchAPI<GeneratedEntity>(`/infinite/entities/${entityId}`);
+}
+
+// Get player stats for a world
+export async function getPlayerWorldStats(
+  worldId: string,
+  playerId: string
+): Promise<PlayerWorldStats> {
+  return fetchAPI<PlayerWorldStats>(`/infinite/worlds/${worldId}/player/${playerId}/stats`);
+}
+
+// Get world leaderboard
+export async function getWorldLeaderboard(worldId: string): Promise<LeaderboardEntry[]> {
+  return fetchAPI<LeaderboardEntry[]>(`/infinite/worlds/${worldId}/leaderboard`);
+}
+
+// Get global leaderboard
+export async function getGlobalLeaderboard(): Promise<LeaderboardEntry[]> {
+  return fetchAPI<LeaderboardEntry[]>("/infinite/leaderboard/global");
 }
