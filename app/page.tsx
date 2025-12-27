@@ -496,7 +496,7 @@ function CampfireView({ campfire, onSelect, onBack, loading }: {
   );
 }
 
-// Infinite Worlds campfire view
+// Infinite Worlds character selection view
 function InfiniteCampfireView({ campfire, onSelect, onBack, loading }: {
   campfire: InfiniteCampfireResponse;
   onSelect: (character: InfiniteCampfireCharacter) => void;
@@ -511,39 +511,22 @@ function InfiniteCampfireView({ campfire, onSelect, onBack, loading }: {
         </button>
         <div className="text-center">
           <span className="text-[var(--amber)] font-bold tracking-wider">{campfire.world_name}</span>
-          <div className="text-[var(--mist)] text-[10px] tracking-widest">THE CAMPFIRE</div>
         </div>
         <ThemePicker />
       </header>
 
       <div className="flex-1 overflow-y-auto">
-        {/* Campfire scene - intro narrative */}
+        {/* Intro narrative */}
         <div className="p-6 border-b border-[var(--slate)] bg-gradient-to-b from-[var(--shadow)] to-transparent">
           <div className="max-w-2xl mx-auto">
-            {/* Fire decoration */}
-            <div className="text-center mb-4 fire-flicker">
-              <span className="text-2xl text-[var(--amber)]">🔥</span>
-            </div>
-
-            <p className="text-[var(--amber)] leading-relaxed whitespace-pre-wrap text-sm md:text-base campfire-text text-center italic">
+            <p className="text-[var(--text)] leading-relaxed whitespace-pre-wrap text-sm md:text-base text-center">
               {campfire.intro_text}
             </p>
-
-            {campfire.world_tagline && (
-              <p className="text-[var(--mist)] text-xs text-center mt-4 tracking-wider">
-                {campfire.world_tagline}
-              </p>
-            )}
           </div>
         </div>
 
         {/* Character selection */}
         <div className="p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-          <div className="text-center mb-6">
-            <div className="text-[var(--mist)] text-[10px] tracking-[0.3em] uppercase mb-1">Choose Your</div>
-            <div className="text-[var(--amber)] font-bold tracking-wider">CHARACTER</div>
-          </div>
-
           <div className="space-y-4 max-w-2xl mx-auto stagger-fade-in">
             {campfire.characters.length === 0 ? (
               <div className="text-center py-8">
