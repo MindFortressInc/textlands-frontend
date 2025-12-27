@@ -38,10 +38,7 @@ async function fetchAPI<T>(
   try {
     const response = await fetch(url, {
       ...options,
-      // TODO: Re-enable credentials once backend CORS is fixed
-      // Backend currently returns Access-Control-Allow-Origin: * on non-OPTIONS requests,
-      // which is incompatible with credentials: "include"
-      // credentials: "include",
+      credentials: "include", // Send cookies for guest session auth
       headers: {
         "Content-Type": "application/json",
         ...options.headers,
@@ -98,8 +95,8 @@ export async function startSession(params?: StartSessionRequest): Promise<StartS
 export async function checkHealth(): Promise<boolean> {
   try {
     console.log("[API] Checking health at:", `${API_BASE}/health`);
-    // Note: Don't use credentials: "include" for health check - backend CORS returns * for non-OPTIONS
     const response = await fetch(`${API_BASE}/health`, {
+      credentials: "include",
       cache: "no-store"
     });
     console.log("[API] Health response status:", response.status, response.ok);
