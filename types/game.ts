@@ -170,6 +170,29 @@ export interface LeaderboardEntry {
   last_played_at: string;
 }
 
+// Infinite world campfire character
+export interface InfiniteCampfireCharacter {
+  id: string;
+  name: string;
+  entity_type: string;
+  occupation: string | null;
+  physical_summary: string;
+  personality_summary: string;
+  backstory_hook: string;
+  is_playable: boolean;
+  canonical_level: string;
+}
+
+// Infinite world campfire response
+export interface InfiniteCampfireResponse {
+  world_id: string;
+  world_name: string;
+  world_tagline: string;
+  intro_text: string;
+  tone: string;
+  characters: InfiniteCampfireCharacter[];
+}
+
 // ============ LEGACY TYPES (for backwards compatibility) ============
 
 // World selection types (deprecated - use InfiniteWorld)

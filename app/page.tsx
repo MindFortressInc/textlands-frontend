@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { GameLog, CommandInput, CharacterPanel, QuickActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel } from "@/components/game";
 import { ThemePicker } from "@/components/ThemePicker";
-import type { Character, GameLogEntry, Genre, World, WorldsByGenre, CampfireResponse, CharacterOption, ActiveScene as ActiveSceneType, NegotiationRequest, CombatSession, ReasoningInfo, InfiniteWorld } from "@/types/game";
+import type { Character, GameLogEntry, Genre, World, WorldsByGenre, CampfireResponse, CharacterOption, ActiveScene as ActiveSceneType, NegotiationRequest, CombatSession, ReasoningInfo, InfiniteWorld, InfiniteCampfireResponse, InfiniteCampfireCharacter } from "@/types/game";
 import * as api from "@/lib/api";
 
 // ========== HELPERS ==========
@@ -149,7 +149,7 @@ const DEMO_CHARACTER: Character = {
 
 // ========== STATE TYPE ==========
 
-type AppPhase = "loading" | "landing" | "genres" | "worlds" | "campfire" | "game";
+type AppPhase = "loading" | "landing" | "genres" | "worlds" | "campfire" | "infinite-campfire" | "game";
 
 // ========== INLINE VIEW COMPONENTS ==========
 
@@ -496,6 +496,110 @@ function CampfireView({ campfire, onSelect, onBack, loading }: {
   );
 }
 
+// Infinite Worlds campfire view
+function InfiniteCampfireView({ campfire, onSelect, onBack, loading }: {
+  campfire: InfiniteCampfireResponse;
+  onSelect: (character: InfiniteCampfireCharacter) => void;
+  onBack: () => void;
+  loading: boolean;
+}) {
+  return (
+    <main className="h-dvh flex flex-col bg-atmospheric pt-[max(0.5rem,env(safe-area-inset-top))] animate-fade-in">
+      <header className="flex items-center justify-between px-4 py-3 border-b border-[var(--slate)] shrink-0">
+        <button onClick={onBack} className="text-[var(--mist)] text-sm min-w-[44px] min-h-[44px] flex items-center gap-1 hover:text-[var(--text)] transition-colors">
+          <span className="text-lg">‹</span> Back
+        </button>
+        <div className="text-center">
+          <span className="text-[var(--amber)] font-bold tracking-wider">{campfire.world_name}</span>
+          <div className="text-[var(--mist)] text-[10px] tracking-widest">THE CAMPFIRE</div>
+        </div>
+        <ThemePicker />
+      </header>
+
+      <div className="flex-1 overflow-y-auto">
+        {/* Campfire scene - intro narrative */}
+        <div className="p-6 border-b border-[var(--slate)] bg-gradient-to-b from-[var(--shadow)] to-transparent">
+          <div className="max-w-2xl mx-auto">
+            {/* Fire decoration */}
+            <div className="text-center mb-4 fire-flicker">
+              <span className="text-2xl text-[var(--amber)]">🔥</span>
+            </div>
+
+            <p className="text-[var(--amber)] leading-relaxed whitespace-pre-wrap text-sm md:text-base campfire-text text-center italic">
+              {campfire.intro_text}
+            </p>
+
+            {campfire.world_tagline && (
+              <p className="text-[var(--mist)] text-xs text-center mt-4 tracking-wider">
+                {campfire.world_tagline}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Character selection */}
+        <div className="p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <div className="text-center mb-6">
+            <div className="text-[var(--mist)] text-[10px] tracking-[0.3em] uppercase mb-1">Choose Your</div>
+            <div className="text-[var(--amber)] font-bold tracking-wider">CHARACTER</div>
+          </div>
+
+          <div className="space-y-4 max-w-2xl mx-auto stagger-fade-in">
+            {campfire.characters.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-[var(--mist)]">No characters available.</p>
+              </div>
+            ) : (
+              campfire.characters.filter(c => c.is_playable).map((char) => (
+                <button
+                  key={char.id}
+                  onClick={() => onSelect(char)}
+                  disabled={loading}
+                  className="character-card w-full p-5 text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <div className="flex items-start gap-4">
+                    {/* Character portrait placeholder */}
+                    <div className="w-12 h-12 rounded bg-[var(--slate)] flex items-center justify-center text-[var(--amber)] text-xl shrink-0">
+                      {char.name.charAt(0)}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <span className="text-[var(--amber)] font-bold">{char.name}</span>
+                        {char.occupation && (
+                          <span className="text-[var(--arcane)] text-[10px] tracking-wider uppercase">
+                            {char.occupation}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[var(--text-dim)] text-sm mb-2">
+                        {char.physical_summary}
+                      </p>
+                      <p className="text-[var(--mist)] text-xs italic line-clamp-2">
+                        {char.backstory_hook}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Personality tags */}
+                  {char.personality_summary && (
+                    <div className="mt-3 pt-3 border-t border-[var(--slate)] flex items-center justify-between">
+                      <span className="text-[var(--mist)] text-[10px] tracking-wider">
+                        {char.personality_summary}
+                      </span>
+                      <span className="text-[var(--amber)] text-sm">→</span>
+                    </div>
+                  )}
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
+
 // ========== MAIN PAGE COMPONENT ==========
 
 export default function GamePage() {
@@ -506,6 +610,7 @@ export default function GamePage() {
   // Infinite Worlds state (new system)
   const [infiniteWorlds, setInfiniteWorlds] = useState<InfiniteWorld[]>([]);
   const [selectedWorld, setSelectedWorld] = useState<InfiniteWorld | null>(null);
+  const [infiniteCampfire, setInfiniteCampfire] = useState<InfiniteCampfireResponse | null>(null);
 
   // Legacy world selection state (for backwards compatibility)
   const [genres, setGenres] = useState<Genre[]>([]);
@@ -574,77 +679,100 @@ export default function GamePage() {
 
   const enterWorlds = () => setPhase("worlds");
 
-  // New: Select an infinite world and go directly to game
+  // New: Select an infinite world and go to campfire for character selection
   const selectInfiniteWorld = async (world: InfiniteWorld) => {
     setSelectedWorld(world);
     setProcessing(true);
 
-    // Start session with world
+    if (!isDemo) {
+      try {
+        const campfire = await api.getInfiniteCampfire(world.id);
+        setInfiniteCampfire(campfire);
+        setPhase("infinite-campfire");
+      } catch {
+        // Fallback to demo campfire
+        setInfiniteCampfire({
+          world_id: world.id,
+          world_name: world.name,
+          world_tagline: world.tagline,
+          intro_text: world.description,
+          tone: world.tone_rules?.primary_tone || "heroic",
+          characters: [],
+        });
+        setPhase("infinite-campfire");
+      }
+    } else {
+      // Demo mode - show demo campfire
+      setInfiniteCampfire({
+        world_id: world.id,
+        world_name: world.name,
+        world_tagline: world.tagline,
+        intro_text: world.description,
+        tone: world.tone_rules?.primary_tone || "heroic",
+        characters: [],
+      });
+      setPhase("infinite-campfire");
+    }
+
+    setProcessing(false);
+  };
+
+  // Select a character from infinite campfire and start game
+  const selectInfiniteCharacter = async (char: InfiniteCampfireCharacter) => {
+    if (!selectedWorld || !infiniteCampfire) return;
+
+    setProcessing(true);
+
     if (!isDemo) {
       try {
         const { session, opening_narrative } = await api.startSession({
-          world_id: world.id,
+          world_id: selectedWorld.id,
+          character_id: char.id,
         });
 
-        // Create a default character for now
         setCharacter({
-          id: session.character_id || "player",
-          name: session.display_name || "Traveler",
-          race: "Human",
-          character_class: "Explorer",
+          id: char.id,
+          name: char.name,
+          race: "Unknown",
+          character_class: char.occupation || "Wanderer",
           stats: { hp: 100, max_hp: 100, mana: 50, max_mana: 50, gold: 0, xp: 0, level: 1 },
           current_zone_id: null,
           inventory: [],
           equipped: {},
         });
 
-        setZoneName(world.name);
+        setZoneName(selectedWorld.name);
         setEntries([
-          log("system", `Entering ${world.name}`),
-          log("narrative", opening_narrative || world.description),
+          log("system", `Entering ${selectedWorld.name}`),
+          log("narrative", opening_narrative || infiniteCampfire.intro_text),
           log("system", "Type 'help' for commands, or just describe what you want to do"),
         ]);
-      } catch {
-        // Demo fallback
-        setCharacter({
-          id: "player",
-          name: "Traveler",
-          race: "Human",
-          character_class: "Explorer",
-          stats: { hp: 100, max_hp: 100, mana: 50, max_mana: 50, gold: 0, xp: 0, level: 1 },
-          current_zone_id: null,
-          inventory: [],
-          equipped: {},
-        });
-        setZoneName(world.name);
-        setEntries([
-          log("system", `Entering ${world.name} (Demo)`),
-          log("narrative", world.description),
-          log("system", "Type 'help' for commands"),
-        ]);
+        setPhase("game");
+      } catch (err) {
+        addLog("system", `Error: ${err instanceof Error ? err.message : "Failed to start session"}`);
       }
     } else {
       // Demo mode
       setCharacter({
-        id: "demo-player",
-        name: "Traveler",
-        race: "Human",
-        character_class: "Explorer",
+        id: char.id,
+        name: char.name,
+        race: "Unknown",
+        character_class: char.occupation || "Wanderer",
         stats: { hp: 100, max_hp: 100, mana: 50, max_mana: 50, gold: 0, xp: 0, level: 1 },
         current_zone_id: null,
         inventory: [],
         equipped: {},
       });
-      setZoneName(world.name);
+      setZoneName(selectedWorld.name);
       setEntries([
         log("system", "Demo Mode"),
-        log("narrative", world.description),
+        log("narrative", infiniteCampfire.intro_text),
         log("system", "Type 'help' for commands"),
       ]);
+      setPhase("game");
     }
 
     setProcessing(false);
-    setPhase("game");
   };
 
   // Legacy: Select genre (for old flow)
@@ -1017,6 +1145,18 @@ export default function GamePage() {
         worlds={infiniteWorlds}
         onSelect={selectInfiniteWorld}
         onBack={() => setPhase("landing")}
+      />
+    );
+  }
+
+  // New: Infinite Worlds campfire (character selection)
+  if (phase === "infinite-campfire" && infiniteCampfire) {
+    return (
+      <InfiniteCampfireView
+        campfire={infiniteCampfire}
+        onSelect={selectInfiniteCharacter}
+        onBack={() => setPhase("worlds")}
+        loading={processing}
       />
     );
   }

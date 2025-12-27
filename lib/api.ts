@@ -23,6 +23,7 @@ import type {
   GenerateEntityRequest,
   PlayerWorldStats,
   LeaderboardEntry,
+  InfiniteCampfireResponse,
 } from "@/types/game";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
@@ -353,4 +354,9 @@ export async function getWorldLeaderboard(worldId: string): Promise<LeaderboardE
 // Get global leaderboard
 export async function getGlobalLeaderboard(): Promise<LeaderboardEntry[]> {
   return fetchAPI<LeaderboardEntry[]>("/infinite/leaderboard/global");
+}
+
+// Get infinite world campfire (character selection)
+export async function getInfiniteCampfire(worldId: string): Promise<InfiniteCampfireResponse> {
+  return fetchAPI<InfiniteCampfireResponse>(`/infinite/worlds/${worldId}/campfire`);
 }
