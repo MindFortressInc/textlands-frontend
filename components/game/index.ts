@@ -10,3 +10,4 @@ export { ReasoningPanel } from "./ReasoningPanel";
 export { SettingsPanel } from "./SettingsPanel";
 export { CombatPanel } from "./CombatPanel";
 export { CombatLog } from "./CombatLog";
+export { AgeGateModal } from "./AgeGateModal";

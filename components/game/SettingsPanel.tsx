@@ -8,9 +8,21 @@ interface SettingsPanelProps {
   isOpen: boolean;
   onClose: () => void;
   isDemo: boolean;
+  nsfwEnabled: boolean;
+  onNsfwToggle: (enabled: boolean) => void;
+  nsfwVerified: boolean;
+  onRequestAgeVerification: () => void;
 }
 
-export function SettingsPanel({ isOpen, onClose, isDemo }: SettingsPanelProps) {
+export function SettingsPanel({
+  isOpen,
+  onClose,
+  isDemo,
+  nsfwEnabled,
+  onNsfwToggle,
+  nsfwVerified,
+  onRequestAgeVerification,
+}: SettingsPanelProps) {
   const [preferences, setPreferences] = useState<UserPreferences>({
     show_reasoning: false,
     show_on_failure: true,
@@ -115,6 +127,46 @@ export function SettingsPanel({ isOpen, onClose, isDemo }: SettingsPanelProps) {
                   </div>
                   <div className={`text-[var(--text-dim)] text-sm ${preferences.show_reasoning ? "opacity-50" : ""}`}>
                     Only reveal mechanics when actions fail
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          {/* Content Section */}
+          <div>
+            <h3 className="text-[var(--text)] font-semibold mb-3 flex items-center gap-2">
+              <span className="text-[var(--crimson)]">*</span>
+              Content
+            </h3>
+
+            <div className="space-y-3">
+              {/* NSFW Toggle */}
+              <label className="flex items-start gap-3 cursor-pointer group">
+                <div className="relative mt-0.5">
+                  <input
+                    type="checkbox"
+                    checked={nsfwEnabled}
+                    onChange={(e) => {
+                      if (e.target.checked && !nsfwVerified) {
+                        // Need age verification first
+                        onRequestAgeVerification();
+                      } else {
+                        onNsfwToggle(e.target.checked);
+                      }
+                    }}
+                    disabled={loading}
+                    className="sr-only peer"
+                  />
+                  <div className="w-10 h-6 bg-[var(--stone)] rounded-full peer-checked:bg-[var(--crimson)] transition-colors" />
+                  <div className="absolute top-0.5 left-0.5 w-5 h-5 bg-[var(--text)] rounded-full peer-checked:translate-x-4 transition-transform" />
+                </div>
+                <div className="flex-1">
+                  <div className="text-[var(--text)] font-medium group-hover:text-[var(--amber)] transition-colors">
+                    Adult Content (18+)
+                  </div>
+                  <div className="text-[var(--text-dim)] text-sm">
+                    Show mature realms and allow explicit content in all worlds
                   </div>
                 </div>
               </label>

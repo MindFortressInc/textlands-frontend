@@ -45,6 +45,8 @@ export interface InfiniteWorld {
   description: string;
   creator_id: string;
   is_public: boolean;
+  realm: string;
+  is_nsfw: boolean;
   governance: WorldGovernance;
   physics_rules: PhysicsRules;
   society_rules: SocietyRules;
