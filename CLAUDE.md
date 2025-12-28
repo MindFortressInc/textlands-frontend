@@ -21,6 +21,73 @@ npm run dev
 - Tailwind CSS
 - System monospace fonts (fast loading)
 
+## Architecture: Fancy Terminal
+
+**This is NOT a typical web app.** It's a text-based MMO where AI handles all game logic.
+
+```
+┌──────────────────────────────────────────────────┐
+│  You enter the tavern. A fire crackles...        │
+│                                                  │
+│  > steal the ring from the sleeping merchant     │
+│                                                  │
+│  You slip the ruby ring from his finger...       │
+├──────────────────────────────────────────────────┤
+│  [Run away] [Hide the evidence] [Sell it]        │
+└──────────────────────────────────────────────────┘
+```
+
+### One Endpoint Does Everything
+
+```typescript
+// 90% of gameplay
+const result = await api.doAction("steal the ring");
+setNarrative(result.narrative);
+setSuggestions(result.suggested_actions);
+```
+
+Backend handles: parsing intent, rolling mechanics, checking witnesses, updating world state, scheduling consequences, generating narrative.
+
+## API Client
+
+All backend calls go through `lib/api.ts`:
+
+```typescript
+import * as api from "@/lib/api";
+
+// CORE GAMEPLAY - all through doAction()
+await api.doAction("look around");
+await api.doAction("go north");
+await api.doAction("talk to the bartender");
+await api.doAction("attack the goblin");
+await api.doAction("kiss her passionately");
+
+// SESSION
+await api.startSession({ world_id, entity_id });
+
+// STATE POLLING (read-only)
+await api.getActiveCombat(characterId);
+await api.getActiveScene(characterId);
+await api.getCombatState(sessionId);
+
+// WORLD BROWSING
+await api.getInfiniteWorldsGrouped();
+await api.getInfiniteCampfire(worldId);
+
+// BILLING
+await api.getSubscription();
+await api.getPlaytime();
+```
+
+### State Changes Are Deltas
+
+```typescript
+// response.state_changes values are ADD/SUBTRACT, not absolute
+if (result.state_changes.hp) {
+  character.hp += result.state_changes.hp;  // +10 heals, -5 damages
+}
+```
+
 ## Project Structure
 
 ```
@@ -59,28 +126,6 @@ textlands-frontend/
 
 Add new themes in `lib/themes/index.ts`.
 
-## API Client
-
-All backend calls go through `lib/api.ts`:
-
-```typescript
-import * as api from "@/lib/api";
-
-// Character
-await api.createCharacter({ name, race, class });
-await api.listCharacters();
-
-// Actions
-await api.look(characterId);
-await api.move(characterId, "north");
-await api.talk(characterId, npcId);
-await api.performAction(characterId, "search the room");
-
-// Combat
-await api.startCombat(characterId, enemyIds);
-await api.combatAction(sessionId, characterId, "attack", targetId);
-```
-
 ## Demo Mode
 
 Works without backend - falls back to canned responses. Good for UI development.
@@ -94,5 +139,5 @@ NEXT_PUBLIC_API_URL=https://api.textlands.com
 
 ## Related
 
-- **Backend:** [Matt-Sandbox/side-projects/world-forge/api](https://github.com/mattrhodes77/Matt-Sandbox/tree/main/side-projects/world-forge/api)
-- **Planning:** [Matt-Sandbox/side-projects/world-forge/PLANNING.md](https://github.com/mattrhodes77/Matt-Sandbox/blob/main/side-projects/world-forge/PLANNING.md)
+- **Backend:** Matt-Sandbox/side-projects/textlands
+- **Backend Docs:** Matt-Sandbox/side-projects/textlands/docs/FRONTEND_INTEGRATION.md

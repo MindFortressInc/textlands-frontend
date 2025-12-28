@@ -241,9 +241,42 @@ export interface CampfireResponse {
 // Account prompt reason types
 export type AccountPromptReason = 'nsfw_unlock' | 'death_recovery' | 'time_limit';
 
+/**
+ * State changes from actions.
+ * IMPORTANT: All numeric values are DELTAS (add/subtract), not absolute values.
+ * Apply as: character.hp += state_changes.hp
+ */
+export interface StateChanges {
+  hp?: number;       // HP delta (positive = heal, negative = damage)
+  mp?: number;       // MP delta
+  xp?: number;       // XP gained
+  gold?: number;     // Gold delta (legacy, use currency for infinite worlds)
+  items?: string[];  // Items added to inventory
+  currency?: {       // Regional currency (infinite worlds)
+    amount: number;
+    currency_name: string;
+    currency_symbol: string;
+    new_balance: number;
+  };
+  inventory?: string[];     // Full inventory list (when updated)
+  location?: string;        // New location name
+  npc_killed?: {            // When an NPC is killed
+    entity_id: string;
+    npc_name: string;
+    tier: 'common' | 'named' | 'legendary';
+    bounty_created?: {
+      id: string;
+      amount: number;
+      reason: string;
+    };
+    reputation_change?: number;
+    respawn_at?: string;
+  };
+}
+
 export interface DoActionResponse {
   narrative: string;
-  state_changes: Record<string, unknown>;
+  state_changes: StateChanges;
   suggested_actions: string[];
   mood?: string;
   character?: Character;
@@ -497,4 +530,80 @@ export interface NegotiationRequest {
 export interface SceneActionRequest {
   action: string;
   scene_id?: string;
+}
+
+// ============ CONSEQUENCE SYSTEM ============
+
+// Bounty on a player for crimes committed
+export interface Bounty {
+  id: string;
+  world_id: string;
+  target_player_id: string;
+  target_display_name?: string;
+  crime_type: string;
+  crime_description: string;
+  bounty_amount: number;
+  status: "active" | "claimed" | "expired" | "paid_off";
+  posted_at: string;
+  expires_at?: string;
+  claimed_by_player_id?: string;
+  claimed_at?: string;
+  victim_entity_id?: string;
+  victim_name?: string;
+}
+
+// Infraction / criminal record entry
+export interface Infraction {
+  id: string;
+  world_id: string;
+  player_id: string;
+  crime_type: string;
+  description: string;
+  severity: "minor" | "moderate" | "serious" | "heinous";
+  occurred_at: string;
+  location_name?: string;
+  victim_entity_id?: string;
+  victim_name?: string;
+  bounty_id?: string;
+  resolved: boolean;
+  resolved_at?: string;
+}
+
+// NPC death record
+export interface NpcDeath {
+  id: string;
+  world_id: string;
+  entity_id: string;
+  entity_name: string;
+  killed_by_player_id?: string;
+  killed_by_display_name?: string;
+  cause_of_death: string;
+  died_at: string;
+  respawn_at?: string;
+  respawned: boolean;
+  location_name?: string;
+}
+
+// Claim bounty response
+export interface ClaimBountyResponse {
+  success: boolean;
+  bounty: Bounty;
+  reward_amount: number;
+  message: string;
+}
+
+// Pay off bounty response
+export interface PayOffBountyResponse {
+  success: boolean;
+  bounty: Bounty;
+  amount_paid: number;
+  message: string;
+}
+
+// Process respawns response
+export interface ProcessRespawnsResponse {
+  success: boolean;
+  respawned_count: number;
+  respawned_entities: string[];
+  message: string;
 }

@@ -23,3 +23,6 @@ export { EntityTimelineModal } from "./EntityTimelineModal";
 export { WorldTemplatesModal } from "./WorldTemplatesModal";
 export { EntityGenerationModal } from "./EntityGenerationModal";
 export { WorldCreationModal } from "./WorldCreationModal";
+export { BountyBoard } from "./BountyBoard";
+export { WantedStatus } from "./WantedStatus";
+export { PlayerRecord } from "./PlayerRecord";

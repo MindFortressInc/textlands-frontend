@@ -2,20 +2,13 @@
 
 import type {
   Character,
-  LookResponse,
-  MoveResponse,
-  TalkResponse,
-  ActionResponse,
   CombatSession,
-  CombatActionResponse,
   Genre,
   World,
   WorldsByGenre,
   CampfireResponse,
   DoActionResponse,
   IntimacyResponse,
-  NegotiationRequest,
-  SceneActionRequest,
   ExplainResponse,
   InfiniteWorld,
   WorldTemplate,
@@ -25,6 +18,12 @@ import type {
   LeaderboardEntry,
   InfiniteCampfireResponse,
   InfiniteCampfireCharacter,
+  Bounty,
+  Infraction,
+  NpcDeath,
+  ClaimBountyResponse,
+  PayOffBountyResponse,
+  ProcessRespawnsResponse,
 } from "@/types/game";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
@@ -66,7 +65,8 @@ export interface SessionInfo {
 
 export interface StartSessionRequest {
   world_id?: string;
-  character_id?: string;
+  entity_id?: string;  // Character/entity to embody (from campfire)
+  character_id?: string;  // Deprecated alias for entity_id
 }
 
 export interface StartSessionResponse {
@@ -142,76 +142,9 @@ export async function getCharacter(characterId: string): Promise<Character> {
   return fetchAPI<Character>(`/characters/${characterId}`);
 }
 
-// Action endpoints
-export async function look(characterId: string): Promise<LookResponse> {
-  return fetchAPI<LookResponse>("/actions/look", {
-    method: "POST",
-    body: JSON.stringify({ character_id: characterId }),
-  });
-}
-
-export async function move(
-  characterId: string,
-  destination: string
-): Promise<MoveResponse> {
-  return fetchAPI<MoveResponse>("/actions/move", {
-    method: "POST",
-    body: JSON.stringify({ character_id: characterId, destination }),
-  });
-}
-
-export async function talk(
-  characterId: string,
-  npcId: string,
-  message?: string
-): Promise<TalkResponse> {
-  return fetchAPI<TalkResponse>(`/actions/talk/${npcId}`, {
-    method: "POST",
-    body: JSON.stringify({ character_id: characterId, message }),
-  });
-}
-
-export async function performAction(
-  characterId: string,
-  action: string
-): Promise<ActionResponse> {
-  return fetchAPI<ActionResponse>("/actions/action", {
-    method: "POST",
-    body: JSON.stringify({ character_id: characterId, action }),
-  });
-}
-
-// Combat endpoints
-export async function startCombat(
-  characterId: string,
-  enemyIds: string[]
-): Promise<CombatSession> {
-  return fetchAPI<CombatSession>("/combat/start", {
-    method: "POST",
-    body: JSON.stringify({ character_id: characterId, enemy_ids: enemyIds }),
-  });
-}
-
+// Combat state polling (actions go through doAction)
 export async function getCombatState(sessionId: string): Promise<CombatSession> {
   return fetchAPI<CombatSession>(`/combat/${sessionId}`);
-}
-
-export async function combatAction(
-  sessionId: string,
-  characterId: string,
-  action: "attack" | "defend" | "skill" | "item" | "flee",
-  targetId?: string,
-  skillName?: string
-): Promise<CombatActionResponse> {
-  return fetchAPI<CombatActionResponse>(`/combat/${sessionId}/action`, {
-    method: "POST",
-    body: JSON.stringify({
-      character_id: characterId,
-      action,
-      target_id: targetId,
-      skill_name: skillName,
-    }),
-  });
 }
 
 export async function getActiveCombat(
@@ -241,56 +174,7 @@ export async function doAction(action: string): Promise<DoActionResponse> {
   });
 }
 
-// Intimacy / Relationship dynamics endpoints
-
-export async function getRelationshipStatus(npcId: string): Promise<IntimacyResponse> {
-  return fetchAPI<IntimacyResponse>(`/intimacy/relationship/${npcId}`);
-}
-
-export async function getIntimacyPreferences(): Promise<IntimacyResponse> {
-  return fetchAPI<IntimacyResponse>("/intimacy/preferences");
-}
-
-export async function startScene(npcId: string): Promise<IntimacyResponse> {
-  return fetchAPI<IntimacyResponse>("/intimacy/scene/start", {
-    method: "POST",
-    body: JSON.stringify({ npc_id: npcId }),
-  });
-}
-
-export async function negotiateScene(
-  negotiation: NegotiationRequest
-): Promise<IntimacyResponse> {
-  return fetchAPI<IntimacyResponse>("/intimacy/scene/negotiate", {
-    method: "POST",
-    body: JSON.stringify(negotiation),
-  });
-}
-
-export async function sceneAction(
-  request: SceneActionRequest
-): Promise<IntimacyResponse> {
-  return fetchAPI<IntimacyResponse>("/intimacy/scene/action", {
-    method: "POST",
-    body: JSON.stringify(request),
-  });
-}
-
-export async function invokeSafeword(): Promise<IntimacyResponse> {
-  return fetchAPI<IntimacyResponse>("/intimacy/scene/safeword", {
-    method: "POST",
-  });
-}
-
-export async function completeScene(
-  aftercareQuality: "minimal" | "standard" | "extended" = "standard"
-): Promise<IntimacyResponse> {
-  return fetchAPI<IntimacyResponse>(
-    `/intimacy/scene/complete?aftercare_quality=${aftercareQuality}`,
-    { method: "POST" }
-  );
-}
-
+// Intimacy state polling (actions go through doAction)
 export async function getActiveScene(guestId?: string): Promise<IntimacyResponse> {
   const params = guestId ? `?guest_id=${guestId}` : "";
   return fetchAPI<IntimacyResponse>(`/intimacy/active${params}`);
@@ -476,27 +360,6 @@ export async function claimCharacter(
     `/infinite/worlds/${worldId}/campfire/claim/${characterId}?player_id=${playerId}`,
     { method: "POST" }
   );
-}
-
-// Start session in an infinite world with a selected entity
-export interface InfiniteSessionRequest {
-  world_id: string;
-  entity_id: string;
-}
-
-export interface InfiniteSessionResponse {
-  session: SessionInfo;
-  message: string;
-  opening_narrative: string;
-}
-
-export async function startInfiniteSession(
-  request: InfiniteSessionRequest
-): Promise<InfiniteSessionResponse> {
-  return fetchAPI<InfiniteSessionResponse>("/infinite/session/start", {
-    method: "POST",
-    body: JSON.stringify(request),
-  });
 }
 
 // Create custom character at campfire
@@ -732,20 +595,6 @@ export async function endGuestSession(): Promise<{ success: boolean }> {
   });
 }
 
-// ============ ADDITIONAL ACTIONS API ============
-
-export async function restAction(): Promise<DoActionResponse> {
-  return fetchAPI<DoActionResponse>("/actions/rest", {
-    method: "POST",
-  });
-}
-
-export async function inventoryAction(): Promise<DoActionResponse> {
-  return fetchAPI<DoActionResponse>("/actions/inventory", {
-    method: "POST",
-  });
-}
-
 // ============ BILLING API ============
 
 // Subscription types
@@ -870,6 +719,55 @@ export async function unlockFateReroll(request?: UnlockRequest): Promise<UnlockR
 
 export async function unlockPlaytime(): Promise<UnlockResponse> {
   return fetchAPI<UnlockResponse>("/billing/unlock/playtime", {
+    method: "POST",
+  });
+}
+
+// ============ CONSEQUENCE SYSTEM API ============
+
+// Get bounty board for a world
+export async function getWorldBounties(worldId: string): Promise<Bounty[]> {
+  return fetchAPI<Bounty[]>(`/worlds/${worldId}/bounties`);
+}
+
+// Get bounties on a specific player
+export async function getPlayerBounties(
+  worldId: string,
+  playerId: string
+): Promise<Bounty[]> {
+  return fetchAPI<Bounty[]>(`/worlds/${worldId}/bounties/player/${playerId}`);
+}
+
+// Claim a bounty (capture the target)
+export async function claimBounty(bountyId: string): Promise<ClaimBountyResponse> {
+  return fetchAPI<ClaimBountyResponse>(`/bounties/${bountyId}/claim`, {
+    method: "POST",
+  });
+}
+
+// Pay off a bounty (clear your name)
+export async function payOffBounty(bountyId: string): Promise<PayOffBountyResponse> {
+  return fetchAPI<PayOffBountyResponse>(`/bounties/${bountyId}/pay-off`, {
+    method: "POST",
+  });
+}
+
+// Get player's criminal record
+export async function getPlayerInfractions(
+  worldId: string,
+  playerId: string
+): Promise<Infraction[]> {
+  return fetchAPI<Infraction[]>(`/worlds/${worldId}/infractions/player/${playerId}`);
+}
+
+// Get recent NPC deaths in a world
+export async function getRecentDeaths(worldId: string): Promise<NpcDeath[]> {
+  return fetchAPI<NpcDeath[]>(`/worlds/${worldId}/deaths/recent`);
+}
+
+// Manually trigger respawn processing (admin/debug)
+export async function processRespawns(worldId: string): Promise<ProcessRespawnsResponse> {
+  return fetchAPI<ProcessRespawnsResponse>(`/worlds/${worldId}/process-respawns`, {
     method: "POST",
   });
 }

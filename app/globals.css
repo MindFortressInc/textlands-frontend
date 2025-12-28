@@ -421,3 +421,79 @@ body {
   }
 }
 
+/* ========== BOUNTY SYSTEM STYLES ========== */
+
+/* Wanted poster torn paper effect */
+.bounty-poster {
+  position: relative;
+  background:
+    linear-gradient(135deg, var(--stone) 0%, var(--shadow) 100%);
+}
+
+.bounty-poster::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--amber-dim) 20%,
+    var(--amber-dim) 80%,
+    transparent 100%
+  );
+  opacity: 0.4;
+}
+
+/* Glow effect on hover for themes with glow enabled */
+.theme-glow .bounty-poster:hover {
+  box-shadow:
+    0 0 20px rgba(239, 68, 68, 0.15),
+    inset 0 0 30px rgba(0, 0, 0, 0.3);
+}
+
+/* Wanted status pulse animation */
+@keyframes wanted-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+  }
+}
+
+.wanted-status button {
+  animation: wanted-pulse 2s ease-in-out infinite;
+}
+
+/* Criminal record severity glow */
+.theme-glow [data-severity="heinous"] {
+  text-shadow: 0 0 10px var(--crimson);
+}
+
+/* Stagger animation for bounty cards */
+.bounty-poster {
+  opacity: 0;
+  animation: bounty-appear 0.4s ease-out forwards;
+}
+
+@keyframes bounty-appear {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.grid > .bounty-poster:nth-child(1) { animation-delay: 0.1s; }
+.grid > .bounty-poster:nth-child(2) { animation-delay: 0.2s; }
+.grid > .bounty-poster:nth-child(3) { animation-delay: 0.3s; }
+.grid > .bounty-poster:nth-child(4) { animation-delay: 0.4s; }
+.grid > .bounty-poster:nth-child(5) { animation-delay: 0.5s; }
+.grid > .bounty-poster:nth-child(6) { animation-delay: 0.6s; }
+

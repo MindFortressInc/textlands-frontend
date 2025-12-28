@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { GameLog, CommandInput, CharacterPanel, QuickActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal, AuthModal, BillingPanel, InfluenceBadge, LeaderboardModal, CharacterCreationModal, PlayerStatsModal, EntityTimelineModal, WorldTemplatesModal, EntityGenerationModal, WorldCreationModal } from "@/components/game";
+import { GameLog, CommandInput, CharacterPanel, QuickActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal, AuthModal, BillingPanel, InfluenceBadge, LeaderboardModal, CharacterCreationModal, PlayerStatsModal, EntityTimelineModal, WorldTemplatesModal, EntityGenerationModal, WorldCreationModal, BountyBoard, WantedStatus, PlayerRecord } from "@/components/game";
 import { ThemePicker } from "@/components/ThemePicker";
 import type { Character, GameLogEntry, Genre, World, WorldsByGenre, CampfireResponse, CharacterOption, ActiveScene as ActiveSceneType, NegotiationRequest, CombatSession, ReasoningInfo, InfiniteWorld, InfiniteCampfireResponse, InfiniteCampfireCharacter, AccountPromptReason, WorldTemplate } from "@/types/game";
 import * as api from "@/lib/api";
@@ -841,6 +841,10 @@ export default function GamePage() {
   const [worldCreationOpen, setWorldCreationOpen] = useState(false);
   const [selectedWorldTemplate, setSelectedWorldTemplate] = useState<WorldTemplate | null>(null);
 
+  // Bounty system state
+  const [bountyBoardOpen, setBountyBoardOpen] = useState(false);
+  const [playerRecordOpen, setPlayerRecordOpen] = useState(false);
+
   // Auth modal state (magic link login)
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalReason, setAuthModalReason] = useState<AccountPromptReason | undefined>();
@@ -1090,7 +1094,7 @@ export default function GamePage() {
     // For non-demo mode, start session via the API
     if (!isDemo) {
       try {
-        const { session, opening_narrative } = await api.startInfiniteSession({
+        const { session, opening_narrative } = await api.startSession({
           world_id: selectedWorld.id,
           entity_id: char.id,
         });
@@ -1401,6 +1405,17 @@ export default function GamePage() {
             setEntityTimelineName(result.examined_entity_name || null);
           }
 
+          // Handle NPC kill consequences
+          if (result.state_changes?.npc_killed) {
+            const kill = result.state_changes.npc_killed;
+            if (kill.bounty_created) {
+              addLog("system", `⚠ BOUNTY PLACED: ${kill.bounty_created.amount}g for ${kill.bounty_created.reason}`);
+            }
+            if (kill.reputation_change && kill.reputation_change < 0) {
+              addLog("system", `Your reputation has suffered...`);
+            }
+          }
+
           if (result.error) {
             addLog("system", result.error);
           }
@@ -1460,44 +1475,47 @@ export default function GamePage() {
 
     setProcessing(true);
     try {
-      const result = await api.startScene(npcId);
-      if (result.success && result.scene) {
-        setNegotiating({
-          npc_id: npcId,
-          scene_id: result.scene.id,
-          npc_name: npcName,
-        });
-        if (result.narrative) {
-          addLog("intimate", result.narrative);
+      const result = await api.doAction(`initiate intimate moment with ${npcName}`);
+      addLog("intimate", result.narrative);
+
+      // Poll for scene state after action
+      if (character) {
+        const sceneResult = await api.getActiveScene(character.id);
+        if (sceneResult.scene) {
+          setNegotiating({
+            npc_id: npcId,
+            scene_id: sceneResult.scene.id,
+            npc_name: npcName,
+          });
         }
-      } else {
-        addLog("system", result.error || "Cannot initiate scene with this character.");
       }
     } catch (error) {
       addLog("system", `Error: ${error instanceof Error ? error.message : "Unknown"}`);
     }
     setProcessing(false);
-  }, [isDemo, addLog]);
+  }, [isDemo, character, addLog]);
 
   const handleNegotiationComplete = useCallback(async (negotiation: NegotiationRequest) => {
     setProcessing(true);
     try {
-      const result = await api.negotiateScene(negotiation);
+      // Express negotiation as natural language
+      const prefs = `proceed with ${negotiation.intensity} intensity as ${negotiation.player_role}`;
+      const result = await api.doAction(prefs);
       setNegotiating(null);
+      addLog("intimate", result.narrative);
 
-      if (result.success && result.scene) {
-        setActiveScene(result.scene);
-        if (result.narrative) {
-          addLog("intimate", result.narrative);
+      // Poll for updated scene state
+      if (character) {
+        const sceneResult = await api.getActiveScene(character.id);
+        if (sceneResult.scene) {
+          setActiveScene(sceneResult.scene);
         }
-      } else {
-        addLog("system", result.error || "Negotiation failed.");
       }
     } catch (error) {
       addLog("system", `Error: ${error instanceof Error ? error.message : "Unknown"}`);
     }
     setProcessing(false);
-  }, [addLog]);
+  }, [character, addLog]);
 
   const handleNegotiationCancel = useCallback(() => {
     setNegotiating(null);
@@ -1509,33 +1527,31 @@ export default function GamePage() {
 
     setProcessing(true);
     try {
-      const result = await api.sceneAction({ action, scene_id: activeScene.id });
+      const result = await api.doAction(action);
+      addLog("intimate", result.narrative);
 
-      if (result.success && result.scene) {
-        setActiveScene(result.scene);
-        if (result.narrative) {
-          addLog("intimate", result.narrative);
+      // Poll for updated scene state
+      if (character) {
+        const sceneResult = await api.getActiveScene(character.id);
+        if (sceneResult.scene) {
+          setActiveScene(sceneResult.scene);
+        } else {
+          // Scene ended
+          setActiveScene(null);
         }
-      } else {
-        addLog("system", result.error || "Action failed.");
       }
     } catch (error) {
       addLog("system", `Error: ${error instanceof Error ? error.message : "Unknown"}`);
     }
     setProcessing(false);
-  }, [activeScene, addLog]);
+  }, [activeScene, character, addLog]);
 
   const handleSafeword = useCallback(async () => {
     setProcessing(true);
     try {
-      const result = await api.invokeSafeword();
+      const result = await api.doAction("safeword - stop immediately");
       setActiveScene(null);
-
-      if (result.narrative) {
-        addLog("system", result.narrative);
-      } else {
-        addLog("system", "Scene ended safely.");
-      }
+      addLog("system", result.narrative || "Scene ended safely.");
     } catch (error) {
       addLog("system", `Error: ${error instanceof Error ? error.message : "Unknown"}`);
       setActiveScene(null);
@@ -1546,15 +1562,9 @@ export default function GamePage() {
   const handleSceneComplete = useCallback(async (aftercareQuality: "minimal" | "standard" | "extended") => {
     setProcessing(true);
     try {
-      const result = await api.completeScene(aftercareQuality);
+      const result = await api.doAction(`complete scene with ${aftercareQuality} aftercare`);
       setActiveScene(null);
-
-      if (result.narrative) {
-        addLog("intimate", result.narrative);
-      }
-      if (result.relationship) {
-        addLog("system", `Your bond with ${result.relationship.npc_name} has ${result.relationship.level === "bonded" ? "deepened into something profound" : "grown stronger"}.`);
-      }
+      addLog("intimate", result.narrative);
     } catch (error) {
       addLog("system", `Error: ${error instanceof Error ? error.message : "Unknown"}`);
       setActiveScene(null);
@@ -1562,7 +1572,7 @@ export default function GamePage() {
     setProcessing(false);
   }, [addLog]);
 
-  // ========== COMBAT HANDLERS ==========
+  // ========== COMBAT HANDLERS (all actions flow through doAction) ==========
 
   const handleCombatAction = useCallback(async (
     action: "attack" | "defend" | "skill" | "item" | "flee",
@@ -1572,12 +1582,10 @@ export default function GamePage() {
 
     setProcessing(true);
     try {
-      const result = await api.combatAction(
-        activeCombat.id,
-        character.id,
-        action,
-        targetId
-      );
+      // Convert structured action to natural language
+      const target = activeCombat.participants.find(p => p.id === targetId);
+      const actionText = target ? `${action} ${target.name}` : action;
+      const result = await api.doAction(actionText);
 
       setCombatNarrative(result.narrative);
       addLog("combat", result.narrative);
@@ -1591,7 +1599,7 @@ export default function GamePage() {
         return;
       }
 
-      // Update combat state
+      // Poll for updated combat state
       const updatedCombat = await api.getCombatState(activeCombat.id);
       setActiveCombat(updatedCombat);
 
@@ -1846,6 +1854,20 @@ export default function GamePage() {
         reason={authModalReason}
         incentive={authModalIncentive}
       />
+      <BountyBoard
+        isOpen={bountyBoardOpen}
+        onClose={() => setBountyBoardOpen(false)}
+        worldId={selectedWorld?.id || null}
+        playerId={playerId}
+        isDemo={isDemo}
+      />
+      <PlayerRecord
+        isOpen={playerRecordOpen}
+        onClose={() => setPlayerRecordOpen(false)}
+        worldId={selectedWorld?.id || null}
+        playerId={playerId}
+        isDemo={isDemo}
+      />
 
       {/* Header */}
       <header className="bg-[var(--shadow)] border-b border-[var(--slate)] px-3 py-2 md:px-4 flex items-center justify-between shrink-0 pt-[max(0.5rem,env(safe-area-inset-top))]">
@@ -1857,6 +1879,16 @@ export default function GamePage() {
         </div>
         <div className="flex items-center gap-3">
           <span className="text-[var(--mist)] text-xs hidden sm:block">{zoneName}</span>
+          {/* Wanted status indicator */}
+          <div className="relative hidden sm:block">
+            <WantedStatus
+              worldId={selectedWorld?.id || null}
+              playerId={playerId}
+              isDemo={isDemo}
+              onViewBounties={() => setBountyBoardOpen(true)}
+              onViewRecord={() => setPlayerRecordOpen(true)}
+            />
+          </div>
           {/* Influence badge - desktop only */}
           {influence && (
             <div className="hidden sm:block">
@@ -1868,6 +1900,13 @@ export default function GamePage() {
               />
             </div>
           )}
+          <button
+            onClick={() => setBountyBoardOpen(true)}
+            className="text-[var(--mist)] hover:text-[var(--crimson)] transition-colors text-xs hidden sm:block"
+            title="Bounty Board"
+          >
+            ☠
+          </button>
           <button
             onClick={() => setEntityGenerationOpen(true)}
             className="text-[var(--mist)] hover:text-[var(--amber)] transition-colors text-xs hidden sm:block"
