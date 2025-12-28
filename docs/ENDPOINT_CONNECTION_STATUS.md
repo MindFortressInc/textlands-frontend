@@ -1,224 +1,183 @@
 # TextLands API Endpoint Connection Status
 
-**Last Updated:** 2025-12-27
+**Last Updated:** 2025-12-28
 **Purpose:** Track integration status of all backend API endpoints with frontend
 
+## Architecture Note
+
+TextLands is a "fancy terminal" - the frontend is basically a display layer. **90% of gameplay goes through `POST /actions/do`**. Most other endpoints exist for:
+- Multi-frontend support (GPT, Slack, SMS, Discord, CLI)
+- Backend-internal admin tools
+- Optional UI enhancements
+
 ## Legend
-- ✅ **Connected** - Endpoint is integrated in `lib/api.ts`
-- 🚀 **Actively Used in UI** - Endpoint is connected AND used in user-facing components
-- ⚠️ **Partial** - Endpoint exists but not fully utilized
-- ❌ **Not Connected** - Endpoint not yet integrated
-- 🔍 **Needs Review** - Connection status unclear
+- 🚀 **Core Frontend** - Essential for web frontend operation
+- ✅ **Nice-to-Have UI** - Connected with UI, but not core gameplay
+- 🗑️ **Removed** - Deleted from api.ts (legacy/backend-internal)
 
 ---
 
-## Health & Session Endpoints
+## Core Frontend Endpoints (28 total)
 
-| Method | Endpoint | Status | API Function | Notes |
-|--------|----------|--------|--------------|-------|
-| GET | `/health` | ✅ | `checkHealth()` | Used in init to detect demo mode |
-| GET | `/session/current` | 🚀 | `getSession()` | Loads player ID on init |
-| POST | `/session/start` | ✅ | `startSession()` | Legacy curated worlds session |
-| POST | `/session/claim` | ✅ | `claimGuestSession()` | Claim guest session to account |
-| DELETE | `/session/guest` | ✅ | `endGuestSession()` | End guest session |
-| GET | `/session/preferences` | 🚀 | `getPreferences()` | Show reasoning toggle |
-| POST | `/session/preferences` | ✅ | `updatePreferences()` | Update reasoning prefs |
+These are the endpoints the web frontend actually needs.
+
+### Session Flow (7)
+| Method | Endpoint | API Function | Status |
+|--------|----------|--------------|--------|
+| GET | `/health` | `checkHealth()` | 🚀 Demo mode detection |
+| GET | `/session/current` | `getSession()` | 🚀 Load player on init |
+| POST | `/session/start` | `startSession()` | 🚀 Legacy curated (still works) |
+| POST | `/session/claim` | `claimGuestSession()` | 🚀 Claim guest to account |
+| DELETE | `/session/guest` | `endGuestSession()` | 🚀 End guest session |
+| GET | `/session/preferences` | `getPreferences()` | 🚀 Reasoning toggle |
+| POST | `/session/preferences` | `updatePreferences()` | 🚀 Save reasoning pref |
+
+### World Browsing (4)
+| Method | Endpoint | API Function | Status |
+|--------|----------|--------------|--------|
+| GET | `/infinite/worlds/grouped` | `getInfiniteWorldsGrouped()` | 🚀 Main world browser |
+| GET | `/infinite/worlds/{id}` | `getInfiniteWorld()` | 🚀 World details |
+| POST | `/infinite/worlds` | `createWorld()` | 🚀 User world creation |
+| GET | `/infinite/worlds/{id}/campfire` | `getInfiniteCampfire()` | 🚀 Character selection |
+
+### Session Start (2)
+| Method | Endpoint | API Function | Status |
+|--------|----------|--------------|--------|
+| POST | `/infinite/session/start` | `startInfiniteSession()` | 🚀 Start game with entity |
+| POST | `/infinite/worlds/{id}/campfire/create` | `createCampfireCharacter()` | 🚀 Custom character creation |
+
+### Core Gameplay (2)
+| Method | Endpoint | API Function | Status |
+|--------|----------|--------------|--------|
+| POST | `/actions/do` | `doAction()` | 🚀 **THE main endpoint (90%)** |
+| GET | `/actions/{id}/explain` | `explainAction()` | 🚀 On-demand reasoning |
+
+### Combat Flow (2)
+| Method | Endpoint | API Function | Status |
+|--------|----------|--------------|--------|
+| GET | `/combat/{session_id}` | `getCombatState()` | 🚀 CombatPanel state |
+| GET | `/combat/active/{character_id}` | `getActiveCombat()` | 🚀 Check active combat |
+
+### Scene Flow (5)
+| Method | Endpoint | API Function | Status |
+|--------|----------|--------------|--------|
+| GET | `/intimacy/active` | `getActiveScene()` | 🚀 Check active scene |
+| POST | `/intimacy/scene/negotiate` | `negotiateScene()` | 🚀 SceneNegotiation |
+| POST | `/intimacy/scene/action` | `sceneAction()` | 🚀 ActiveScene |
+| POST | `/intimacy/scene/safeword` | `invokeSafeword()` | 🚀 Safety exit |
+| POST | `/intimacy/scene/complete` | `completeScene()` | 🚀 End scene |
+
+### NSFW Preferences (3)
+| Method | Endpoint | API Function | Status |
+|--------|----------|--------------|--------|
+| GET | `/infinite/player/{id}/preferences` | `getPlayerPreferences()` | 🚀 NSFW state |
+| POST | `/infinite/player/{id}/preferences` | `updatePlayerPreferences()` | 🚀 Toggle NSFW |
+| POST | `/infinite/player/{id}/nsfw-prompt` | `handleNsfwPrompt()` | 🚀 Age verification |
+
+### Billing (12)
+| Method | Endpoint | API Function | Status |
+|--------|----------|--------------|--------|
+| GET | `/billing/subscription` | `getSubscription()` | 🚀 Check subscription |
+| POST | `/billing/subscription/create` | `createSubscription()` | 🚀 Start checkout |
+| POST | `/billing/subscription/cancel` | `cancelSubscription()` | 🚀 Cancel subscription |
+| GET | `/billing/tokens` | `getTokenBalance()` | 🚀 Token balance |
+| POST | `/billing/tokens/purchase` | `purchaseTokens()` | 🚀 Buy tokens |
+| GET | `/billing/playtime` | `getPlaytime()` | 🚀 Playtime remaining |
+| GET | `/billing/free-uses` | `getFreeUses()` | 🚀 Free uses remaining |
+| GET | `/billing/usage` | `getUsage()` | 🚀 Monthly usage |
+| POST | `/billing/unlock/nsfw` | `unlockNsfw()` | 🚀 Unlock NSFW |
+| POST | `/billing/unlock/death-recovery` | `unlockDeathRecovery()` | 🚀 Unlock death recovery |
+| POST | `/billing/unlock/fate-reroll` | `unlockFateReroll()` | 🚀 Unlock fate reroll |
+| POST | `/billing/unlock/playtime` | `unlockPlaytime()` | 🚀 Unlock extra playtime |
 
 ---
 
-## Infinite Worlds Endpoints
+## Nice-to-Have UI Endpoints (17 total)
 
-### World Browsing
-| Method | Endpoint | Status | API Function | Notes |
-|--------|----------|--------|--------------|-------|
-| GET | `/infinite/worlds` | ✅ | `getInfiniteWorlds()` | Flat world list (deprecated) |
-| GET | `/infinite/worlds/grouped` | 🚀 | `getInfiniteWorldsGrouped()` | Worlds grouped by realm - used in WorldBrowser |
-| GET | `/infinite/worlds/{world_id}` | ✅ | `getInfiniteWorld()` | Single world details |
-| POST | `/infinite/worlds` | ❌ | - | Create new world |
+These have UI but aren't core gameplay. Could be removed to simplify.
 
-### Templates
-| Method | Endpoint | Status | API Function | Notes |
-|--------|----------|--------|--------------|-------|
-| GET | `/infinite/templates` | ✅ | `getWorldTemplates()` | List world templates |
-| GET | `/infinite/templates/{slug}` | ✅ | `getWorldTemplate()` | Template details |
-
-### Campfire (Character Selection)
-| Method | Endpoint | Status | API Function | Notes |
-|--------|----------|--------|--------------|-------|
-| GET | `/infinite/worlds/{world_id}/campfire` | 🚀 | `getInfiniteCampfire()` | Character selection - used in InfiniteCampfireView |
-| POST | `/infinite/worlds/{world_id}/campfire/create` | ✅ | `createCampfireCharacter()` | Create custom character |
-| POST | `/infinite/worlds/{world_id}/campfire/claim/{character_id}` | ✅ | `claimCharacter()` | Legacy - replaced by startInfiniteSession |
-
-### Session
-| Method | Endpoint | Status | API Function | Notes |
-|--------|----------|--------|--------------|-------|
-| POST | `/infinite/session/start` | 🚀 | `startInfiniteSession()` | Start game with entity - used in selectInfiniteCharacter |
-
-### Entities
-| Method | Endpoint | Status | API Function | Notes |
-|--------|----------|--------|--------------|-------|
-| POST | `/infinite/worlds/{world_id}/generate` | ✅ | `generateEntity()` | Generate world entity |
-| GET | `/infinite/worlds/{world_id}/entities` | ✅ | `getWorldEntities()` | List world entities |
-| GET | `/infinite/entities/{entity_id}` | ✅ | `getEntity()` | Entity details |
-| GET | `/infinite/entities/{entity_id}/timeline` | ✅ | `getEntityTimeline()` | Entity history |
-| POST | `/infinite/entities/{entity_id}/timeline` | ✅ | `addEntityTimelineEvent()` | Add timeline event |
-| PATCH | `/infinite/entities/{entity_id}/state` | ✅ | `updateEntityState()` | Update entity state |
-
-### Location Interaction
-| Method | Endpoint | Status | API Function | Notes |
-|--------|----------|--------|--------------|-------|
-| GET | `/infinite/entities/{entity_id}/footprints` | ✅ | `getLocationFootprints()` | Who visited location |
-| POST | `/infinite/entities/{entity_id}/messages` | ✅ | `leaveLocationMessage()` | Leave message at location |
-| POST | `/infinite/entities/{entity_id}/visit` | ✅ | `recordLocationVisit()` | Record location visit |
+### Entity & World Tools
+| Method | Endpoint | API Function | UI Component |
+|--------|----------|--------------|--------------|
+| POST | `/infinite/worlds/{id}/generate` | `generateEntity()` | EntityGenerationModal |
+| GET | `/infinite/worlds/{id}/entities` | `getWorldEntities()` | EntityGenerationModal |
+| GET | `/infinite/entities/{id}` | `getEntity()` | Entity modals |
+| GET | `/infinite/templates` | `getWorldTemplates()` | WorldTemplatesModal |
+| GET | `/infinite/templates/{slug}` | `getWorldTemplate()` | WorldTemplatesModal |
 
 ### Leaderboards & Stats
-| Method | Endpoint | Status | API Function | Notes |
-|--------|----------|--------|--------------|-------|
-| GET | `/infinite/worlds/{world_id}/leaderboard` | ✅ | `getWorldLeaderboard()` | World trailblazer rankings |
-| GET | `/infinite/leaderboard/global` | ✅ | `getGlobalLeaderboard()` | Global rankings |
-| GET | `/infinite/worlds/{world_id}/player/{player_id}/stats` | ✅ | `getPlayerWorldStats()` | Player stats in world |
-| GET | `/infinite/worlds/{world_id}/player/{player_id}/influence` | ✅ | `getPlayerInfluence()` | Player influence/tier |
-| GET | `/infinite/worlds/{world_id}/influence-leaderboard` | ❌ | - | Influence-specific leaderboard |
+| Method | Endpoint | API Function | UI Component |
+|--------|----------|--------------|--------------|
+| GET | `/infinite/worlds/{id}/leaderboard` | `getWorldLeaderboard()` | LeaderboardModal |
+| GET | `/infinite/leaderboard/global` | `getGlobalLeaderboard()` | LeaderboardModal |
+| GET | `/infinite/worlds/{id}/player/{id}/stats` | `getPlayerWorldStats()` | PlayerStatsModal |
+| GET | `/infinite/worlds/{id}/player/{id}/influence` | `getPlayerInfluence()` | CharacterPanel |
+| GET | `/infinite/worlds/{id}/influence-leaderboard` | `getInfluenceLeaderboard()` | LeaderboardModal |
 
-### Player Preferences (NSFW)
-| Method | Endpoint | Status | API Function | Notes |
-|--------|----------|--------|--------------|-------|
-| GET | `/infinite/player/{player_id}/preferences` | 🚀 | `getPlayerPreferences()` | Server-side NSFW prefs - loaded on init |
-| POST | `/infinite/player/{player_id}/preferences` | 🚀 | `updatePlayerPreferences()` | Update NSFW prefs - synced on toggle |
-| POST | `/infinite/player/{player_id}/nsfw-prompt` | 🚀 | `handleNsfwPrompt()` | Handle age verification - synced on accept/reject |
-
----
-
-## Legacy World Selection Endpoints
-
-| Method | Endpoint | Status | API Function | Notes |
-|--------|----------|--------|--------------|-------|
-| GET | `/worlds` | ✅ | `getWorlds()` | Legacy - worlds by genre |
-| GET | `/worlds/genres` | ✅ | `getGenres()` | Legacy - genre list |
-| GET | `/worlds/{world_id}/campfire` | ✅ | `getCampfire()` | Legacy curated campfire |
+### Entity Timeline & Location
+| Method | Endpoint | API Function | UI Component |
+|--------|----------|--------------|--------------|
+| GET | `/infinite/entities/{id}/timeline` | `getEntityTimeline()` | EntityTimelineModal |
+| POST | `/infinite/entities/{id}/timeline` | `addEntityTimelineEvent()` | EntityTimelineModal |
+| PATCH | `/infinite/entities/{id}/state` | `updateEntityState()` | Admin only |
+| GET | `/infinite/entities/{id}/footprints` | `getLocationFootprints()` | CharacterPanel |
+| POST | `/infinite/entities/{id}/messages` | `leaveLocationMessage()` | CharacterPanel |
+| POST | `/infinite/entities/{id}/visit` | `recordLocationVisit()` | Auto by backend |
 
 ---
 
-## Gameplay Action Endpoints
+## Removed from api.ts (15 functions)
 
-| Method | Endpoint | Status | API Function | Notes |
-|--------|----------|--------|--------------|-------|
-| POST | `/actions/do` | 🚀 | `doAction()` | Natural language actions - main gameplay |
-| POST | `/actions/look` | ✅ | `look()` | Look around |
-| POST | `/actions/move` | ✅ | `move()` | Move to location |
-| POST | `/actions/talk/{npc_id}` | ✅ | `talk()` | Talk to NPC |
-| POST | `/actions/action` | ✅ | `performAction()` | Perform action |
-| POST | `/actions/rest` | ✅ | `restAction()` | Rest and recover |
-| POST | `/actions/inventory` | ✅ | `inventoryAction()` | Check inventory |
-| GET | `/actions/{action_id}/explain` | ✅ | `explainAction()` | Explain action outcome |
+These were deleted in the Dec 2025 cleanup.
 
----
+### Legacy Curated World (3)
+| Endpoint | Old Function | Reason |
+|----------|--------------|--------|
+| `GET /worlds/genres` | `getGenres()` | 🗑️ Legacy curated system |
+| `GET /worlds` | `getWorlds()` | 🗑️ Legacy curated system |
+| `GET /worlds/{id}/campfire` | `getCampfire()` | 🗑️ Legacy curated system |
 
-## Combat Endpoints
+### Deprecated (2)
+| Endpoint | Old Function | Reason |
+|----------|--------------|--------|
+| `GET /infinite/worlds` | `getInfiniteWorlds()` | 🗑️ Use `/grouped` instead |
+| `POST /infinite/worlds/{id}/campfire/claim/{char_id}` | `claimCharacter()` | 🗑️ Use `startInfiniteSession()` |
 
-| Method | Endpoint | Status | API Function | Notes |
-|--------|----------|--------|--------------|-------|
-| POST | `/combat/start` | ✅ | `startCombat()` | Start combat |
-| GET | `/combat/{session_id}` | 🚀 | `getCombatState()` | Get combat state - used in CombatPanel |
-| POST | `/combat/{session_id}/action` | 🚀 | `combatAction()` | Combat action - used in CombatPanel |
-| GET | `/combat/active/{character_id}` | ✅ | `getActiveCombat()` | Check for active combat |
+### Legacy Character (3)
+| Endpoint | Old Function | Reason |
+|----------|--------------|--------|
+| `POST /characters` | `createCharacter()` | 🗑️ Use campfire/create |
+| `GET /characters` | `listCharacters()` | 🗑️ Legacy system |
+| `GET /characters/{id}` | `getCharacter()` | 🗑️ Legacy system |
 
----
-
-## Intimacy/Scene Endpoints
-
-| Method | Endpoint | Status | API Function | Notes |
-|--------|----------|--------|--------------|-------|
-| GET | `/intimacy/relationship/{npc_id}` | ✅ | `getRelationshipStatus()` | NPC relationship |
-| GET | `/intimacy/preferences` | ✅ | `getIntimacyPreferences()` | Player intimacy prefs |
-| POST | `/intimacy/scene/start` | ✅ | `startScene()` | Start intimate scene |
-| POST | `/intimacy/scene/negotiate` | 🚀 | `negotiateScene()` | Scene negotiation - SceneNegotiation component |
-| POST | `/intimacy/scene/action` | 🚀 | `sceneAction()` | Scene action - ActiveScene component |
-| POST | `/intimacy/scene/safeword` | 🚀 | `invokeSafeword()` | Invoke safeword |
-| POST | `/intimacy/scene/complete` | 🚀 | `completeScene()` | Complete scene |
-| GET | `/intimacy/active` | ✅ | `getActiveScene()` | Check for active scene |
-
----
-
-## Character Endpoints
-
-| Method | Endpoint | Status | API Function | Notes |
-|--------|----------|--------|--------------|-------|
-| GET | `/characters` | ✅ | `listCharacters()` | List characters |
-| POST | `/characters` | ✅ | `createCharacter()` | Create character |
-| GET | `/characters/{character_id}` | ✅ | `getCharacter()` | Get character |
-
----
-
-## Billing Endpoints
-
-| Method | Endpoint | Status | API Function | Notes |
-|--------|----------|--------|--------------|-------|
-| GET | `/billing/subscription` | 🚀 | `getSubscription()` | Subscription status - BillingPanel |
-| POST | `/billing/subscription/create` | 🚀 | `createSubscription()` | Start checkout |
-| POST | `/billing/subscription/cancel` | 🚀 | `cancelSubscription()` | Cancel subscription |
-| GET | `/billing/tokens` | 🚀 | `getTokenBalance()` | Token balance |
-| POST | `/billing/tokens/purchase` | 🚀 | `purchaseTokens()` | Buy tokens |
-| GET | `/billing/playtime` | 🚀 | `getPlaytime()` | Playtime remaining |
-| GET | `/billing/free-uses` | 🚀 | `getFreeUses()` | Free uses remaining |
-| GET | `/billing/usage` | 🚀 | `getUsage()` | Monthly usage |
-| POST | `/billing/unlock/nsfw` | ✅ | `unlockNsfw()` | Unlock NSFW |
-| POST | `/billing/unlock/death-recovery` | ✅ | `unlockDeathRecovery()` | Unlock death recovery |
-| POST | `/billing/unlock/fate-reroll` | ✅ | `unlockFateReroll()` | Unlock fate reroll |
-| POST | `/billing/unlock/playtime` | ✅ | `unlockPlaytime()` | Unlock extra playtime |
+### Consequence System (7)
+| Endpoint | Old Function | Reason |
+|----------|--------------|--------|
+| `GET /worlds/{id}/bounties` | `getWorldBounties()` | 🗑️ Backend handles via doAction |
+| `GET /worlds/{id}/bounties/player/{id}` | `getPlayerBounties()` | 🗑️ Backend handles via doAction |
+| `POST /bounties/{id}/claim` | `claimBounty()` | 🗑️ Backend handles via doAction |
+| `POST /bounties/{id}/pay-off` | `payOffBounty()` | 🗑️ Backend handles via doAction |
+| `GET /worlds/{id}/infractions/player/{id}` | `getPlayerInfractions()` | 🗑️ Backend handles via doAction |
+| `GET /worlds/{id}/deaths/recent` | `getRecentDeaths()` | 🗑️ Backend handles via doAction |
+| `POST /worlds/{id}/process-respawns` | `processRespawns()` | 🗑️ Admin/debug only |
 
 ---
 
 ## Summary Statistics
 
-### By Status
-| Status | Count | Percentage |
-|--------|-------|------------|
-| 🚀 Actively Used in UI | 24 | 31% |
-| ✅ Connected | 48 | 62% |
-| ❌ Not Connected | 2 | 3% |
-| ⚠️ Partial | 0 | 0% |
+| Category | Count |
+|----------|-------|
+| 🚀 Core Frontend | 28 |
+| ✅ Nice-to-Have UI | 17 |
+| 🗑️ Removed | 15 |
+| **Total in api.ts** | **45** |
 
-### By Category
-| Category | Endpoints | Actively Used |
-|----------|-----------|---------------|
-| Health & Session | 7 | 3 |
-| Infinite Worlds | 26 | 6 |
-| Legacy Worlds | 3 | 0 |
-| Gameplay Actions | 8 | 1 |
-| Combat | 4 | 2 |
-| Intimacy/Scenes | 8 | 4 |
-| Characters | 3 | 0 |
-| Billing | 12 | 8 |
-
-**Total Endpoints:** 74 documented
-**Connected:** 72 (97%)
-**Actively Used:** 24 (32%)
-
----
-
-## Not Connected - Priority
-
-| Endpoint | Purpose | Priority |
-|----------|---------|----------|
-| ~~POST `/infinite/worlds`~~ | Create new world | ✅ `createWorld()` + WorldCreationModal |
-| ~~GET `.../influence-leaderboard`~~ | Influence rankings | ✅ `getInfluenceLeaderboard()` |
-
-**All endpoints now connected!**
-
----
-
-## UI Gaps - Have API but No UI
-
-These endpoints are connected but have no user-facing UI:
-
-1. ~~**Leaderboards**~~ - `getWorldLeaderboard()`, `getGlobalLeaderboard()`, `getPlayerWorldStats()` ✅ LeaderboardModal exists
-2. ~~**Location Interaction**~~ - `getLocationFootprints()`, `leaveLocationMessage()`, `recordLocationVisit()` ✅ CharacterPanel footprints section
-3. ~~**Entity Timeline**~~ - `getEntityTimeline()`, `addEntityTimelineEvent()` ✅ EntityTimelineModal + QuickActions trigger
-4. ~~**Custom Character**~~ - `createCampfireCharacter()` ✅ CharacterCreationModal exists
-5. ~~**Entity Generation**~~ - `generateEntity()`, `getWorldEntities()` ✅ EntityGenerationModal with Forge button
-6. ~~**World Templates**~~ - `getWorldTemplates()`, `getWorldTemplate()` ✅ WorldTemplatesModal + WorldBrowser button
-7. ~~**Player Influence**~~ - `getPlayerInfluence()` ✅ CharacterPanel influence + PlayerStatsModal
+### Before/After
+| Metric | Before | After |
+|--------|--------|-------|
+| Functions in api.ts | 60 | 45 |
+| Types imported | 27 | 12 |
+| Lines of code | ~755 | ~653 |
 
 ---
 

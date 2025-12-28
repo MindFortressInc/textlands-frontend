@@ -1,12 +1,7 @@
 // TextLands API client
 
 import type {
-  Character,
   CombatSession,
-  Genre,
-  World,
-  WorldsByGenre,
-  CampfireResponse,
   DoActionResponse,
   IntimacyResponse,
   ExplainResponse,
@@ -18,12 +13,6 @@ import type {
   LeaderboardEntry,
   InfiniteCampfireResponse,
   InfiniteCampfireCharacter,
-  Bounty,
-  Infraction,
-  NpcDeath,
-  ClaimBountyResponse,
-  PayOffBountyResponse,
-  ProcessRespawnsResponse,
 } from "@/types/game";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
@@ -122,26 +111,6 @@ export async function explainAction(actionId: string): Promise<ExplainResponse> 
   return fetchAPI<ExplainResponse>(`/actions/${actionId}/explain`);
 }
 
-// Character endpoints
-export async function createCharacter(data: {
-  name: string;
-  race: string;
-  class: string;
-}): Promise<Character> {
-  return fetchAPI<Character>("/characters", {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
-}
-
-export async function listCharacters(): Promise<Character[]> {
-  return fetchAPI<Character[]>("/characters");
-}
-
-export async function getCharacter(characterId: string): Promise<Character> {
-  return fetchAPI<Character>(`/characters/${characterId}`);
-}
-
 // Combat state polling (actions go through doAction)
 export async function getCombatState(sessionId: string): Promise<CombatSession> {
   return fetchAPI<CombatSession>(`/combat/${sessionId}`);
@@ -153,18 +122,7 @@ export async function getActiveCombat(
   return fetchAPI<CombatSession | null>(`/combat/active/${characterId}`);
 }
 
-// World selection endpoints
-export async function getGenres(): Promise<Genre[]> {
-  return fetchAPI<Genre[]>("/worlds/genres");
-}
-
-export async function getWorlds(): Promise<WorldsByGenre[]> {
-  return fetchAPI<WorldsByGenre[]>("/worlds");
-}
-
-export async function getCampfire(worldId: string): Promise<CampfireResponse> {
-  return fetchAPI<CampfireResponse>(`/worlds/${worldId}/campfire`);
-}
+// Legacy curated world endpoints removed - use infinite worlds API
 
 // Natural language action endpoint
 export async function doAction(action: string): Promise<DoActionResponse> {
@@ -181,11 +139,6 @@ export async function getActiveScene(guestId?: string): Promise<IntimacyResponse
 }
 
 // ============ INFINITE WORLDS API ============
-
-// List public worlds
-export async function getInfiniteWorlds(): Promise<InfiniteWorld[]> {
-  return fetchAPI<InfiniteWorld[]>("/infinite/worlds");
-}
 
 // Land group from grouped endpoint
 export interface LandGroup {
@@ -320,26 +273,6 @@ export async function getInfluenceLeaderboard(worldId: string): Promise<Influenc
 // Get infinite world campfire (character selection)
 export async function getInfiniteCampfire(worldId: string): Promise<InfiniteCampfireResponse> {
   return fetchAPI<InfiniteCampfireResponse>(`/infinite/worlds/${worldId}/campfire`);
-}
-
-// Claim a character from the campfire (legacy - use startInfiniteSession instead)
-export interface ClaimCharacterResponse {
-  success: boolean;
-  character_id: string;
-  world_id: string;
-  opening_narrative?: string;
-  message?: string;
-}
-
-export async function claimCharacter(
-  worldId: string,
-  characterId: string,
-  playerId: string
-): Promise<ClaimCharacterResponse> {
-  return fetchAPI<ClaimCharacterResponse>(
-    `/infinite/worlds/${worldId}/campfire/claim/${characterId}?player_id=${playerId}`,
-    { method: "POST" }
-  );
 }
 
 // Create custom character at campfire
@@ -705,51 +638,4 @@ export async function unlockPlaytime(): Promise<UnlockResponse> {
   });
 }
 
-// ============ CONSEQUENCE SYSTEM API ============
-
-// Get bounty board for a world
-export async function getWorldBounties(worldId: string): Promise<Bounty[]> {
-  return fetchAPI<Bounty[]>(`/worlds/${worldId}/bounties`);
-}
-
-// Get bounties on a specific player
-export async function getPlayerBounties(
-  worldId: string,
-  playerId: string
-): Promise<Bounty[]> {
-  return fetchAPI<Bounty[]>(`/worlds/${worldId}/bounties/player/${playerId}`);
-}
-
-// Claim a bounty (capture the target)
-export async function claimBounty(bountyId: string): Promise<ClaimBountyResponse> {
-  return fetchAPI<ClaimBountyResponse>(`/bounties/${bountyId}/claim`, {
-    method: "POST",
-  });
-}
-
-// Pay off a bounty (clear your name)
-export async function payOffBounty(bountyId: string): Promise<PayOffBountyResponse> {
-  return fetchAPI<PayOffBountyResponse>(`/bounties/${bountyId}/pay-off`, {
-    method: "POST",
-  });
-}
-
-// Get player's criminal record
-export async function getPlayerInfractions(
-  worldId: string,
-  playerId: string
-): Promise<Infraction[]> {
-  return fetchAPI<Infraction[]>(`/worlds/${worldId}/infractions/player/${playerId}`);
-}
-
-// Get recent NPC deaths in a world
-export async function getRecentDeaths(worldId: string): Promise<NpcDeath[]> {
-  return fetchAPI<NpcDeath[]>(`/worlds/${worldId}/deaths/recent`);
-}
-
-// Manually trigger respawn processing (admin/debug)
-export async function processRespawns(worldId: string): Promise<ProcessRespawnsResponse> {
-  return fetchAPI<ProcessRespawnsResponse>(`/worlds/${worldId}/process-respawns`, {
-    method: "POST",
-  });
-}
+// Consequence system (bounties, infractions, deaths) removed - backend handles via doAction

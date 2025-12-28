@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { GameLog, CommandInput, CharacterPanel, QuickActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal, AuthModal, BillingPanel, InfluenceBadge, LeaderboardModal, CharacterCreationModal, PlayerStatsModal, EntityTimelineModal, WorldTemplatesModal, EntityGenerationModal, WorldCreationModal, BountyBoard, WantedStatus, PlayerRecord } from "@/components/game";
+import { GameLog, CommandInput, CharacterPanel, QuickActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal, AuthModal, BillingPanel, InfluenceBadge, LeaderboardModal, CharacterCreationModal, PlayerStatsModal, EntityTimelineModal, WorldTemplatesModal, EntityGenerationModal, WorldCreationModal } from "@/components/game";
 import { ThemePicker } from "@/components/ThemePicker";
-import type { Character, GameLogEntry, Genre, World, WorldsByGenre, CampfireResponse, CharacterOption, ActiveScene as ActiveSceneType, NegotiationRequest, CombatSession, ReasoningInfo, InfiniteWorld, InfiniteCampfireResponse, InfiniteCampfireCharacter, AccountPromptReason, WorldTemplate } from "@/types/game";
+import type { Character, GameLogEntry, CharacterOption, ActiveScene as ActiveSceneType, NegotiationRequest, CombatSession, ReasoningInfo, InfiniteWorld, InfiniteCampfireResponse, InfiniteCampfireCharacter, AccountPromptReason, WorldTemplate } from "@/types/game";
 import * as api from "@/lib/api";
 import type { LandGroup, PlayerInfluence, LocationFootprint } from "@/lib/api";
 import type { PlayerWorldStats } from "@/types/game";
@@ -125,120 +125,6 @@ function LandingView({ onEnter }: { onEnter: () => void }) {
 
       {/* Decorative bottom line */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-32 h-px bg-gradient-to-r from-transparent via-[var(--amber-dim)] to-transparent opacity-50" />
-    </main>
-  );
-}
-
-function GenreGrid({ genres, onSelect, onBack }: {
-  genres: Genre[];
-  onSelect: (genre: Genre) => void;
-  onBack: () => void;
-}) {
-  return (
-    <main className="h-dvh flex flex-col bg-atmospheric pt-[max(0.5rem,env(safe-area-inset-top))] animate-fade-in">
-      <header className="flex items-center justify-between px-4 py-3 border-b border-[var(--slate)] shrink-0">
-        <button onClick={onBack} className="text-[var(--mist)] text-sm min-w-[44px] min-h-[44px] flex items-center gap-1 hover:text-[var(--text)] transition-colors">
-          <span className="text-lg">‹</span> Back
-        </button>
-        <div className="text-center">
-          <span className="text-[var(--amber)] font-bold tracking-wider">SELECT GENRE</span>
-          <div className="text-[var(--mist)] text-[10px] tracking-widest">{genres.length} LANDS AVAILABLE</div>
-        </div>
-        <ThemePicker />
-      </header>
-
-      <div className="flex-1 overflow-y-auto p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-4xl mx-auto stagger-fade-in">
-          {genres.map((genre) => (
-            <button
-              key={genre.genre}
-              onClick={() => onSelect(genre)}
-              className="genre-card p-4 text-left flex flex-col gap-3 min-h-[120px] md:min-h-[140px]"
-            >
-              {/* Genre icon */}
-              <div className="text-2xl md:text-3xl text-[var(--amber)] opacity-80">
-                {TONE_ICONS[genre.genre] || "◇"}
-              </div>
-
-              {/* Genre name */}
-              <div className="flex-1">
-                <span className="text-[var(--amber)] font-bold text-sm md:text-base capitalize block">
-                  {genre.genre}
-                </span>
-              </div>
-
-              {/* World count */}
-              <div className="flex items-center gap-2">
-                <span className="w-1 h-1 rounded-full bg-[var(--amber-dim)]" />
-                <span className="text-[var(--mist)] text-[10px] tracking-wide">
-                  {genre.count} WORLDS
-                </span>
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
-    </main>
-  );
-}
-
-function WorldList({ genre, worldsByGenre, onSelect, onBack }: {
-  genre: Genre;
-  worldsByGenre: WorldsByGenre[];
-  onSelect: (world: World) => void;
-  onBack: () => void;
-}) {
-  // Find worlds for this genre
-  const genreData = worldsByGenre.find(wg => wg.genre === genre.genre);
-  const worlds = genreData?.worlds || [];
-
-  return (
-    <main className="h-dvh flex flex-col bg-atmospheric pt-[max(0.5rem,env(safe-area-inset-top))] animate-fade-in">
-      <header className="flex items-center justify-between px-4 py-3 border-b border-[var(--slate)] shrink-0">
-        <button onClick={onBack} className="text-[var(--mist)] text-sm min-w-[44px] min-h-[44px] flex items-center gap-1 hover:text-[var(--text)] transition-colors">
-          <span className="text-lg">‹</span> Back
-        </button>
-        <div className="text-center">
-          <div className="flex items-center justify-center gap-2">
-            <span className="text-xl text-[var(--amber)] opacity-70">{TONE_ICONS[genre.genre] || "◇"}</span>
-            <span className="text-[var(--amber)] font-bold tracking-wider uppercase">{genre.genre}</span>
-          </div>
-          <div className="text-[var(--mist)] text-[10px] tracking-widest">{worlds.length} WORLDS</div>
-        </div>
-        <ThemePicker />
-      </header>
-
-      <div className="flex-1 overflow-y-auto p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-        <div className="space-y-3 max-w-2xl mx-auto stagger-fade-in">
-          {worlds.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-[var(--mist)] text-2xl mb-2">◌</div>
-              <p className="text-[var(--mist)]">No worlds available yet.</p>
-              <p className="text-[var(--slate)] text-sm mt-1">Check back soon...</p>
-            </div>
-          ) : (
-            worlds.map((world) => (
-              <button
-                key={world.id}
-                onClick={() => onSelect(world)}
-                className="world-card w-full p-4 text-left min-h-[80px]"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <span className="text-[var(--amber)] font-bold block">{world.name}</span>
-                    <span className="text-[var(--text-dim)] text-sm mt-1 block line-clamp-2">{world.description}</span>
-                  </div>
-                  {world.subgenre && (
-                    <span className="text-[var(--mist)] text-[10px] tracking-wider uppercase shrink-0 mt-1">
-                      {world.subgenre}
-                    </span>
-                  )}
-                </div>
-              </button>
-            ))
-          )}
-        </div>
-      </div>
     </main>
   );
 }
@@ -423,88 +309,6 @@ function WorldBrowser({ landGroups, onSelect, onBack, nsfwEnabled, nsfwAutoBlock
   );
 }
 
-function CampfireView({ campfire, onSelect, onBack, loading }: {
-  campfire: CampfireResponse;
-  onSelect: (character: CharacterOption) => void;
-  onBack: () => void;
-  loading: boolean;
-}) {
-  return (
-    <main className="h-dvh flex flex-col bg-atmospheric pt-[max(0.5rem,env(safe-area-inset-top))] animate-fade-in">
-      <header className="flex items-center justify-between px-4 py-3 border-b border-[var(--slate)] shrink-0">
-        <button onClick={onBack} className="text-[var(--mist)] text-sm min-w-[44px] min-h-[44px] flex items-center gap-1 hover:text-[var(--text)] transition-colors">
-          <span className="text-lg">‹</span> Back
-        </button>
-        <div className="text-center">
-          <span className="text-[var(--amber)] font-bold tracking-wider">{campfire.world.name}</span>
-          <div className="text-[var(--mist)] text-[10px] tracking-widest">THE CAMPFIRE</div>
-        </div>
-        <ThemePicker />
-      </header>
-
-      <div className="flex-1 overflow-y-auto">
-        {/* Campfire scene - intro narrative */}
-        <div className="p-6 border-b border-[var(--slate)] bg-gradient-to-b from-[var(--shadow)] to-transparent">
-          <div className="max-w-2xl mx-auto">
-            {/* Fire decoration */}
-            <div className="text-center mb-4 fire-flicker">
-              <span className="text-2xl text-[var(--amber)]">🔥</span>
-            </div>
-
-            <p className="text-[var(--amber)] leading-relaxed whitespace-pre-wrap text-sm md:text-base campfire-text text-center italic">
-              {campfire.intro_text}
-            </p>
-          </div>
-        </div>
-
-        {/* Character selection */}
-        <div className="p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-          <div className="text-center mb-6">
-            <div className="text-[var(--mist)] text-[10px] tracking-[0.3em] uppercase mb-1">Choose Your</div>
-            <div className="text-[var(--amber)] font-bold tracking-wider">CHARACTER</div>
-          </div>
-
-          <div className="space-y-4 max-w-2xl mx-auto stagger-fade-in">
-            {campfire.characters.map((char) => (
-              <button
-                key={char.id}
-                onClick={() => onSelect(char)}
-                disabled={loading}
-                className="character-card w-full p-5 text-left disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <div className="flex items-start gap-4">
-                  {/* Character portrait placeholder */}
-                  <div className="w-12 h-12 rounded bg-[var(--slate)] flex items-center justify-center text-[var(--amber)] text-xl shrink-0">
-                    {char.name.charAt(0)}
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <span className="text-[var(--amber)] font-bold">{char.name}</span>
-                      <span className="text-[var(--arcane)] text-[10px] tracking-wider uppercase">
-                        {char.race} {char.character_class}
-                      </span>
-                    </div>
-                    <p className="text-[var(--text-dim)] text-sm line-clamp-2">
-                      {char.backstory}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Selection indicator */}
-                <div className="mt-3 pt-3 border-t border-[var(--slate)] flex items-center justify-between">
-                  <span className="text-[var(--mist)] text-[10px] tracking-wider">SELECT TO PLAY</span>
-                  <span className="text-[var(--amber)] text-sm">→</span>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    </main>
-  );
-}
-
 // Infinite Worlds character selection view
 function InfiniteCampfireView({ campfire, onSelect, onBack, loading, onCreateOwn }: {
   campfire: InfiniteCampfireResponse;
@@ -628,13 +432,6 @@ export default function GamePage() {
   const [selectedWorld, setSelectedWorld] = useState<InfiniteWorld | null>(null);
   const [infiniteCampfire, setInfiniteCampfire] = useState<InfiniteCampfireResponse | null>(null);
 
-  // Legacy world selection state (for backwards compatibility)
-  const [genres, setGenres] = useState<Genre[]>([]);
-  const [worldsByGenre, setWorldsByGenre] = useState<WorldsByGenre[]>([]);
-  const [selectedGenre, setSelectedGenre] = useState<Genre | null>(null);
-  const [campfireData, setCampfireData] = useState<CampfireResponse | null>(null);
-  const [selectedWorldId, setSelectedWorldId] = useState<string | null>(null);
-
   // Game state
   const [character, setCharacter] = useState<Character | null>(null);
   const [entries, setEntries] = useState<GameLogEntry[]>([]);
@@ -697,10 +494,6 @@ export default function GamePage() {
   // World creation modal state
   const [worldCreationOpen, setWorldCreationOpen] = useState(false);
   const [selectedWorldTemplate, setSelectedWorldTemplate] = useState<WorldTemplate | null>(null);
-
-  // Bounty system state
-  const [bountyBoardOpen, setBountyBoardOpen] = useState(false);
-  const [playerRecordOpen, setPlayerRecordOpen] = useState(false);
 
   // Auth modal state (magic link login)
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -1002,72 +795,6 @@ export default function GamePage() {
     setEntityTimelineId(entityId);
     setEntityTimelineName(entityName || null);
     setEntityTimelineOpen(true);
-  };
-
-  // Legacy: Select genre (for old flow)
-  const enterGenres = () => setPhase("genres");
-
-  const selectGenre = async (genre: Genre) => {
-    setSelectedGenre(genre);
-
-    // Fetch worlds if not cached
-    if (worldsByGenre.length === 0) {
-      try {
-        const worldData = await api.getWorlds();
-        setWorldsByGenre(worldData);
-      } catch (err) {
-        setConnectionError(`Failed to load worlds: ${err instanceof Error ? err.message : "Unknown error"}`);
-        return;
-      }
-    }
-
-    setPhase("worlds");
-  };
-
-  const selectWorld = async (world: World) => {
-    setSelectedWorldId(world.id);
-
-    try {
-      const data = await api.getCampfire(world.id);
-      setCampfireData(data);
-      setPhase("campfire");
-    } catch (err) {
-      setConnectionError(`Failed to load world: ${err instanceof Error ? err.message : "Unknown error"}`);
-    }
-  };
-
-  const selectCharacter = async (charOption: CharacterOption) => {
-    setProcessing(true);
-
-    try {
-      const { session, message, opening_narrative } = await api.startSession({
-        world_id: selectedWorldId || undefined,
-        character_id: charOption.id,
-      });
-
-      setCharacter({
-        id: charOption.id,
-        name: charOption.name,
-        race: charOption.race,
-        character_class: charOption.character_class,
-        stats: { hp: 100, max_hp: 100, mana: 50, max_mana: 50, gold: 0, xp: 0, level: 1 },
-        current_zone_id: null,
-        inventory: [],
-        equipped: {},
-      });
-
-      setZoneName(campfireData?.world.name || "Unknown");
-      setEntries([
-        log("system", session.is_guest ? "Guest Session" : "Welcome!"),
-        log("narrative", opening_narrative || message),
-        log("system", "Type 'help' for commands, or just describe what you want to do"),
-      ]);
-      setPhase("game");
-    } catch (err) {
-      setConnectionError(`Failed to start session: ${err instanceof Error ? err.message : "Unknown error"}`);
-    }
-
-    setProcessing(false);
   };
 
   // ========== GAME LOGIC ==========
@@ -1433,29 +1160,6 @@ export default function GamePage() {
     );
   }
 
-  // Legacy: Genre grid (kept for backwards compatibility)
-  if (phase === "genres") {
-    return (
-      <GenreGrid
-        genres={genres}
-        onSelect={selectGenre}
-        onBack={() => setPhase("landing")}
-      />
-    );
-  }
-
-  // Legacy: Campfire character selection
-  if (phase === "campfire" && campfireData) {
-    return (
-      <CampfireView
-        campfire={campfireData}
-        onSelect={selectCharacter}
-        onBack={() => setPhase("worlds")}
-        loading={processing}
-      />
-    );
-  }
-
   // Game phase
   return (
     <main className="h-dvh flex flex-col bg-[var(--void)]">
@@ -1552,18 +1256,6 @@ export default function GamePage() {
         reason={authModalReason}
         incentive={authModalIncentive}
       />
-      <BountyBoard
-        isOpen={bountyBoardOpen}
-        onClose={() => setBountyBoardOpen(false)}
-        worldId={selectedWorld?.id || null}
-        playerId={playerId}
-      />
-      <PlayerRecord
-        isOpen={playerRecordOpen}
-        onClose={() => setPlayerRecordOpen(false)}
-        worldId={selectedWorld?.id || null}
-        playerId={playerId}
-      />
 
       {/* Header */}
       <header className="bg-[var(--shadow)] border-b border-[var(--slate)] px-3 py-2 md:px-4 flex items-center justify-between shrink-0 pt-[max(0.5rem,env(safe-area-inset-top))]">
@@ -1574,15 +1266,6 @@ export default function GamePage() {
         </div>
         <div className="flex items-center gap-3">
           <span className="text-[var(--mist)] text-xs hidden sm:block">{zoneName}</span>
-          {/* Wanted status indicator */}
-          <div className="relative hidden sm:block">
-            <WantedStatus
-              worldId={selectedWorld?.id || null}
-              playerId={playerId}
-              onViewBounties={() => setBountyBoardOpen(true)}
-              onViewRecord={() => setPlayerRecordOpen(true)}
-            />
-          </div>
           {/* Influence badge - desktop only */}
           {influence && (
             <div className="hidden sm:block">
@@ -1594,13 +1277,6 @@ export default function GamePage() {
               />
             </div>
           )}
-          <button
-            onClick={() => setBountyBoardOpen(true)}
-            className="text-[var(--mist)] hover:text-[var(--crimson)] transition-colors text-xs hidden sm:block"
-            title="Bounty Board"
-          >
-            ☠
-          </button>
           <button
             onClick={() => setEntityGenerationOpen(true)}
             className="text-[var(--mist)] hover:text-[var(--amber)] transition-colors text-xs hidden sm:block"
