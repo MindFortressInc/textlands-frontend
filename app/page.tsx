@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { GameLog, CommandInput, CharacterPanel, QuickActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal, BillingPanel, InfluenceBadge, LeaderboardModal, CharacterCreationModal } from "@/components/game";
+import { GameLog, CommandInput, CharacterPanel, QuickActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal, SaveProgressModal, AccountRequiredModal, BillingPanel, InfluenceBadge, LeaderboardModal, CharacterCreationModal } from "@/components/game";
 import { ThemePicker } from "@/components/ThemePicker";
-import type { Character, GameLogEntry, Genre, World, WorldsByGenre, CampfireResponse, CharacterOption, ActiveScene as ActiveSceneType, NegotiationRequest, CombatSession, ReasoningInfo, InfiniteWorld, InfiniteCampfireResponse, InfiniteCampfireCharacter } from "@/types/game";
+import type { Character, GameLogEntry, Genre, World, WorldsByGenre, CampfireResponse, CharacterOption, ActiveScene as ActiveSceneType, NegotiationRequest, CombatSession, ReasoningInfo, InfiniteWorld, InfiniteCampfireResponse, InfiniteCampfireCharacter, AccountPromptReason } from "@/types/game";
 import * as api from "@/lib/api";
 import type { RealmGroup, PlayerInfluence } from "@/lib/api";
 
@@ -794,6 +794,13 @@ export default function GamePage() {
   const [charCreatorOpen, setCharCreatorOpen] = useState(false);
   const [charCreatorLoading, setCharCreatorLoading] = useState(false);
 
+  // Guest account prompt state
+  const [showSavePrompt, setShowSavePrompt] = useState(false);
+  const [savePromptDismissed, setSavePromptDismissed] = useState(false);
+  const [showAccountRequired, setShowAccountRequired] = useState(false);
+  const [accountPromptReason, setAccountPromptReason] = useState<AccountPromptReason | undefined>();
+  const [accountPromptIncentive, setAccountPromptIncentive] = useState<string | undefined>();
+
   // ========== INITIALIZATION ==========
 
   // Load NSFW preferences from localStorage (fallback for demo mode)
@@ -1272,6 +1279,12 @@ export default function GamePage() {
               // Will retry command after verification
             });
           }
+        } else if (result.requires_account) {
+          // Blocking prompt - must create account to continue
+          addLog("narrative", result.narrative);
+          setAccountPromptReason(result.account_prompt_reason);
+          setAccountPromptIncentive(result.account_prompt_incentive);
+          setShowAccountRequired(true);
         } else {
           // Normal response - add narrative with reasoning if available
           setEntries((prev) => [
@@ -1290,6 +1303,11 @@ export default function GamePage() {
           if (result.error) {
             addLog("system", result.error);
           }
+
+          // Soft prompt - dismissible save nudge (after 5 actions)
+          if (result.show_save_prompt && !savePromptDismissed) {
+            setShowSavePrompt(true);
+          }
         }
       }
     } catch (error) {
@@ -1297,7 +1315,7 @@ export default function GamePage() {
     }
 
     setProcessing(false);
-  }, [character, addLog, isDemo]);
+  }, [character, addLog, isDemo, nsfwAutoBlocked, requestAgeVerification, savePromptDismissed]);
 
   const handleDemoCommand = useCallback((action: string, args: string) => {
     if (["look", "l"].includes(action)) {
@@ -1461,6 +1479,15 @@ export default function GamePage() {
       setCombatNarrative(result.narrative);
       addLog("combat", result.narrative);
 
+      // Check for death recovery prompt (guest died)
+      if (result.requires_account) {
+        setAccountPromptReason(result.account_prompt_reason);
+        setAccountPromptIncentive(result.account_prompt_incentive);
+        setShowAccountRequired(true);
+        setProcessing(false);
+        return;
+      }
+
       // Update combat state
       const updatedCombat = await api.getCombatState(activeCombat.id);
       setActiveCombat(updatedCombat);
@@ -1482,8 +1509,8 @@ export default function GamePage() {
   useEffect(() => {
     if (phase === "game" && !isDemo) {
       // Check for active scene
-      if (!activeScene && playerId) {
-        api.getActiveScene(playerId).then((result) => {
+      if (!activeScene && character) {
+        api.getActiveScene(character.id).then((result) => {
           if (result.scene) {
             setActiveScene(result.scene);
           }
@@ -1629,6 +1656,26 @@ export default function GamePage() {
         worldName={selectedWorld?.name}
         playerId={playerId}
         isDemo={isDemo}
+      />
+      <SaveProgressModal
+        isOpen={showSavePrompt}
+        onSignUp={() => {
+          setShowSavePrompt(false);
+          setBillingOpen(true);
+        }}
+        onDismiss={() => {
+          setShowSavePrompt(false);
+          setSavePromptDismissed(true);
+        }}
+      />
+      <AccountRequiredModal
+        isOpen={showAccountRequired}
+        reason={accountPromptReason}
+        incentive={accountPromptIncentive}
+        onSignUp={() => {
+          setShowAccountRequired(false);
+          setBillingOpen(true);
+        }}
       />
 
       {/* Header */}

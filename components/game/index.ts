@@ -11,6 +11,8 @@ export { SettingsPanel } from "./SettingsPanel";
 export { CombatPanel } from "./CombatPanel";
 export { CombatLog } from "./CombatLog";
 export { AgeGateModal } from "./AgeGateModal";
+export { SaveProgressModal } from "./SaveProgressModal";
+export { AccountRequiredModal } from "./AccountRequiredModal";
 export { BillingPanel } from "./BillingPanel";
 export { InfluenceBadge } from "./InfluenceBadge";
 export { LeaderboardModal } from "./LeaderboardModal";

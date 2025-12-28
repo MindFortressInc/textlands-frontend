@@ -238,6 +238,9 @@ export interface CampfireResponse {
   characters: CharacterOption[];
 }
 
+// Account prompt reason types
+export type AccountPromptReason = 'nsfw_unlock' | 'death_recovery' | 'time_limit';
+
 export interface DoActionResponse {
   narrative: string;
   state_changes: Record<string, unknown>;
@@ -250,6 +253,11 @@ export interface DoActionResponse {
   // NSFW content blocking
   nsfw_blocked?: boolean;
   nsfw_trigger?: string;
+  // Guest account prompts
+  requires_account?: boolean;
+  account_prompt_reason?: AccountPromptReason;
+  account_prompt_incentive?: string;
+  show_save_prompt?: boolean;
 }
 
 // Character types
@@ -382,6 +390,10 @@ export interface CombatActionResponse {
   is_player_turn: boolean;
   next_actor: string | null;
   combat_log_entry: CombatLogEntry;
+  // Guest account prompts (on death)
+  requires_account?: boolean;
+  account_prompt_reason?: AccountPromptReason;
+  account_prompt_incentive?: string;
 }
 
 // Game log entry for the scrolling text interface
