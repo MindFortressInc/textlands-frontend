@@ -54,7 +54,7 @@ const TONE_ICONS: Record<string, string> = {
 const DEMO_REALM_GROUPS: RealmGroup[] = [
   {
     realm: "fantasy",
-    display_name: "Fantasy Realms",
+    display_name: "Fantasy Lands",
     description: "Magic, medieval kingdoms, and mythical creatures",
     world_count: 2,
     is_locked: false,
@@ -227,7 +227,7 @@ function LandingView({ onEnter, isDemo }: { onEnter: () => void; isDemo: boolean
 
         {/* Decorative text */}
         <div className="text-[var(--slate)] text-[10px] tracking-widest">
-          ═══ ENTER THE REALM ═══
+          ═══ ENTER THE LANDS ═══
         </div>
       </div>
 
@@ -255,7 +255,7 @@ function GenreGrid({ genres, onSelect, onBack }: {
         </button>
         <div className="text-center">
           <span className="text-[var(--amber)] font-bold tracking-wider">SELECT GENRE</span>
-          <div className="text-[var(--mist)] text-[10px] tracking-widest">{genres.length} REALMS AVAILABLE</div>
+          <div className="text-[var(--mist)] text-[10px] tracking-widest">{genres.length} LANDS AVAILABLE</div>
         </div>
         <ThemePicker />
       </header>
@@ -409,7 +409,7 @@ function WorldBrowser({ realmGroups, onSelect, onBack, nsfwEnabled, nsfwAutoBloc
           <span className="text-lg">‹</span> Back
         </button>
         <div className="text-center">
-          <span className="text-[var(--amber)] font-bold tracking-wider">CHOOSE YOUR REALM</span>
+          <span className="text-[var(--amber)] font-bold tracking-wider">CHOOSE YOUR LAND</span>
           <div className="text-[var(--mist)] text-[10px] tracking-widest">{totalWorlds} WORLDS AVAILABLE</div>
         </div>
         <div className="flex items-center gap-2">
