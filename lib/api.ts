@@ -323,6 +323,47 @@ export async function getInfiniteWorld(worldId: string): Promise<InfiniteWorld> 
   return fetchAPI<InfiniteWorld>(`/infinite/worlds/${worldId}`);
 }
 
+// Create a new world
+export interface CreateWorldRequest {
+  name: string;
+  tagline: string;
+  description: string;
+  realm: string;
+  template_slug?: string;
+  is_nsfw?: boolean;
+  physics_rules?: {
+    tech_level?: string;
+    magic_exists?: boolean;
+    magic_system?: string;
+  };
+  society_rules?: {
+    class_system?: string;
+    economy_type?: string;
+  };
+  content_rules?: {
+    romance_level?: string;
+    violence_level?: string;
+  };
+  tone_rules?: {
+    primary_tone?: string;
+    stakes_level?: string;
+    moral_complexity?: string;
+  };
+}
+
+export interface CreateWorldResponse {
+  success: boolean;
+  world: InfiniteWorld;
+  message?: string;
+}
+
+export async function createWorld(request: CreateWorldRequest): Promise<CreateWorldResponse> {
+  return fetchAPI<CreateWorldResponse>("/infinite/worlds", {
+    method: "POST",
+    body: JSON.stringify(request),
+  });
+}
+
 // List world templates
 export async function getWorldTemplates(): Promise<WorldTemplate[]> {
   return fetchAPI<WorldTemplate[]>("/infinite/templates");
@@ -392,6 +433,24 @@ export async function getGlobalLeaderboard(): Promise<LeaderboardEntry[]> {
     entities_created: entry.total_entities_created,
     last_played_at: entry.last_active || "",
   }));
+}
+
+// Influence leaderboard entry (more detailed than regular leaderboard)
+export interface InfluenceLeaderboardEntry {
+  rank: number;
+  player_id: string;
+  display_name?: string;
+  trailblazer_score: number;
+  tier: number;
+  title: string;
+  entities_created_count: number;
+  governance_points: number;
+  is_world_creator: boolean;
+}
+
+// Get influence leaderboard for a world
+export async function getInfluenceLeaderboard(worldId: string): Promise<InfluenceLeaderboardEntry[]> {
+  return fetchAPI<InfluenceLeaderboardEntry[]>(`/infinite/worlds/${worldId}/influence-leaderboard`);
 }
 
 // Get infinite world campfire (character selection)

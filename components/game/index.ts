@@ -22,3 +22,4 @@ export { PlayerStatsModal } from "./PlayerStatsModal";
 export { EntityTimelineModal } from "./EntityTimelineModal";
 export { WorldTemplatesModal } from "./WorldTemplatesModal";
 export { EntityGenerationModal } from "./EntityGenerationModal";
+export { WorldCreationModal } from "./WorldCreationModal";

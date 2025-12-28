@@ -201,8 +201,10 @@
 
 | Endpoint | Purpose | Priority |
 |----------|---------|----------|
-| POST `/infinite/worlds` | Create new world | Medium - creator feature |
-| GET `.../influence-leaderboard` | Influence rankings | Low - can use regular leaderboard |
+| ~~POST `/infinite/worlds`~~ | Create new world | ✅ `createWorld()` + WorldCreationModal |
+| ~~GET `.../influence-leaderboard`~~ | Influence rankings | ✅ `getInfluenceLeaderboard()` |
+
+**All endpoints now connected!**
 
 ---
 

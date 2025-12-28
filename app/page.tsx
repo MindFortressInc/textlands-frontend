@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { GameLog, CommandInput, CharacterPanel, QuickActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal, AuthModal, BillingPanel, InfluenceBadge, LeaderboardModal, CharacterCreationModal, PlayerStatsModal, EntityTimelineModal, WorldTemplatesModal, EntityGenerationModal } from "@/components/game";
+import { GameLog, CommandInput, CharacterPanel, QuickActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal, AuthModal, BillingPanel, InfluenceBadge, LeaderboardModal, CharacterCreationModal, PlayerStatsModal, EntityTimelineModal, WorldTemplatesModal, EntityGenerationModal, WorldCreationModal } from "@/components/game";
 import { ThemePicker } from "@/components/ThemePicker";
-import type { Character, GameLogEntry, Genre, World, WorldsByGenre, CampfireResponse, CharacterOption, ActiveScene as ActiveSceneType, NegotiationRequest, CombatSession, ReasoningInfo, InfiniteWorld, InfiniteCampfireResponse, InfiniteCampfireCharacter, AccountPromptReason } from "@/types/game";
+import type { Character, GameLogEntry, Genre, World, WorldsByGenre, CampfireResponse, CharacterOption, ActiveScene as ActiveSceneType, NegotiationRequest, CombatSession, ReasoningInfo, InfiniteWorld, InfiniteCampfireResponse, InfiniteCampfireCharacter, AccountPromptReason, WorldTemplate } from "@/types/game";
 import * as api from "@/lib/api";
 import type { RealmGroup, PlayerInfluence, LocationFootprint } from "@/lib/api";
 import type { PlayerWorldStats } from "@/types/game";
@@ -369,13 +369,14 @@ const REALM_INFO: Record<string, { name: string; icon: string }> = {
 };
 
 // New Infinite Worlds browser - grouped by realm
-function WorldBrowser({ realmGroups, onSelect, onBack, nsfwEnabled, onRequestNsfw, onTemplatesClick }: {
+function WorldBrowser({ realmGroups, onSelect, onBack, nsfwEnabled, onRequestNsfw, onTemplatesClick, onCreateClick }: {
   realmGroups: RealmGroup[];
   onSelect: (world: InfiniteWorld) => void;
   onBack: () => void;
   nsfwEnabled: boolean;
   onRequestNsfw: () => void;
   onTemplatesClick?: () => void;
+  onCreateClick?: () => void;
 }) {
   const [expandedRealm, setExpandedRealm] = useState<string | null>(null);
 
@@ -413,6 +414,15 @@ function WorldBrowser({ realmGroups, onSelect, onBack, nsfwEnabled, onRequestNsf
           <div className="text-[var(--mist)] text-[10px] tracking-widest">{totalWorlds} WORLDS AVAILABLE</div>
         </div>
         <div className="flex items-center gap-2">
+          {onCreateClick && (
+            <button
+              onClick={onCreateClick}
+              className="text-[var(--amber)] hover:text-[var(--text)] transition-colors text-sm px-2 py-1 border border-[var(--amber-dim)] rounded"
+              title="Create New World"
+            >
+              + Create
+            </button>
+          )}
           {onTemplatesClick && (
             <button
               onClick={onTemplatesClick}
@@ -826,6 +836,10 @@ export default function GamePage() {
 
   // Entity generation modal state
   const [entityGenerationOpen, setEntityGenerationOpen] = useState(false);
+
+  // World creation modal state
+  const [worldCreationOpen, setWorldCreationOpen] = useState(false);
+  const [selectedWorldTemplate, setSelectedWorldTemplate] = useState<WorldTemplate | null>(null);
 
   // Auth modal state (magic link login)
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -1647,6 +1661,7 @@ export default function GamePage() {
           nsfwEnabled={nsfwEnabled}
           onRequestNsfw={() => requestAgeVerification()}
           onTemplatesClick={() => setWorldTemplatesOpen(true)}
+          onCreateClick={() => setWorldCreationOpen(true)}
         />
         <AgeGateModal
           isOpen={showAgeGate}
@@ -1656,6 +1671,24 @@ export default function GamePage() {
         <WorldTemplatesModal
           isOpen={worldTemplatesOpen}
           onClose={() => setWorldTemplatesOpen(false)}
+          onSelectTemplate={(template) => {
+            setSelectedWorldTemplate(template);
+            setWorldTemplatesOpen(false);
+            setWorldCreationOpen(true);
+          }}
+          isDemo={isDemo}
+        />
+        <WorldCreationModal
+          isOpen={worldCreationOpen}
+          onClose={() => {
+            setWorldCreationOpen(false);
+            setSelectedWorldTemplate(null);
+          }}
+          onWorldCreated={(worldId) => {
+            // Refresh world list and optionally navigate to the new world
+            enterWorlds();
+          }}
+          selectedTemplate={selectedWorldTemplate}
           isDemo={isDemo}
         />
       </>
@@ -1778,6 +1811,20 @@ export default function GamePage() {
       <WorldTemplatesModal
         isOpen={worldTemplatesOpen}
         onClose={() => setWorldTemplatesOpen(false)}
+        onSelectTemplate={(template) => {
+          setSelectedWorldTemplate(template);
+          setWorldTemplatesOpen(false);
+          setWorldCreationOpen(true);
+        }}
+        isDemo={isDemo}
+      />
+      <WorldCreationModal
+        isOpen={worldCreationOpen}
+        onClose={() => {
+          setWorldCreationOpen(false);
+          setSelectedWorldTemplate(null);
+        }}
+        selectedTemplate={selectedWorldTemplate}
         isDemo={isDemo}
       />
       <EntityGenerationModal
