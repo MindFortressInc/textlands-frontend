@@ -364,11 +364,13 @@ export async function claimCharacter(
 
 // Create custom character at campfire
 export interface CreateCharacterRequest {
-  name: string;
-  occupation?: string;
-  physical_description?: string;
-  personality_traits?: string[];
-  backstory_hook?: string;
+  concept: string;  // e.g., "a scarred mercenary seeking redemption"
+  hints?: {
+    gender?: string;
+    species?: string;
+    occupation?: string;
+  };
+  player_id?: string;
 }
 
 export interface CreateCharacterResponse {

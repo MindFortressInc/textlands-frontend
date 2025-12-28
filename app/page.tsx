@@ -544,25 +544,6 @@ function InfiniteCampfireView({ campfire, onSelect, onBack, loading, onCreateOwn
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 stagger-fade-in">
-                {/* Create Your Own option */}
-                {onCreateOwn && (
-                  <button
-                    onClick={onCreateOwn}
-                    disabled={loading}
-                    className="character-card w-full p-5 text-left disabled:opacity-50 disabled:cursor-not-allowed group border-dashed"
-                  >
-                    <div className="flex items-center justify-center gap-4 py-4">
-                      <div className="w-14 h-14 rounded-lg border-2 border-dashed border-[var(--slate)] flex items-center justify-center text-[var(--amber)] text-3xl group-hover:border-[var(--amber-dim)] transition-colors">
-                        +
-                      </div>
-                      <div>
-                        <span className="text-[var(--amber)] font-bold text-lg group-hover:text-[var(--text)] transition-colors">Create Your Own</span>
-                        <p className="text-[var(--mist)] text-sm">Design a custom character</p>
-                      </div>
-                    </div>
-                  </button>
-                )}
-
                 {campfire.characters.filter(c => c.is_playable).map((char) => (
                   <button
                     key={char.id}
@@ -607,6 +588,25 @@ function InfiniteCampfireView({ campfire, onSelect, onBack, loading, onCreateOwn
                     )}
                   </button>
                 ))}
+
+                {/* Create Your Own - at bottom for advanced users */}
+                {onCreateOwn && (
+                  <button
+                    onClick={onCreateOwn}
+                    disabled={loading}
+                    className="character-card w-full p-5 text-left disabled:opacity-50 disabled:cursor-not-allowed group border-dashed md:col-span-2"
+                  >
+                    <div className="flex items-center justify-center gap-4 py-2">
+                      <div className="w-12 h-12 rounded-lg border-2 border-dashed border-[var(--slate)] flex items-center justify-center text-[var(--mist)] text-2xl group-hover:border-[var(--amber-dim)] group-hover:text-[var(--amber)] transition-colors">
+                        +
+                      </div>
+                      <div>
+                        <span className="text-[var(--mist)] font-bold group-hover:text-[var(--amber)] transition-colors">Create Your Own</span>
+                        <p className="text-[var(--text-dim)] text-sm">Describe a character concept</p>
+                      </div>
+                    </div>
+                  </button>
+                )}
               </div>
             )}
           </div>
