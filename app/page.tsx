@@ -1482,8 +1482,8 @@ export default function GamePage() {
   useEffect(() => {
     if (phase === "game" && !isDemo) {
       // Check for active scene
-      if (!activeScene) {
-        api.getActiveScene().then((result) => {
+      if (!activeScene && character) {
+        api.getActiveScene(character.id).then((result) => {
           if (result.scene) {
             setActiveScene(result.scene);
           }
@@ -1523,13 +1523,20 @@ export default function GamePage() {
   // New: Infinite Worlds browser (replaces genre grid + world list)
   if (phase === "worlds") {
     return (
-      <WorldBrowser
-        realmGroups={realmGroups}
-        onSelect={selectInfiniteWorld}
-        onBack={() => setPhase("landing")}
-        nsfwEnabled={nsfwEnabled}
-        onRequestNsfw={() => requestAgeVerification()}
-      />
+      <>
+        <WorldBrowser
+          realmGroups={realmGroups}
+          onSelect={selectInfiniteWorld}
+          onBack={() => setPhase("landing")}
+          nsfwEnabled={nsfwEnabled}
+          onRequestNsfw={() => requestAgeVerification()}
+        />
+        <AgeGateModal
+          isOpen={showAgeGate}
+          onConfirm={handleAgeVerified}
+          onCancel={handleAgeGateCancelled}
+        />
+      </>
     );
   }
 

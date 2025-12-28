@@ -290,8 +290,8 @@ export async function completeScene(
   );
 }
 
-export async function getActiveScene(): Promise<IntimacyResponse> {
-  return fetchAPI<IntimacyResponse>("/intimacy/active");
+export async function getActiveScene(characterId: string): Promise<IntimacyResponse> {
+  return fetchAPI<IntimacyResponse>(`/intimacy/active?character_id=${characterId}`);
 }
 
 // ============ INFINITE WORLDS API ============
