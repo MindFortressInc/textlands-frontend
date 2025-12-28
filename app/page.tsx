@@ -369,15 +369,13 @@ const REALM_INFO: Record<string, { name: string; icon: string }> = {
 };
 
 // New Infinite Worlds browser - grouped by realm
-function WorldBrowser({ realmGroups, onSelect, onBack, nsfwEnabled, nsfwAutoBlocked, onRequestNsfw, onTemplatesClick, onCreateClick }: {
+function WorldBrowser({ realmGroups, onSelect, onBack, nsfwEnabled, nsfwAutoBlocked, onRequestNsfw }: {
   realmGroups: RealmGroup[];
   onSelect: (world: InfiniteWorld) => void;
   onBack: () => void;
   nsfwEnabled: boolean;
   nsfwAutoBlocked?: boolean;
   onRequestNsfw: () => void;
-  onTemplatesClick?: () => void;
-  onCreateClick?: () => void;
 }) {
   const [expandedRealm, setExpandedRealm] = useState<string | null>(null);
 
@@ -415,24 +413,6 @@ function WorldBrowser({ realmGroups, onSelect, onBack, nsfwEnabled, nsfwAutoBloc
           <div className="text-[var(--mist)] text-[10px] tracking-widest">{totalWorlds} WORLDS AVAILABLE</div>
         </div>
         <div className="flex items-center gap-2">
-          {onCreateClick && (
-            <button
-              onClick={onCreateClick}
-              className="text-[var(--amber)] hover:text-[var(--text)] transition-colors text-sm px-2 py-1 border border-[var(--amber-dim)] rounded"
-              title="Create New World"
-            >
-              + Create
-            </button>
-          )}
-          {onTemplatesClick && (
-            <button
-              onClick={onTemplatesClick}
-              className="text-[var(--mist)] hover:text-[var(--amber)] transition-colors text-sm px-2 py-1"
-              title="Browse Templates"
-            >
-              Templates
-            </button>
-          )}
           <ThemePicker />
         </div>
       </header>
@@ -570,8 +550,8 @@ function WorldBrowser({ realmGroups, onSelect, onBack, nsfwEnabled, nsfwAutoBloc
                   })
                 ) : nsfwAutoBlocked ? (
                   // Auto-blocked after 3 rejections
-                  <div className="w-full p-4 bg-[var(--shadow)] border border-[var(--stone)] rounded-lg flex items-center gap-3 opacity-40">
-                    <span className="text-2xl">🚫</span>
+                  <div className="w-full p-4 bg-[var(--shadow)] border border-[var(--stone)] rounded-lg flex items-start gap-3 opacity-40">
+                    <span className="text-xl leading-none mt-0.5">🚫</span>
                     <div className="text-left">
                       <span className="text-[var(--mist)] font-bold block">Adults Only</span>
                       <span className="text-[var(--slate)] text-xs">{nsfwRealms.reduce((sum, g) => sum + g.world_count, 0)} worlds · Blocked (enable in Settings)</span>
@@ -581,14 +561,12 @@ function WorldBrowser({ realmGroups, onSelect, onBack, nsfwEnabled, nsfwAutoBloc
                   // Locked NSFW section - tap to verify
                   <button
                     onClick={onRequestNsfw}
-                    className="w-full p-4 bg-[var(--shadow)] border border-[var(--stone)] rounded-lg flex items-center justify-between hover:border-[var(--mist)] transition-colors opacity-60"
+                    className="w-full p-4 bg-[var(--shadow)] border border-[var(--stone)] rounded-lg flex items-start gap-3 hover:border-[var(--mist)] transition-colors opacity-60"
                   >
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">🔒</span>
-                      <div className="text-left">
-                        <span className="text-[var(--mist)] font-bold block">Adults Only</span>
-                        <span className="text-[var(--slate)] text-xs">{nsfwRealms.reduce((sum, g) => sum + g.world_count, 0)} worlds · Tap to verify age</span>
-                      </div>
+                    <span className="text-xl leading-none mt-0.5">🔒</span>
+                    <div className="text-left">
+                      <span className="text-[var(--mist)] font-bold block">Adults Only</span>
+                      <span className="text-[var(--slate)] text-xs">{nsfwRealms.reduce((sum, g) => sum + g.world_count, 0)} worlds · Tap to verify age</span>
                     </div>
                   </button>
                 )}
@@ -1704,36 +1682,11 @@ export default function GamePage() {
           nsfwEnabled={nsfwEnabled}
           nsfwAutoBlocked={nsfwAutoBlocked}
           onRequestNsfw={() => requestAgeVerification()}
-          onTemplatesClick={() => setWorldTemplatesOpen(true)}
-          onCreateClick={() => setWorldCreationOpen(true)}
         />
         <AgeGateModal
           isOpen={showAgeGate}
           onConfirm={handleAgeVerified}
           onCancel={handleAgeGateCancelled}
-        />
-        <WorldTemplatesModal
-          isOpen={worldTemplatesOpen}
-          onClose={() => setWorldTemplatesOpen(false)}
-          onSelectTemplate={(template) => {
-            setSelectedWorldTemplate(template);
-            setWorldTemplatesOpen(false);
-            setWorldCreationOpen(true);
-          }}
-          isDemo={isDemo}
-        />
-        <WorldCreationModal
-          isOpen={worldCreationOpen}
-          onClose={() => {
-            setWorldCreationOpen(false);
-            setSelectedWorldTemplate(null);
-          }}
-          onWorldCreated={(worldId) => {
-            // Refresh world list and optionally navigate to the new world
-            enterWorlds();
-          }}
-          selectedTemplate={selectedWorldTemplate}
-          isDemo={isDemo}
         />
       </>
     );
