@@ -5,7 +5,7 @@ import { GameLog, CommandInput, CharacterPanel, QuickActions, MobileStats, Scene
 import { ThemePicker } from "@/components/ThemePicker";
 import type { Character, GameLogEntry, Genre, World, WorldsByGenre, CampfireResponse, CharacterOption, ActiveScene as ActiveSceneType, NegotiationRequest, CombatSession, ReasoningInfo, InfiniteWorld, InfiniteCampfireResponse, InfiniteCampfireCharacter, AccountPromptReason, WorldTemplate } from "@/types/game";
 import * as api from "@/lib/api";
-import type { RealmGroup, PlayerInfluence, LocationFootprint } from "@/lib/api";
+import type { LandGroup, PlayerInfluence, LocationFootprint } from "@/lib/api";
 import type { PlayerWorldStats } from "@/types/game";
 
 // ========== HELPERS ==========
@@ -48,130 +48,6 @@ const TONE_ICONS: Record<string, string> = {
   romantic: "♡",
 };
 
-// ========== DEMO DATA ==========
-
-// Demo realm groups for offline mode
-const DEMO_REALM_GROUPS: RealmGroup[] = [
-  {
-    realm: "fantasy",
-    display_name: "Fantasy Lands",
-    description: "Magic, medieval kingdoms, and mythical creatures",
-    world_count: 2,
-    is_locked: false,
-    worlds: [
-      {
-        id: "demo-thornwood",
-        slug: "thornwood-vale",
-        name: "Thornwood Vale",
-        tagline: "Dark secrets lurk beneath ancient boughs",
-        description: "A dark medieval fantasy realm where magic has a terrible cost and the old gods still hunger.",
-        creator_id: "system",
-        is_public: true,
-        realm: "fantasy",
-        is_nsfw: false,
-        governance: { type: "autocracy" },
-        physics_rules: { magic_exists: true, magic_system: "hard", tech_level: "medieval" },
-        society_rules: { class_system: "rigid", economy_type: "feudal" },
-        content_rules: { violence_level: "graphic", romance_level: "fade_to_black", nsfw_allowed: false },
-        tone_rules: { primary_tone: "grimdark", stakes_level: "personal", moral_complexity: "grey" },
-        player_count: 42,
-      },
-      {
-        id: "demo-willowmere",
-        slug: "willowmere",
-        name: "Willowmere",
-        tagline: "A cozy corner of the realm",
-        description: "Low-stakes wholesome fantasy focused on community, crafting, and found family.",
-        creator_id: "system",
-        is_public: true,
-        realm: "fantasy",
-        is_nsfw: false,
-        governance: { type: "democracy" },
-        physics_rules: { magic_exists: true, magic_system: "soft", tech_level: "medieval" },
-        society_rules: { class_system: "fluid", economy_type: "mercantile" },
-        content_rules: { violence_level: "mild", romance_level: "fade_to_black", nsfw_allowed: false },
-        tone_rules: { primary_tone: "slice_of_life", stakes_level: "personal", moral_complexity: "grey" },
-        player_count: 15,
-      },
-    ],
-  },
-  {
-    realm: "scifi",
-    display_name: "Sci-Fi Worlds",
-    description: "Future technology, space exploration, and cyberpunk",
-    world_count: 1,
-    is_locked: false,
-    worlds: [
-      {
-        id: "demo-neon",
-        slug: "neon-sprawl",
-        name: "Neon Sprawl",
-        tagline: "Jack in. Fight back. Survive.",
-        description: "Cyberpunk megacity where megacorps rule and hackers fight for freedom in the digital shadows.",
-        creator_id: "system",
-        is_public: true,
-        realm: "scifi",
-        is_nsfw: false,
-        governance: { type: "council" },
-        physics_rules: { magic_exists: false, tech_level: "futuristic" },
-        society_rules: { class_system: "fluid", economy_type: "capitalist" },
-        content_rules: { violence_level: "graphic", romance_level: "suggestive", nsfw_allowed: false },
-        tone_rules: { primary_tone: "noir", stakes_level: "personal", moral_complexity: "grey" },
-        player_count: 28,
-      },
-    ],
-  },
-];
-
-// Legacy demo data (for backwards compatibility)
-const DEMO_GENRES: Genre[] = [
-  { genre: "fantasy", count: 18 },
-  { genre: "scifi", count: 19 },
-  { genre: "horror", count: 13 },
-  { genre: "mystery", count: 8 },
-  { genre: "western", count: 6 },
-  { genre: "romance", count: 13 },
-  { genre: "historical", count: 8 },
-  { genre: "contemporary", count: 5 },
-];
-
-const DEMO_WORLDS_BY_GENRE: WorldsByGenre[] = [
-  {
-    genre: "fantasy",
-    worlds: [
-      { id: "demo-crossroads", name: "The Crossroads", genre: "fantasy", subgenre: "adventure", description: "Where all paths converge in mystery" },
-      { id: "demo-elderwood", name: "Elderwood", genre: "fantasy", subgenre: "dark", description: "Ancient forest of whispers and secrets" },
-      { id: "demo-ironhold", name: "Ironhold", genre: "fantasy", subgenre: "siege", description: "A fortress city besieged by darkness" },
-    ],
-  },
-];
-
-const DEMO_CAMPFIRE: CampfireResponse = {
-  world: {
-    id: "demo-crossroads",
-    name: "The Crossroads",
-    genre: "fantasy",
-    subgenre: "adventure",
-    description: "A mystical nexus where travelers from all realms meet.",
-  },
-  intro_text: "The fire crackles warmly as shadows dance across weathered faces. Three figures sit around the flames, each carrying stories untold. The innkeeper watches from the doorway, knowing that tonight, one of these souls will embark on a journey that will change everything.\n\nWho will you become?",
-  characters: [
-    { id: "demo-1", name: "Wanderer", race: "Human", character_class: "Adventurer", backstory: "A mysterious traveler with no past and uncertain future. They carry only a worn blade and fragments of memories." },
-    { id: "demo-2", name: "Kira Shadowleaf", race: "Elf", character_class: "Ranger", backstory: "An outcast from the forest kingdom, hunting something—or someone—across the realms." },
-    { id: "demo-3", name: "Throk the Bold", race: "Orc", character_class: "Warrior", backstory: "A reformed raider seeking redemption through honorable deeds." },
-  ],
-};
-
-const DEMO_CHARACTER: Character = {
-  id: "demo-1",
-  name: "Wanderer",
-  race: "Human",
-  character_class: "Adventurer",
-  stats: { hp: 85, max_hp: 100, mana: 45, max_mana: 50, gold: 127, xp: 35, level: 3 },
-  current_zone_id: "starting_zone",
-  inventory: [],
-  equipped: { weapon: "iron_sword" },
-};
 
 // ========== STATE TYPE ==========
 
@@ -188,7 +64,25 @@ function LoadingView() {
   );
 }
 
-function LandingView({ onEnter, isDemo }: { onEnter: () => void; isDemo: boolean }) {
+function ErrorView({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <main className="h-dvh flex flex-col items-center justify-center bg-[var(--void)] p-4">
+      <div className="text-center space-y-6 max-w-md">
+        <div className="text-[var(--crimson)] text-4xl">⚠</div>
+        <div className="text-[var(--amber)] font-bold tracking-[0.3em] text-lg">CONNECTION ERROR</div>
+        <p className="text-[var(--text-dim)] text-sm">{message}</p>
+        <button
+          onClick={onRetry}
+          className="px-6 py-3 bg-[var(--shadow)] border border-[var(--slate)] rounded text-[var(--amber)] hover:border-[var(--amber)] transition-colors"
+        >
+          Try Again
+        </button>
+      </div>
+    </main>
+  );
+}
+
+function LandingView({ onEnter }: { onEnter: () => void }) {
   return (
     <main className="h-dvh flex flex-col items-center justify-center bg-atmospheric p-4 pt-[max(1rem,env(safe-area-inset-top))] animate-fade-in">
       {/* Decorative top line */}
@@ -208,13 +102,6 @@ function LandingView({ onEnter, isDemo }: { onEnter: () => void; isDemo: boolean
         <p className="text-[var(--text-dim)] text-sm md:text-base italic">
           Choose your world. Become your character.
         </p>
-
-        {isDemo && (
-          <div className="flex items-center justify-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[var(--crimson)] animate-pulse" />
-            <span className="text-[var(--crimson)] text-xs uppercase tracking-widest">Offline Mode</span>
-          </div>
-        )}
 
         {/* CTA Button */}
         <button
@@ -356,50 +243,38 @@ function WorldList({ genre, worldsByGenre, onSelect, onBack }: {
   );
 }
 
-// Realm display names and icons
-const REALM_INFO: Record<string, { name: string; icon: string }> = {
-  fantasy: { name: "Fantasy", icon: "⚔" },
-  scifi: { name: "Sci-Fi", icon: "◈" },
-  horror: { name: "Horror", icon: "☠" },
-  romance: { name: "Romance", icon: "♡" },
-  mystery: { name: "Mystery", icon: "◎" },
-  historical: { name: "Historical", icon: "⚜" },
-  contemporary: { name: "Contemporary", icon: "▣" },
-  thriller: { name: "Thriller", icon: "◆" },
-};
-
-// New Infinite Worlds browser - grouped by realm
-function WorldBrowser({ realmGroups, onSelect, onBack, nsfwEnabled, nsfwAutoBlocked, onRequestNsfw }: {
-  realmGroups: RealmGroup[];
+// Infinite Worlds browser
+function WorldBrowser({ landGroups, onSelect, onBack, nsfwEnabled, nsfwAutoBlocked, onRequestNsfw }: {
+  landGroups: LandGroup[];
   onSelect: (world: InfiniteWorld) => void;
   onBack: () => void;
   nsfwEnabled: boolean;
   nsfwAutoBlocked?: boolean;
   onRequestNsfw: () => void;
 }) {
-  const [expandedRealm, setExpandedRealm] = useState<string | null>(null);
+  const [expandedLand, setExpandedLand] = useState<string | null>(null);
 
-  // Separate SFW and locked/NSFW realms
-  const sfwRealms = realmGroups.filter(g => !g.is_locked);
-  const nsfwRealms = realmGroups.filter(g => g.is_locked);
+  // Separate SFW and locked/NSFW lands
+  const sfwLands = landGroups.filter(g => !g.is_locked);
+  const nsfwLands = landGroups.filter(g => g.is_locked);
 
-  // Get all SFW worlds flat
-  const allSfwWorlds = sfwRealms.flatMap(g => g.worlds).filter(w => !w.is_nsfw || nsfwEnabled);
+  // Get all SFW realms flat
+  const allSfwWorlds = sfwLands.flatMap(g => g.realms).filter(w => !w.is_nsfw || nsfwEnabled);
 
-  // Show flat list if < 10 SFW worlds, otherwise group by realm
+  // Show flat list if < 10 SFW worlds, otherwise group by land
   const showFlat = allSfwWorlds.length < 10;
 
-  const handleRealmClick = (realm: string, isLocked: boolean) => {
+  const handleLandClick = (land: string, isLocked: boolean) => {
     if (isLocked && !nsfwEnabled) {
       onRequestNsfw();
       return;
     }
-    setExpandedRealm(expandedRealm === realm ? null : realm);
+    setExpandedLand(expandedLand === land ? null : land);
   };
 
-  const totalWorlds = realmGroups.reduce((sum, g) => {
-    if (nsfwEnabled) return sum + g.world_count;
-    return sum + g.worlds.filter(w => !w.is_nsfw).length;
+  const totalWorlds = landGroups.reduce((sum, g) => {
+    if (nsfwEnabled) return sum + g.realm_count;
+    return sum + g.realms.filter(w => !w.is_nsfw).length;
   }, 0);
 
   return (
@@ -421,7 +296,7 @@ function WorldBrowser({ realmGroups, onSelect, onBack, nsfwEnabled, nsfwAutoBloc
         <div className="max-w-6xl mx-auto">
           {/* World grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 stagger-fade-in">
-            {/* SFW Worlds - flat list if < 10, otherwise grouped by realm */}
+            {/* SFW Worlds - flat list if < 10, otherwise grouped by land */}
             {showFlat ? (
               // Flat list of all SFW worlds
               allSfwWorlds.map((world) => (
@@ -445,25 +320,21 @@ function WorldBrowser({ realmGroups, onSelect, onBack, nsfwEnabled, nsfwAutoBloc
                 </button>
               ))
             ) : (
-              // Grouped by realm
-              sfwRealms.map((group) => {
-                const info = REALM_INFO[group.realm] || { name: group.display_name, icon: "◇" };
-                const filteredWorlds = group.worlds.filter(w => !w.is_nsfw || nsfwEnabled);
-                const isExpanded = expandedRealm === group.realm;
+              // Grouped by land
+              sfwLands.map((group) => {
+                const filteredWorlds = group.realms.filter(w => !w.is_nsfw || nsfwEnabled);
+                const isExpanded = expandedLand === group.land;
 
                 return (
-                  <div key={group.realm} className={`realm-group ${isExpanded ? "md:col-span-2 lg:col-span-3" : ""}`}>
-                    {/* Realm Header */}
+                  <div key={group.land} className={`land-group ${isExpanded ? "md:col-span-2 lg:col-span-3" : ""}`}>
+                    {/* Land Header */}
                     <button
-                      onClick={() => handleRealmClick(group.realm, false)}
+                      onClick={() => handleLandClick(group.land, false)}
                       className="w-full p-4 bg-[var(--shadow)] border border-[var(--slate)] rounded-lg flex items-center justify-between hover:border-[var(--amber-dim)] transition-colors group"
                     >
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl text-[var(--amber)] opacity-80 group-hover:opacity-100 transition-opacity">{info.icon}</span>
-                        <div className="text-left">
-                          <span className="text-[var(--amber)] font-bold block">{group.display_name}</span>
-                          <span className="text-[var(--mist)] text-xs">{filteredWorlds.length} worlds</span>
-                        </div>
+                      <div className="text-left">
+                        <span className="text-[var(--amber)] font-bold block">{group.display_name}</span>
+                        <span className="text-[var(--mist)] text-xs">{filteredWorlds.length} worlds</span>
                       </div>
                       <span className="text-[var(--mist)] text-lg">{isExpanded ? "−" : "+"}</span>
                     </button>
@@ -498,34 +369,30 @@ function WorldBrowser({ realmGroups, onSelect, onBack, nsfwEnabled, nsfwAutoBloc
               })
             )}
 
-            {/* NSFW/Locked Realms Section */}
-            {nsfwRealms.length > 0 && (
+            {/* NSFW/Locked Lands Section */}
+            {nsfwLands.length > 0 && (
               <>
                 {nsfwEnabled ? (
-                  // Show NSFW realms normally when unlocked
-                  nsfwRealms.map((group) => {
-                    const info = REALM_INFO[group.realm] || { name: group.display_name, icon: "◇" };
-                    const isExpanded = expandedRealm === group.realm;
+                  // Show NSFW lands normally when unlocked
+                  nsfwLands.map((group) => {
+                    const isExpanded = expandedLand === group.land;
 
                     return (
-                      <div key={group.realm} className={`realm-group ${isExpanded ? "md:col-span-2 lg:col-span-3" : ""}`}>
+                      <div key={group.land} className={`land-group ${isExpanded ? "md:col-span-2 lg:col-span-3" : ""}`}>
                         <button
-                          onClick={() => handleRealmClick(group.realm, false)}
+                          onClick={() => handleLandClick(group.land, false)}
                           className="w-full p-4 bg-[var(--shadow)] border border-[var(--crimson)]/30 rounded-lg flex items-center justify-between hover:border-[var(--crimson)] transition-colors group"
                         >
-                          <div className="flex items-center gap-3">
-                            <span className="text-2xl text-[var(--crimson)] opacity-80 group-hover:opacity-100 transition-opacity">{info.icon}</span>
-                            <div className="text-left">
-                              <span className="text-[var(--crimson)] font-bold block">{group.display_name}</span>
-                              <span className="text-[var(--mist)] text-xs">{group.world_count} worlds · 18+</span>
-                            </div>
+                          <div className="text-left">
+                            <span className="text-[var(--crimson)] font-bold block">{group.display_name}</span>
+                            <span className="text-[var(--mist)] text-xs">{group.realm_count} worlds · 18+</span>
                           </div>
                           <span className="text-[var(--mist)] text-lg">{isExpanded ? "−" : "+"}</span>
                         </button>
 
                         {isExpanded && (
                           <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2">
-                            {group.worlds.map((world) => (
+                            {group.realms.map((world) => (
                               <button
                                 key={world.id}
                                 onClick={() => onSelect(world)}
@@ -554,7 +421,7 @@ function WorldBrowser({ realmGroups, onSelect, onBack, nsfwEnabled, nsfwAutoBloc
                     <span className="text-xl leading-none mt-0.5">🚫</span>
                     <div className="text-left">
                       <span className="text-[var(--mist)] font-bold block">Adults Only</span>
-                      <span className="text-[var(--slate)] text-xs">{nsfwRealms.reduce((sum, g) => sum + g.world_count, 0)} worlds · Blocked (enable in Settings)</span>
+                      <span className="text-[var(--slate)] text-xs">{nsfwLands.reduce((sum, g) => sum + g.realm_count, 0)} worlds · Blocked (enable in Settings)</span>
                     </div>
                   </div>
                 ) : (
@@ -566,7 +433,7 @@ function WorldBrowser({ realmGroups, onSelect, onBack, nsfwEnabled, nsfwAutoBloc
                     <span className="text-xl leading-none mt-0.5">🔒</span>
                     <div className="text-left">
                       <span className="text-[var(--mist)] font-bold block">Adults Only</span>
-                      <span className="text-[var(--slate)] text-xs">{nsfwRealms.reduce((sum, g) => sum + g.world_count, 0)} worlds · Tap to verify age</span>
+                      <span className="text-[var(--slate)] text-xs">{nsfwLands.reduce((sum, g) => sum + g.realm_count, 0)} worlds · Tap to verify age</span>
                     </div>
                   </button>
                 )}
@@ -777,10 +644,10 @@ function InfiniteCampfireView({ campfire, onSelect, onBack, loading, onCreateOwn
 export default function GamePage() {
   // Phase state machine
   const [phase, setPhase] = useState<AppPhase>("loading");
-  const [isDemo, setIsDemo] = useState(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
 
   // Infinite Worlds state (new system)
-  const [realmGroups, setRealmGroups] = useState<RealmGroup[]>([]);
+  const [landGroups, setLandGroups] = useState<LandGroup[]>([]);
   const [selectedWorld, setSelectedWorld] = useState<InfiniteWorld | null>(null);
   const [infiniteCampfire, setInfiniteCampfire] = useState<InfiniteCampfireResponse | null>(null);
 
@@ -897,12 +764,7 @@ export default function GamePage() {
       const healthy = await api.checkHealth();
 
       if (!healthy) {
-        // API unavailable - demo mode
-        setIsDemo(true);
-        setRealmGroups(DEMO_REALM_GROUPS);
-        setGenres(DEMO_GENRES);
-        setWorldsByGenre(DEMO_WORLDS_BY_GENRE);
-        setPhase("landing");
+        setConnectionError("Unable to connect to server. Please check your connection and try again.");
         return;
       }
 
@@ -928,17 +790,12 @@ export default function GamePage() {
             // Keep localStorage values as fallback
           }
         }
-        setRealmGroups(groupedData);
+        setLandGroups(groupedData);
         setShowReasoning(prefs.show_reasoning);
+        setPhase("landing");
       } catch {
-        // Fall back to demo mode on error
-        setIsDemo(true);
-        setRealmGroups(DEMO_REALM_GROUPS);
-        setGenres(DEMO_GENRES);
-        setWorldsByGenre(DEMO_WORLDS_BY_GENRE);
+        setConnectionError("Failed to load game data. Please try again.");
       }
-
-      setPhase("landing");
     }
 
     init();
@@ -974,7 +831,7 @@ export default function GamePage() {
     setShowAgeGate(false);
 
     // Sync with server if we have a player ID
-    if (playerId && !isDemo) {
+    if (playerId) {
       try {
         await api.handleNsfwPrompt(playerId, true);
       } catch {
@@ -1009,7 +866,7 @@ export default function GamePage() {
       ageGateCallback();
       setAgeGateCallback(null);
     }
-  }, [ageGateCallback, pendingNsfwCommand, playerId, isDemo]);
+  }, [ageGateCallback, pendingNsfwCommand, playerId]);
 
   const handleAgeGateCancelled = useCallback(async () => {
     setShowAgeGate(false);
@@ -1025,14 +882,14 @@ export default function GamePage() {
     }
 
     // Sync with server if we have a player ID
-    if (playerId && !isDemo) {
+    if (playerId) {
       try {
         await api.handleNsfwPrompt(playerId, false);
       } catch {
         // Server sync failed, local state already updated
       }
     }
-  }, [nsfwRejections, playerId, isDemo]);
+  }, [nsfwRejections, playerId]);
 
   const handleNsfwToggle = useCallback(async (enabled: boolean) => {
     if (enabled) {
@@ -1043,7 +900,7 @@ export default function GamePage() {
     setNsfwEnabled(enabled);
 
     // Sync with server if we have a player ID
-    if (playerId && !isDemo) {
+    if (playerId) {
       try {
         await api.updatePlayerPreferences(playerId, {
           nsfw_enabled: enabled,
@@ -1054,7 +911,7 @@ export default function GamePage() {
         // Server sync failed, local state already updated
       }
     }
-  }, [playerId, isDemo]);
+  }, [playerId]);
 
   // ========== PHASE TRANSITIONS ==========
 
@@ -1065,34 +922,12 @@ export default function GamePage() {
     setSelectedWorld(world);
     setProcessing(true);
 
-    if (!isDemo) {
-      try {
-        const campfire = await api.getInfiniteCampfire(world.id);
-        setInfiniteCampfire(campfire);
-        setPhase("infinite-campfire");
-      } catch {
-        // Fallback to demo campfire
-        setInfiniteCampfire({
-          world_id: world.id,
-          world_name: world.name,
-          world_tagline: world.tagline,
-          intro_text: world.description,
-          tone: world.tone_rules?.primary_tone || "heroic",
-          characters: [],
-        });
-        setPhase("infinite-campfire");
-      }
-    } else {
-      // Demo mode - show demo campfire
-      setInfiniteCampfire({
-        world_id: world.id,
-        world_name: world.name,
-        world_tagline: world.tagline,
-        intro_text: world.description,
-        tone: world.tone_rules?.primary_tone || "heroic",
-        characters: [],
-      });
+    try {
+      const campfire = await api.getInfiniteCampfire(world.id);
+      setInfiniteCampfire(campfire);
       setPhase("infinite-campfire");
+    } catch (err) {
+      setConnectionError(`Failed to load world: ${err instanceof Error ? err.message : "Unknown error"}`);
     }
 
     setProcessing(false);
@@ -1104,58 +939,15 @@ export default function GamePage() {
 
     setProcessing(true);
 
-    // For non-demo mode, start session via the API
-    if (!isDemo) {
-      try {
-        const { session, opening_narrative } = await api.startSession({
-          world_id: selectedWorld.id,
-          entity_id: char.id,
-        });
+    try {
+      const { session, opening_narrative } = await api.startSession({
+        world_id: selectedWorld.id,
+        entity_id: char.id,
+      });
 
-        setCharacter({
-          id: session.character_id || char.id,
-          name: session.character_name || char.name,
-          race: "Unknown",
-          character_class: char.occupation || "Wanderer",
-          stats: { hp: 100, max_hp: 100, mana: 50, max_mana: 50, gold: 0, xp: 0, level: 1 },
-          current_zone_id: null,
-          inventory: [],
-          equipped: {},
-        });
-
-        setZoneName(session.world_name || selectedWorld.name);
-        setEntries([
-          log("system", `Entering ${session.world_name || selectedWorld.name}`),
-          log("narrative", opening_narrative || infiniteCampfire.intro_text),
-          log("system", "Type 'help' for commands, or just describe what you want to do"),
-        ]);
-        setPhase("game");
-      } catch (err) {
-        // If session start fails, fall back to intro text
-        console.warn("Session start failed:", err);
-        setCharacter({
-          id: char.id,
-          name: char.name,
-          race: "Unknown",
-          character_class: char.occupation || "Wanderer",
-          stats: { hp: 100, max_hp: 100, mana: 50, max_mana: 50, gold: 0, xp: 0, level: 1 },
-          current_zone_id: null,
-          inventory: [],
-          equipped: {},
-        });
-        setZoneName(selectedWorld.name);
-        setEntries([
-          log("system", `Entering ${selectedWorld.name}`),
-          log("narrative", infiniteCampfire.intro_text),
-          log("system", "Type 'help' for commands, or just describe what you want to do"),
-        ]);
-        setPhase("game");
-      }
-    } else {
-      // Demo mode
       setCharacter({
-        id: char.id,
-        name: char.name,
+        id: session.character_id || char.id,
+        name: session.character_name || char.name,
         race: "Unknown",
         character_class: char.occupation || "Wanderer",
         stats: { hp: 100, max_hp: 100, mana: 50, max_mana: 50, gold: 0, xp: 0, level: 1 },
@@ -1163,13 +955,16 @@ export default function GamePage() {
         inventory: [],
         equipped: {},
       });
-      setZoneName(selectedWorld.name);
+
+      setZoneName(session.world_name || selectedWorld.name);
       setEntries([
-        log("system", "Demo Mode"),
-        log("narrative", infiniteCampfire.intro_text),
+        log("system", `Entering ${session.world_name || selectedWorld.name}`),
+        log("narrative", opening_narrative || infiniteCampfire.intro_text),
         log("system", "Type 'help' for commands, or just describe what you want to do"),
       ]);
       setPhase("game");
+    } catch (err) {
+      setConnectionError(`Failed to start session: ${err instanceof Error ? err.message : "Unknown error"}`);
     }
 
     setProcessing(false);
@@ -1194,7 +989,6 @@ export default function GamePage() {
 
   // Fetch location footprints
   const fetchFootprints = async (locationEntityId: string) => {
-    if (isDemo) return;
     setLoadingFootprints(true);
     setCurrentLocationEntityId(locationEntityId);
     try {
@@ -1208,7 +1002,7 @@ export default function GamePage() {
 
   // Leave message at current location
   const handleLeaveMessage = async (message: string) => {
-    if (!currentLocationEntityId || isDemo) return;
+    if (!currentLocationEntityId) return;
     await api.leaveLocationMessage(currentLocationEntityId, message);
     // Refresh footprints to show new message
     await fetchFootprints(currentLocationEntityId);
@@ -1216,7 +1010,7 @@ export default function GamePage() {
 
   // Open player stats modal
   const handleOpenPlayerStats = async () => {
-    if (!selectedWorld || !playerId || isDemo) return;
+    if (!selectedWorld || !playerId) return;
     setPlayerStatsOpen(true);
     try {
       const stats = await api.getPlayerWorldStats(selectedWorld.id, playerId);
@@ -1240,12 +1034,13 @@ export default function GamePage() {
     setSelectedGenre(genre);
 
     // Fetch worlds if not cached
-    if (!isDemo && worldsByGenre.length === 0) {
+    if (worldsByGenre.length === 0) {
       try {
         const worldData = await api.getWorlds();
         setWorldsByGenre(worldData);
-      } catch {
-        setWorldsByGenre(DEMO_WORLDS_BY_GENRE);
+      } catch (err) {
+        setConnectionError(`Failed to load worlds: ${err instanceof Error ? err.message : "Unknown error"}`);
+        return;
       }
     }
 
@@ -1255,76 +1050,47 @@ export default function GamePage() {
   const selectWorld = async (world: World) => {
     setSelectedWorldId(world.id);
 
-    if (isDemo) {
-      setCampfireData(DEMO_CAMPFIRE);
-    } else {
-      try {
-        const data = await api.getCampfire(world.id);
-        setCampfireData(data);
-      } catch {
-        setCampfireData(DEMO_CAMPFIRE);
-      }
+    try {
+      const data = await api.getCampfire(world.id);
+      setCampfireData(data);
+      setPhase("campfire");
+    } catch (err) {
+      setConnectionError(`Failed to load world: ${err instanceof Error ? err.message : "Unknown error"}`);
     }
-
-    setPhase("campfire");
   };
 
   const selectCharacter = async (charOption: CharacterOption) => {
     setProcessing(true);
 
-    if (isDemo) {
-      // Demo mode - use demo character
+    try {
+      const { session, message, opening_narrative } = await api.startSession({
+        world_id: selectedWorldId || undefined,
+        character_id: charOption.id,
+      });
+
       setCharacter({
-        ...DEMO_CHARACTER,
         id: charOption.id,
         name: charOption.name,
         race: charOption.race,
         character_class: charOption.character_class,
+        stats: { hp: 100, max_hp: 100, mana: 50, max_mana: 50, gold: 0, xp: 0, level: 1 },
+        current_zone_id: null,
+        inventory: [],
+        equipped: {},
       });
-      setZoneName(campfireData?.world.name || "The Crossroads");
+
+      setZoneName(campfireData?.world.name || "Unknown");
       setEntries([
-        log("system", "Demo Mode"),
-        log("narrative", campfireData?.intro_text || "Your adventure begins..."),
-        log("system", "Type 'help' for commands"),
+        log("system", session.is_guest ? "Guest Session" : "Welcome!"),
+        log("narrative", opening_narrative || message),
+        log("system", "Type 'help' for commands, or just describe what you want to do"),
       ]);
-    } else {
-      // Real API - start session
-      try {
-        const { session, message, opening_narrative } = await api.startSession({
-          world_id: selectedWorldId || undefined,
-          character_id: charOption.id,
-        });
-
-        setCharacter({
-          id: charOption.id,
-          name: charOption.name,
-          race: charOption.race,
-          character_class: charOption.character_class,
-          stats: { hp: 100, max_hp: 100, mana: 50, max_mana: 50, gold: 0, xp: 0, level: 1 },
-          current_zone_id: null,
-          inventory: [],
-          equipped: {},
-        });
-
-        setZoneName(campfireData?.world.name || "Unknown");
-        setEntries([
-          log("system", session.is_guest ? "Guest Session" : "Welcome!"),
-          log("narrative", opening_narrative || message),
-          log("system", "Type 'help' for commands, or just describe what you want to do"),
-        ]);
-      } catch {
-        // Fallback to demo on error
-        setCharacter(DEMO_CHARACTER);
-        setZoneName("The Crossroads");
-        setEntries([
-          log("system", "Connection failed - Demo Mode"),
-          log("narrative", "Your adventure begins at the crossroads..."),
-        ]);
-      }
+      setPhase("game");
+    } catch (err) {
+      setConnectionError(`Failed to start session: ${err instanceof Error ? err.message : "Unknown error"}`);
     }
 
     setProcessing(false);
-    setPhase("game");
   };
 
   // ========== GAME LOGIC ==========
@@ -1362,11 +1128,8 @@ export default function GamePage() {
         addLog("system", `${character.name} - Lv.${s.level} ${character.race} ${character.character_class}\nHP: ${s.hp}/${s.max_hp} | MP: ${s.mana}/${s.max_mana} | Gold: ${s.gold} | XP: ${s.xp}`);
       } else if (["inventory", "inv", "i"].includes(action)) {
         addLog("system", character.inventory.length ? `Inventory: ${character.inventory.join(", ")}` : "Your pack is empty.");
-      } else if (isDemo) {
-        // Demo mode - canned responses
-        handleDemoCommand(action, args);
       } else {
-        // Real API - use natural language endpoint
+        // API - use natural language endpoint
         const result = await api.doAction(command);
 
         // Check for NSFW block
@@ -1446,46 +1209,11 @@ export default function GamePage() {
     }
 
     setProcessing(false);
-  }, [character, addLog, isDemo, nsfwAutoBlocked, requestAgeVerification, savePromptDismissed]);
-
-  const handleDemoCommand = useCallback((action: string, args: string) => {
-    if (["look", "l"].includes(action)) {
-      addLog("narrative", "The ancient crossroads stretches in all directions, worn stones marking countless footsteps. A weathered signpost points to distant lands.");
-      addLog("system", "Exits: north, south, east, west");
-    } else if (["go", "move", "walk", "n", "s", "e", "w", "north", "south", "east", "west"].includes(action)) {
-      let dir = args;
-      if (["n", "north"].includes(action)) dir = "north";
-      if (["s", "south"].includes(action)) dir = "south";
-      if (["e", "east"].includes(action)) dir = "east";
-      if (["w", "west"].includes(action)) dir = "west";
-
-      if (!dir) {
-        addLog("system", "Go where?");
-      } else {
-        addLog("narrative", `You head ${dir}. The path stretches before you, full of possibility...`);
-      }
-    } else if (["talk", "speak"].includes(action)) {
-      if (!args) {
-        addLog("system", "Talk to whom?");
-      } else {
-        addLog("dialogue", `"Greetings, traveler. What brings you to the crossroads?"`, args);
-      }
-    } else if (["attack", "fight"].includes(action)) {
-      addLog("combat", "You ready your weapon...");
-      addLog("system", "No enemies nearby.");
-    } else {
-      addLog("narrative", "Nothing happens. (Demo mode - try: look, go north, talk innkeeper)");
-    }
-  }, [addLog]);
+  }, [character, addLog, nsfwAutoBlocked, requestAgeVerification, savePromptDismissed]);
 
   // ========== SCENE HANDLERS ==========
 
   const handleStartScene = useCallback(async (npcId: string, npcName: string) => {
-    if (isDemo) {
-      addLog("system", "Intimate scenes not available in demo mode.");
-      return;
-    }
-
     setProcessing(true);
     try {
       const result = await api.doAction(`initiate intimate moment with ${npcName}`);
@@ -1506,7 +1234,7 @@ export default function GamePage() {
       addLog("system", `Error: ${error instanceof Error ? error.message : "Unknown"}`);
     }
     setProcessing(false);
-  }, [isDemo, character, addLog]);
+  }, [character, addLog]);
 
   const handleNegotiationComplete = useCallback(async (negotiation: NegotiationRequest) => {
     setProcessing(true);
@@ -1631,7 +1359,7 @@ export default function GamePage() {
 
   // Check for active scene/combat on game start
   useEffect(() => {
-    if (phase === "game" && !isDemo) {
+    if (phase === "game") {
       // Check for active scene
       if (!activeScene && character) {
         api.getActiveScene(character.id).then((result) => {
@@ -1650,25 +1378,39 @@ export default function GamePage() {
         }).catch(() => {});
       }
     }
-  }, [phase, isDemo, activeScene, activeCombat, character, playerId]);
+  }, [phase, activeScene, activeCombat, character, playerId]);
 
   // Fetch player influence on game start
   useEffect(() => {
-    if (phase === "game" && !isDemo && playerId && selectedWorld) {
+    if (phase === "game" && playerId && selectedWorld) {
       api.getPlayerInfluence(selectedWorld.id, playerId)
         .then(setInfluence)
         .catch(() => setInfluence(null));
     }
-  }, [phase, isDemo, playerId, selectedWorld]);
+  }, [phase, playerId, selectedWorld]);
 
   // ========== RENDER BY PHASE ==========
+
+  if (connectionError) {
+    return (
+      <ErrorView
+        message={connectionError}
+        onRetry={() => {
+          setConnectionError(null);
+          setPhase("loading");
+          // Re-trigger initialization
+          window.location.reload();
+        }}
+      />
+    );
+  }
 
   if (phase === "loading") {
     return <LoadingView />;
   }
 
   if (phase === "landing") {
-    return <LandingView onEnter={enterWorlds} isDemo={isDemo} />;
+    return <LandingView onEnter={enterWorlds} />;
   }
 
   // New: Infinite Worlds browser (replaces genre grid + world list)
@@ -1676,7 +1418,7 @@ export default function GamePage() {
     return (
       <>
         <WorldBrowser
-          realmGroups={realmGroups}
+          landGroups={landGroups}
           onSelect={selectInfiniteWorld}
           onBack={() => setPhase("landing")}
           nsfwEnabled={nsfwEnabled}
@@ -1754,11 +1496,8 @@ export default function GamePage() {
         onClose={() => {
           setSettingsOpen(false);
           // Refresh preferences when closing
-          if (!isDemo) {
-            api.getPreferences().then((prefs) => setShowReasoning(prefs.show_reasoning)).catch(() => {});
-          }
+          api.getPreferences().then((prefs) => setShowReasoning(prefs.show_reasoning)).catch(() => {});
         }}
-        isDemo={isDemo}
         nsfwEnabled={nsfwEnabled}
         onNsfwToggle={handleNsfwToggle}
         nsfwVerified={nsfwVerified}
@@ -1772,7 +1511,6 @@ export default function GamePage() {
       <BillingPanel
         isOpen={billingOpen}
         onClose={() => setBillingOpen(false)}
-        isDemo={isDemo}
       />
       <LeaderboardModal
         isOpen={leaderboardOpen}
@@ -1780,7 +1518,6 @@ export default function GamePage() {
         worldId={selectedWorld?.id || null}
         worldName={selectedWorld?.name}
         playerId={playerId}
-        isDemo={isDemo}
       />
       <PlayerStatsModal
         isOpen={playerStatsOpen}
@@ -1792,7 +1529,6 @@ export default function GamePage() {
           setPlayerStatsOpen(false);
           setLeaderboardOpen(true);
         }}
-        isDemo={isDemo}
       />
       <EntityTimelineModal
         isOpen={entityTimelineOpen}
@@ -1803,7 +1539,6 @@ export default function GamePage() {
         }}
         entityId={entityTimelineId}
         entityName={entityTimelineName || undefined}
-        isDemo={isDemo}
       />
       <WorldTemplatesModal
         isOpen={worldTemplatesOpen}
@@ -1813,7 +1548,6 @@ export default function GamePage() {
           setWorldTemplatesOpen(false);
           setWorldCreationOpen(true);
         }}
-        isDemo={isDemo}
       />
       <WorldCreationModal
         isOpen={worldCreationOpen}
@@ -1822,14 +1556,12 @@ export default function GamePage() {
           setSelectedWorldTemplate(null);
         }}
         selectedTemplate={selectedWorldTemplate}
-        isDemo={isDemo}
       />
       <EntityGenerationModal
         isOpen={entityGenerationOpen}
         onClose={() => setEntityGenerationOpen(false)}
         worldId={selectedWorld?.id || null}
         worldName={selectedWorld?.name}
-        isDemo={isDemo}
       />
       <AuthModal
         isOpen={showAuthModal}
@@ -1848,21 +1580,18 @@ export default function GamePage() {
         onClose={() => setBountyBoardOpen(false)}
         worldId={selectedWorld?.id || null}
         playerId={playerId}
-        isDemo={isDemo}
       />
       <PlayerRecord
         isOpen={playerRecordOpen}
         onClose={() => setPlayerRecordOpen(false)}
         worldId={selectedWorld?.id || null}
         playerId={playerId}
-        isDemo={isDemo}
       />
 
       {/* Header */}
       <header className="bg-[var(--shadow)] border-b border-[var(--slate)] px-3 py-2 md:px-4 flex items-center justify-between shrink-0 pt-[max(0.5rem,env(safe-area-inset-top))]">
         <div className="flex items-center gap-2">
           <span className="text-[var(--amber)] font-bold tracking-wider text-sm md:text-base">TEXTLANDS</span>
-          {isDemo && <span className="text-[var(--crimson)] text-[10px] uppercase tracking-wide">Demo</span>}
           {activeScene && <span className="text-[var(--crimson)] text-[10px] uppercase tracking-wide animate-pulse">Scene</span>}
           {activeCombat && <span className="text-[var(--crimson)] text-[10px] uppercase tracking-wide animate-pulse">Combat</span>}
         </div>
@@ -1873,7 +1602,6 @@ export default function GamePage() {
             <WantedStatus
               worldId={selectedWorld?.id || null}
               playerId={playerId}
-              isDemo={isDemo}
               onViewBounties={() => setBountyBoardOpen(true)}
               onViewRecord={() => setPlayerRecordOpen(true)}
             />

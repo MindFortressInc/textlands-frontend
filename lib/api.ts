@@ -187,19 +187,19 @@ export async function getInfiniteWorlds(): Promise<InfiniteWorld[]> {
   return fetchAPI<InfiniteWorld[]>("/infinite/worlds");
 }
 
-// Realm group from grouped endpoint
-export interface RealmGroup {
-  realm: string;
+// Land group from grouped endpoint
+export interface LandGroup {
+  land: string;
   display_name: string;
   description: string;
-  world_count: number;
+  realm_count: number;
   is_locked: boolean;
-  worlds: InfiniteWorld[];
+  realms: InfiniteWorld[];
 }
 
-// List worlds grouped by realm (preferred over getInfiniteWorlds)
-export async function getInfiniteWorldsGrouped(): Promise<RealmGroup[]> {
-  return fetchAPI<RealmGroup[]>("/infinite/worlds/grouped");
+// List worlds grouped by land (preferred over getInfiniteWorlds)
+export async function getInfiniteWorldsGrouped(): Promise<LandGroup[]> {
+  return fetchAPI<LandGroup[]>("/infinite/worlds/grouped");
 }
 
 // Get world details
