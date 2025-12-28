@@ -373,48 +373,25 @@ function WorldBrowser({ landGroups, onSelect, onBack, nsfwEnabled, nsfwAutoBlock
             {nsfwLands.length > 0 && (
               <>
                 {nsfwEnabled ? (
-                  // Show NSFW lands normally when unlocked
-                  nsfwLands.map((group) => {
-                    const isExpanded = expandedLand === group.land;
-
-                    return (
-                      <div key={group.land} className={`land-group ${isExpanded ? "md:col-span-2 lg:col-span-3" : ""}`}>
-                        <button
-                          onClick={() => handleLandClick(group.land, false)}
-                          className="w-full p-4 bg-[var(--shadow)] border border-[var(--crimson)]/30 rounded-lg flex items-center justify-between hover:border-[var(--crimson)] transition-colors group"
-                        >
-                          <div className="text-left">
-                            <span className="text-[var(--crimson)] font-bold block">{group.display_name}</span>
-                            <span className="text-[var(--mist)] text-xs">{group.realm_count} worlds · 18+</span>
-                          </div>
-                          <span className="text-[var(--mist)] text-lg">{isExpanded ? "−" : "+"}</span>
-                        </button>
-
-                        {isExpanded && (
-                          <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2">
-                            {group.realms.map((world) => (
-                              <button
-                                key={world.id}
-                                onClick={() => onSelect(world)}
-                                className="w-full p-4 bg-[var(--void)] border border-[var(--stone)] rounded-lg text-left hover:border-[var(--crimson)] hover:bg-[var(--shadow)] transition-colors"
-                              >
-                                <div className="flex items-start justify-between gap-2 mb-1">
-                                  <span className="text-[var(--amber)] font-bold">{world.name}</span>
-                                  <span className="text-[var(--crimson)] text-[10px] tracking-wider">18+</span>
-                                </div>
-                                <p className="text-[var(--text-dim)] text-sm italic line-clamp-2">{world.tagline}</p>
-                                {world.player_count > 0 && (
-                                  <div className="mt-2 text-[var(--mist)] text-[10px] tracking-wider">
-                                    {world.player_count} exploring
-                                  </div>
-                                )}
-                              </button>
-                            ))}
-                          </div>
-                        )}
+                  // Show NSFW realms as flat cards when unlocked (no extra click needed)
+                  nsfwLands.flatMap((group) => group.realms).map((world) => (
+                    <button
+                      key={world.id}
+                      onClick={() => onSelect(world)}
+                      className="w-full p-4 bg-[var(--shadow)] border border-[var(--crimson)]/30 rounded-lg text-left hover:border-[var(--crimson)] hover:bg-[var(--void)] transition-colors"
+                    >
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <span className="text-[var(--amber)] font-bold">{world.name}</span>
+                        <span className="text-[var(--crimson)] text-[10px] tracking-wider">18+</span>
                       </div>
-                    );
-                  })
+                      <p className="text-[var(--text-dim)] text-sm italic line-clamp-2">{world.tagline}</p>
+                      {world.player_count > 0 && (
+                        <div className="mt-2 text-[var(--mist)] text-[10px] tracking-wider">
+                          {world.player_count} exploring
+                        </div>
+                      )}
+                    </button>
+                  ))
                 ) : nsfwAutoBlocked ? (
                   // Auto-blocked after 3 rejections
                   <div className="w-full p-4 bg-[var(--shadow)] border border-[var(--stone)] rounded-lg flex items-start gap-3 opacity-40">

@@ -454,7 +454,7 @@ export async function handleNsfwPrompt(
 ): Promise<NsfwPromptResponse> {
   return fetchAPI<NsfwPromptResponse>(`/infinite/player/${playerId}/nsfw-prompt`, {
     method: "POST",
-    body: JSON.stringify({ accepted }),
+    body: JSON.stringify({ action: accepted ? "accept" : "reject" }),
   });
 }
 
