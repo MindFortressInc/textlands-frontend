@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/lib/themes/ThemeProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { DynamicFavicon } from "@/components/DynamicFavicon";
 
 export const metadata: Metadata = {
   title: "Textlands",
@@ -31,7 +32,10 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <AuthProvider>
-          <ThemeProvider>{children}</ThemeProvider>
+          <ThemeProvider>
+            <DynamicFavicon />
+            {children}
+          </ThemeProvider>
         </AuthProvider>
       </body>
     </html>

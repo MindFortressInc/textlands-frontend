@@ -3,6 +3,8 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { themes, defaultTheme, applyTheme, type Theme } from "./index";
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
+
 interface ThemeContextType {
   theme: Theme;
   themeId: string;
@@ -11,6 +13,20 @@ interface ThemeContextType {
 }
 
 const ThemeContext = createContext<ThemeContextType | null>(null);
+
+// Sync theme preference to backend (for email theming, etc.)
+async function syncThemeToBackend(themeId: string): Promise<void> {
+  try {
+    await fetch(`${API_BASE}/auth/preferences`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ theme: themeId }),
+    });
+  } catch {
+    // Silently fail - user might not be logged in
+  }
+}
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [themeId, setThemeId] = useState(defaultTheme);
@@ -32,6 +48,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const setTheme = (id: string) => {
     if (themes[id]) {
       setThemeId(id);
+      // Sync to backend for email theming
+      syncThemeToBackend(id);
     }
   };
 
