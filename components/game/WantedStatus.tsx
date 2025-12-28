@@ -7,7 +7,6 @@ import type { Bounty } from "@/types/game";
 interface WantedStatusProps {
   worldId: string | null;
   playerId: string | null;
-  isDemo: boolean;
   onViewBounties?: () => void;
   onViewRecord?: () => void;
 }
@@ -20,7 +19,6 @@ function formatGold(amount: number): string {
 export function WantedStatus({
   worldId,
   playerId,
-  isDemo,
   onViewBounties,
   onViewRecord,
 }: WantedStatusProps) {
@@ -30,7 +28,7 @@ export function WantedStatus({
   const [payingOff, setPayingOff] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isDemo || !worldId || !playerId) return;
+    if (!worldId || !playerId) return;
 
     const fetchBounties = async () => {
       setLoading(true);
@@ -48,7 +46,7 @@ export function WantedStatus({
     // Refresh periodically
     const interval = setInterval(fetchBounties, 60000);
     return () => clearInterval(interval);
-  }, [worldId, playerId, isDemo]);
+  }, [worldId, playerId]);
 
   const handlePayOff = async (bountyId: string) => {
     setPayingOff(bountyId);
@@ -64,7 +62,7 @@ export function WantedStatus({
   };
 
   // Don't render if no bounties or loading
-  if (isDemo || loading || bounties.length === 0) return null;
+  if (loading || bounties.length === 0) return null;
 
   const totalBounty = bounties.reduce((sum, b) => sum + b.bounty_amount, 0);
 

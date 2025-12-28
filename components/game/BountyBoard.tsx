@@ -9,7 +9,6 @@ interface BountyBoardProps {
   onClose: () => void;
   worldId: string | null;
   playerId: string | null;
-  isDemo: boolean;
 }
 
 function formatTimeRemaining(expiresAt: string | undefined): string {
@@ -135,14 +134,13 @@ export function BountyBoard({
   onClose,
   worldId,
   playerId,
-  isDemo,
 }: BountyBoardProps) {
   const [bounties, setBounties] = useState<Bounty[]>([]);
   const [loading, setLoading] = useState(false);
   const [claimingId, setClaimingId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isOpen || isDemo || !worldId) return;
+    if (!isOpen || !worldId) return;
 
     const fetchBounties = async () => {
       setLoading(true);
@@ -156,7 +154,7 @@ export function BountyBoard({
     };
 
     fetchBounties();
-  }, [isOpen, worldId, isDemo]);
+  }, [isOpen, worldId]);
 
   const handleClaim = async (bountyId: string) => {
     if (!playerId) return;
@@ -209,12 +207,7 @@ export function BountyBoard({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4">
-          {isDemo ? (
-            <div className="text-center py-12 text-[var(--mist)]">
-              <div className="text-2xl mb-2">🎭</div>
-              <p>Bounty board unavailable in demo mode</p>
-            </div>
-          ) : loading ? (
+          {loading ? (
             <div className="text-center py-12 text-[var(--mist)]">
               <div className="animate-pulse">Loading wanted posters...</div>
             </div>

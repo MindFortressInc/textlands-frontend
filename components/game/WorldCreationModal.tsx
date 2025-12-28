@@ -9,7 +9,6 @@ interface WorldCreationModalProps {
   onClose: () => void;
   onWorldCreated?: (worldId: string) => void;
   selectedTemplate?: WorldTemplate | null;
-  isDemo: boolean;
 }
 
 const REALMS = [
@@ -53,7 +52,6 @@ export function WorldCreationModal({
   onClose,
   onWorldCreated,
   selectedTemplate,
-  isDemo,
 }: WorldCreationModalProps) {
   const [step, setStep] = useState(1);
   const [creating, setCreating] = useState(false);
@@ -170,11 +168,7 @@ export function WorldCreationModal({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4">
-          {isDemo ? (
-            <div className="text-center py-8 text-[var(--mist)]">
-              <p>World creation unavailable in demo mode</p>
-            </div>
-          ) : step === 1 ? (
+          {step === 1 ? (
             <Step1Basics
               name={name}
               setName={setName}

@@ -6,7 +6,6 @@ import * as api from "@/lib/api";
 interface BillingPanelProps {
   isOpen: boolean;
   onClose: () => void;
-  isDemo: boolean;
 }
 
 const TOKEN_PACKS: { id: api.TokenPack; name: string; tokens: number; price: string }[] = [
@@ -15,7 +14,7 @@ const TOKEN_PACKS: { id: api.TokenPack; name: string; tokens: number; price: str
   { id: "value", name: "Value Pack", tokens: 50, price: "$15" },
 ];
 
-export function BillingPanel({ isOpen, onClose, isDemo }: BillingPanelProps) {
+export function BillingPanel({ isOpen, onClose }: BillingPanelProps) {
   const [subscription, setSubscription] = useState<api.SubscriptionStatus | null>(null);
   const [tokens, setTokens] = useState<api.TokenBalance | null>(null);
   const [playtime, setPlaytime] = useState<api.PlaytimeStatus | null>(null);
@@ -24,10 +23,10 @@ export function BillingPanel({ isOpen, onClose, isDemo }: BillingPanelProps) {
   const [purchasing, setPurchasing] = useState(false);
 
   useEffect(() => {
-    if (isOpen && !isDemo) {
+    if (isOpen) {
       loadBillingData();
     }
-  }, [isOpen, isDemo]);
+  }, [isOpen]);
 
   const loadBillingData = async () => {
     setLoading(true);
@@ -108,13 +107,7 @@ export function BillingPanel({ isOpen, onClose, isDemo }: BillingPanelProps) {
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
-          {isDemo ? (
-            <div className="p-3 rounded border border-[var(--crimson)]/30 bg-[var(--crimson)]/5">
-              <p className="text-[var(--crimson)] text-sm">
-                Billing is not available in demo mode.
-              </p>
-            </div>
-          ) : loading ? (
+          {loading ? (
             <div className="text-center py-8">
               <p className="text-[var(--mist)] animate-pulse">Loading...</p>
             </div>

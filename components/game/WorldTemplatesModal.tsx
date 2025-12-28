@@ -8,7 +8,6 @@ interface WorldTemplatesModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectTemplate?: (template: WorldTemplate) => void;
-  isDemo: boolean;
 }
 
 const genreColors: Record<string, string> = {
@@ -25,14 +24,13 @@ export function WorldTemplatesModal({
   isOpen,
   onClose,
   onSelectTemplate,
-  isDemo,
 }: WorldTemplatesModalProps) {
   const [templates, setTemplates] = useState<WorldTemplate[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<WorldTemplate | null>(null);
 
   useEffect(() => {
-    if (!isOpen || isDemo) return;
+    if (!isOpen) return;
 
     const fetchTemplates = async () => {
       setLoading(true);
@@ -46,7 +44,7 @@ export function WorldTemplatesModal({
     };
 
     fetchTemplates();
-  }, [isOpen, isDemo]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -81,11 +79,7 @@ export function WorldTemplatesModal({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4">
-          {isDemo ? (
-            <div className="text-center py-8 text-[var(--mist)]">
-              <p>Templates unavailable in demo mode</p>
-            </div>
-          ) : loading ? (
+          {loading ? (
             <div className="text-center py-8 text-[var(--mist)] animate-pulse">
               Loading templates...
             </div>

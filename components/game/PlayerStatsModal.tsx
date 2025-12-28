@@ -12,7 +12,6 @@ interface PlayerStatsModalProps {
   influence: PlayerInfluence | null;
   worldName?: string;
   onLeaderboardClick?: () => void;
-  isDemo: boolean;
 }
 
 export function PlayerStatsModal({
@@ -22,7 +21,6 @@ export function PlayerStatsModal({
   influence,
   worldName,
   onLeaderboardClick,
-  isDemo,
 }: PlayerStatsModalProps) {
   if (!isOpen) return null;
 
@@ -63,11 +61,7 @@ export function PlayerStatsModal({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {isDemo ? (
-            <div className="text-center py-8 text-[var(--mist)]">
-              <p>Stats unavailable in demo mode</p>
-            </div>
-          ) : !stats && !influence ? (
+          {!stats && !influence ? (
             <div className="text-center py-8 text-[var(--mist)] animate-pulse">
               Loading...
             </div>

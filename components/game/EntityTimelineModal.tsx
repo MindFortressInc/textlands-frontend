@@ -9,7 +9,6 @@ interface EntityTimelineModalProps {
   onClose: () => void;
   entityId: string | null;
   entityName?: string;
-  isDemo: boolean;
 }
 
 const eventTypeStyles: Record<string, { color: string; icon: string }> = {
@@ -26,13 +25,12 @@ export function EntityTimelineModal({
   onClose,
   entityId,
   entityName,
-  isDemo,
 }: EntityTimelineModalProps) {
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!isOpen || !entityId || isDemo) return;
+    if (!isOpen || !entityId) return;
 
     const fetchTimeline = async () => {
       setLoading(true);
@@ -46,7 +44,7 @@ export function EntityTimelineModal({
     };
 
     fetchTimeline();
-  }, [isOpen, entityId, isDemo]);
+  }, [isOpen, entityId]);
 
   if (!isOpen) return null;
 
@@ -83,11 +81,7 @@ export function EntityTimelineModal({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4">
-          {isDemo ? (
-            <div className="text-center py-8 text-[var(--mist)]">
-              <p>Timeline unavailable in demo mode</p>
-            </div>
-          ) : loading ? (
+          {loading ? (
             <div className="text-center py-8 text-[var(--mist)] animate-pulse">
               Loading...
             </div>

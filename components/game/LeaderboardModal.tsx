@@ -12,7 +12,6 @@ interface LeaderboardModalProps {
   worldId: string | null;
   worldName?: string;
   playerId: string | null;
-  isDemo: boolean;
 }
 
 type Tab = "world" | "global";
@@ -23,7 +22,6 @@ export function LeaderboardModal({
   worldId,
   worldName,
   playerId,
-  isDemo,
 }: LeaderboardModalProps) {
   const [activeTab, setActiveTab] = useState<Tab>(worldId ? "world" : "global");
   const [worldLeaderboard, setWorldLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -32,7 +30,7 @@ export function LeaderboardModal({
 
   // Fetch leaderboard data when modal opens or tab changes
   useEffect(() => {
-    if (!isOpen || isDemo) return;
+    if (!isOpen) return;
 
     const fetchData = async () => {
       setLoading(true);
@@ -51,7 +49,7 @@ export function LeaderboardModal({
     };
 
     fetchData();
-  }, [isOpen, activeTab, worldId, isDemo]);
+  }, [isOpen, activeTab, worldId]);
 
   if (!isOpen) return null;
 
@@ -105,11 +103,7 @@ export function LeaderboardModal({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4">
-          {isDemo ? (
-            <div className="text-center py-8 text-[var(--mist)]">
-              <p>Leaderboards unavailable in demo mode</p>
-            </div>
-          ) : loading ? (
+          {loading ? (
             <div className="text-center py-8 text-[var(--mist)] animate-pulse">
               Loading...
             </div>

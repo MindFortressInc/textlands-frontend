@@ -7,7 +7,6 @@ import * as api from "@/lib/api";
 interface SettingsPanelProps {
   isOpen: boolean;
   onClose: () => void;
-  isDemo: boolean;
   nsfwEnabled: boolean;
   onNsfwToggle: (enabled: boolean) => void;
   nsfwVerified: boolean;
@@ -17,7 +16,6 @@ interface SettingsPanelProps {
 export function SettingsPanel({
   isOpen,
   onClose,
-  isDemo,
   nsfwEnabled,
   onNsfwToggle,
   nsfwVerified,
@@ -31,29 +29,27 @@ export function SettingsPanel({
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    if (isOpen && !isDemo) {
+    if (isOpen) {
       api.getPreferences().then(setPreferences).catch(() => {
         // Use defaults on error
       });
     }
-  }, [isOpen, isDemo]);
+  }, [isOpen]);
 
   const updatePreference = async (key: keyof UserPreferences, value: boolean) => {
     const newPrefs = { ...preferences, [key]: value };
     setPreferences(newPrefs);
 
-    if (!isDemo) {
-      setLoading(true);
-      try {
-        await api.updatePreferences({ [key]: value });
-        setSaved(true);
-        setTimeout(() => setSaved(false), 1500);
-      } catch {
-        // Revert on error
-        setPreferences(preferences);
-      }
-      setLoading(false);
+    setLoading(true);
+    try {
+      await api.updatePreferences({ [key]: value });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 1500);
+    } catch {
+      // Revert on error
+      setPreferences(preferences);
     }
+    setLoading(false);
   };
 
   if (!isOpen) return null;
@@ -92,7 +88,7 @@ export function SettingsPanel({
                     type="checkbox"
                     checked={preferences.show_reasoning}
                     onChange={(e) => updatePreference("show_reasoning", e.target.checked)}
-                    disabled={loading || isDemo}
+                    disabled={loading}
                     className="sr-only peer"
                   />
                   <div className="w-10 h-6 bg-[var(--stone)] rounded-full peer-checked:bg-[var(--arcane)] transition-colors" />
@@ -115,7 +111,7 @@ export function SettingsPanel({
                     type="checkbox"
                     checked={preferences.show_on_failure}
                     onChange={(e) => updatePreference("show_on_failure", e.target.checked)}
-                    disabled={loading || isDemo || preferences.show_reasoning}
+                    disabled={loading || preferences.show_reasoning}
                     className="sr-only peer"
                   />
                   <div className={`w-10 h-6 bg-[var(--stone)] rounded-full peer-checked:bg-[var(--arcane)] transition-colors ${preferences.show_reasoning ? "opacity-50" : ""}`} />
@@ -172,15 +168,6 @@ export function SettingsPanel({
               </label>
             </div>
           </div>
-
-          {/* Demo Mode Notice */}
-          {isDemo && (
-            <div className="p-3 rounded border border-[var(--crimson)]/30 bg-[var(--crimson)]/5">
-              <p className="text-[var(--crimson)] text-sm">
-                Settings are not saved in demo mode. Connect to the server to save preferences.
-              </p>
-            </div>
-          )}
 
           {/* Saved indicator */}
           {saved && (

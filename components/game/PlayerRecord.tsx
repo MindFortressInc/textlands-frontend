@@ -9,7 +9,6 @@ interface PlayerRecordProps {
   onClose: () => void;
   worldId: string | null;
   playerId: string | null;
-  isDemo: boolean;
 }
 
 function formatDate(dateStr: string): string {
@@ -98,14 +97,13 @@ export function PlayerRecord({
   onClose,
   worldId,
   playerId,
-  isDemo,
 }: PlayerRecordProps) {
   const [infractions, setInfractions] = useState<Infraction[]>([]);
   const [activeBounties, setActiveBounties] = useState<Bounty[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!isOpen || isDemo || !worldId || !playerId) return;
+    if (!isOpen || !worldId || !playerId) return;
 
     const fetchData = async () => {
       setLoading(true);
@@ -123,7 +121,7 @@ export function PlayerRecord({
     };
 
     fetchData();
-  }, [isOpen, worldId, playerId, isDemo]);
+  }, [isOpen, worldId, playerId]);
 
   if (!isOpen) return null;
 
@@ -208,11 +206,7 @@ export function PlayerRecord({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
-          {isDemo ? (
-            <div className="text-center py-12 text-[var(--mist)]">
-              <p>Criminal records unavailable in demo mode</p>
-            </div>
-          ) : loading ? (
+          {loading ? (
             <div className="text-center py-12 text-[var(--mist)]">
               <div className="animate-pulse">Accessing records...</div>
             </div>

@@ -9,7 +9,6 @@ interface EntityGenerationModalProps {
   onClose: () => void;
   worldId: string | null;
   worldName?: string;
-  isDemo: boolean;
 }
 
 const ENTITY_TYPES: { type: EntityType; label: string; icon: string; description: string }[] = [
@@ -28,7 +27,6 @@ export function EntityGenerationModal({
   onClose,
   worldId,
   worldName,
-  isDemo,
 }: EntityGenerationModalProps) {
   const [activeTab, setActiveTab] = useState<Tab>("generate");
   const [selectedType, setSelectedType] = useState<EntityType>("npc");
@@ -44,7 +42,7 @@ export function EntityGenerationModal({
 
   // Fetch entities when browsing
   useEffect(() => {
-    if (!isOpen || !worldId || isDemo || activeTab !== "browse") return;
+    if (!isOpen || !worldId || activeTab !== "browse") return;
 
     const fetchEntities = async () => {
       setLoadingEntities(true);
@@ -58,7 +56,7 @@ export function EntityGenerationModal({
     };
 
     fetchEntities();
-  }, [isOpen, worldId, isDemo, activeTab, browseType]);
+  }, [isOpen, worldId, activeTab, browseType]);
 
   // Reset state when modal opens
   useEffect(() => {
@@ -145,11 +143,7 @@ export function EntityGenerationModal({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4">
-          {isDemo ? (
-            <div className="text-center py-8 text-[var(--mist)]">
-              <p>Entity generation unavailable in demo mode</p>
-            </div>
-          ) : activeTab === "generate" ? (
+          {activeTab === "generate" ? (
             generatedEntity ? (
               <GeneratedEntityDisplay entity={generatedEntity} onNew={handleNewGeneration} />
             ) : (
