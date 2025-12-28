@@ -369,11 +369,12 @@ const REALM_INFO: Record<string, { name: string; icon: string }> = {
 };
 
 // New Infinite Worlds browser - grouped by realm
-function WorldBrowser({ realmGroups, onSelect, onBack, nsfwEnabled, onRequestNsfw, onTemplatesClick, onCreateClick }: {
+function WorldBrowser({ realmGroups, onSelect, onBack, nsfwEnabled, nsfwAutoBlocked, onRequestNsfw, onTemplatesClick, onCreateClick }: {
   realmGroups: RealmGroup[];
   onSelect: (world: InfiniteWorld) => void;
   onBack: () => void;
   nsfwEnabled: boolean;
+  nsfwAutoBlocked?: boolean;
   onRequestNsfw: () => void;
   onTemplatesClick?: () => void;
   onCreateClick?: () => void;
@@ -384,11 +385,11 @@ function WorldBrowser({ realmGroups, onSelect, onBack, nsfwEnabled, onRequestNsf
   const sfwRealms = realmGroups.filter(g => !g.is_locked);
   const nsfwRealms = realmGroups.filter(g => g.is_locked);
 
-  // Filter worlds based on NSFW setting
-  const filterWorlds = (worlds: InfiniteWorld[]) => {
-    if (nsfwEnabled) return worlds;
-    return worlds.filter(w => !w.is_nsfw);
-  };
+  // Get all SFW worlds flat
+  const allSfwWorlds = sfwRealms.flatMap(g => g.worlds).filter(w => !w.is_nsfw || nsfwEnabled);
+
+  // Show flat list if < 10 SFW worlds, otherwise group by realm
+  const showFlat = allSfwWorlds.length < 10;
 
   const handleRealmClick = (realm: string, isLocked: boolean) => {
     if (isLocked && !nsfwEnabled) {
@@ -438,59 +439,84 @@ function WorldBrowser({ realmGroups, onSelect, onBack, nsfwEnabled, onRequestNsf
 
       <div className="flex-1 overflow-y-auto p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         <div className="max-w-6xl mx-auto">
-          {/* Realm grid - 2 columns on desktop */}
+          {/* World grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 stagger-fade-in">
-            {/* SFW Realms */}
-            {sfwRealms.map((group) => {
-              const info = REALM_INFO[group.realm] || { name: group.display_name, icon: "◇" };
-              const filteredWorlds = filterWorlds(group.worlds);
-              const isExpanded = expandedRealm === group.realm;
-
-              return (
-                <div key={group.realm} className={`realm-group ${isExpanded ? "md:col-span-2 lg:col-span-3" : ""}`}>
-                  {/* Realm Header */}
-                  <button
-                    onClick={() => handleRealmClick(group.realm, false)}
-                    className="w-full p-4 bg-[var(--shadow)] border border-[var(--slate)] rounded-lg flex items-center justify-between hover:border-[var(--amber-dim)] transition-colors group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl text-[var(--amber)] opacity-80 group-hover:opacity-100 transition-opacity">{info.icon}</span>
-                      <div className="text-left">
-                        <span className="text-[var(--amber)] font-bold block">{group.display_name}</span>
-                        <span className="text-[var(--mist)] text-xs">{filteredWorlds.length} worlds</span>
-                      </div>
-                    </div>
-                    <span className="text-[var(--mist)] text-lg">{isExpanded ? "−" : "+"}</span>
-                  </button>
-
-                  {/* Expanded World List - also 2 columns on desktop */}
-                  {isExpanded && (
-                    <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {filteredWorlds.map((world) => (
-                        <button
-                          key={world.id}
-                          onClick={() => onSelect(world)}
-                          className="w-full p-4 bg-[var(--void)] border border-[var(--stone)] rounded-lg text-left hover:border-[var(--amber-dim)] hover:bg-[var(--shadow)] transition-colors"
-                        >
-                          <div className="flex items-start justify-between gap-2 mb-1">
-                            <span className="text-[var(--amber)] font-bold">{world.name}</span>
-                            {world.is_nsfw && (
-                              <span className="text-[var(--crimson)] text-[10px] tracking-wider">18+</span>
-                            )}
-                          </div>
-                          <p className="text-[var(--text-dim)] text-sm italic line-clamp-2">{world.tagline}</p>
-                          {world.player_count > 0 && (
-                            <div className="mt-2 text-[var(--mist)] text-[10px] tracking-wider">
-                              {world.player_count} exploring
-                            </div>
-                          )}
-                        </button>
-                      ))}
+            {/* SFW Worlds - flat list if < 10, otherwise grouped by realm */}
+            {showFlat ? (
+              // Flat list of all SFW worlds
+              allSfwWorlds.map((world) => (
+                <button
+                  key={world.id}
+                  onClick={() => onSelect(world)}
+                  className="w-full p-4 bg-[var(--shadow)] border border-[var(--slate)] rounded-lg text-left hover:border-[var(--amber-dim)] hover:bg-[var(--void)] transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <span className="text-[var(--amber)] font-bold">{world.name}</span>
+                    {world.is_nsfw && (
+                      <span className="text-[var(--crimson)] text-[10px] tracking-wider">18+</span>
+                    )}
+                  </div>
+                  <p className="text-[var(--text-dim)] text-sm italic line-clamp-2">{world.tagline}</p>
+                  {world.player_count > 0 && (
+                    <div className="mt-2 text-[var(--mist)] text-[10px] tracking-wider">
+                      {world.player_count} exploring
                     </div>
                   )}
-                </div>
-              );
-            })}
+                </button>
+              ))
+            ) : (
+              // Grouped by realm
+              sfwRealms.map((group) => {
+                const info = REALM_INFO[group.realm] || { name: group.display_name, icon: "◇" };
+                const filteredWorlds = group.worlds.filter(w => !w.is_nsfw || nsfwEnabled);
+                const isExpanded = expandedRealm === group.realm;
+
+                return (
+                  <div key={group.realm} className={`realm-group ${isExpanded ? "md:col-span-2 lg:col-span-3" : ""}`}>
+                    {/* Realm Header */}
+                    <button
+                      onClick={() => handleRealmClick(group.realm, false)}
+                      className="w-full p-4 bg-[var(--shadow)] border border-[var(--slate)] rounded-lg flex items-center justify-between hover:border-[var(--amber-dim)] transition-colors group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl text-[var(--amber)] opacity-80 group-hover:opacity-100 transition-opacity">{info.icon}</span>
+                        <div className="text-left">
+                          <span className="text-[var(--amber)] font-bold block">{group.display_name}</span>
+                          <span className="text-[var(--mist)] text-xs">{filteredWorlds.length} worlds</span>
+                        </div>
+                      </div>
+                      <span className="text-[var(--mist)] text-lg">{isExpanded ? "−" : "+"}</span>
+                    </button>
+
+                    {/* Expanded World List */}
+                    {isExpanded && (
+                      <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {filteredWorlds.map((world) => (
+                          <button
+                            key={world.id}
+                            onClick={() => onSelect(world)}
+                            className="w-full p-4 bg-[var(--void)] border border-[var(--stone)] rounded-lg text-left hover:border-[var(--amber-dim)] hover:bg-[var(--shadow)] transition-colors"
+                          >
+                            <div className="flex items-start justify-between gap-2 mb-1">
+                              <span className="text-[var(--amber)] font-bold">{world.name}</span>
+                              {world.is_nsfw && (
+                                <span className="text-[var(--crimson)] text-[10px] tracking-wider">18+</span>
+                              )}
+                            </div>
+                            <p className="text-[var(--text-dim)] text-sm italic line-clamp-2">{world.tagline}</p>
+                            {world.player_count > 0 && (
+                              <div className="mt-2 text-[var(--mist)] text-[10px] tracking-wider">
+                                {world.player_count} exploring
+                              </div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
 
             {/* NSFW/Locked Realms Section */}
             {nsfwRealms.length > 0 && (
@@ -542,8 +568,17 @@ function WorldBrowser({ realmGroups, onSelect, onBack, nsfwEnabled, onRequestNsf
                       </div>
                     );
                   })
+                ) : nsfwAutoBlocked ? (
+                  // Auto-blocked after 3 rejections
+                  <div className="w-full p-4 bg-[var(--shadow)] border border-[var(--stone)] rounded-lg flex items-center gap-3 opacity-40">
+                    <span className="text-2xl">🚫</span>
+                    <div className="text-left">
+                      <span className="text-[var(--mist)] font-bold block">Adults Only</span>
+                      <span className="text-[var(--slate)] text-xs">{nsfwRealms.reduce((sum, g) => sum + g.world_count, 0)} worlds · Blocked (enable in Settings)</span>
+                    </div>
+                  </div>
                 ) : (
-                  // Locked NSFW section
+                  // Locked NSFW section - tap to verify
                   <button
                     onClick={onRequestNsfw}
                     className="w-full p-4 bg-[var(--shadow)] border border-[var(--stone)] rounded-lg flex items-center justify-between hover:border-[var(--mist)] transition-colors opacity-60"
@@ -1667,6 +1702,7 @@ export default function GamePage() {
           onSelect={selectInfiniteWorld}
           onBack={() => setPhase("landing")}
           nsfwEnabled={nsfwEnabled}
+          nsfwAutoBlocked={nsfwAutoBlocked}
           onRequestNsfw={() => requestAgeVerification()}
           onTemplatesClick={() => setWorldTemplatesOpen(true)}
           onCreateClick={() => setWorldCreationOpen(true)}
