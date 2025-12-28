@@ -79,7 +79,7 @@ export function CharacterPanel({ character, zoneName, influence, onLeaderboardCl
           <div className="pt-2 border-t border-[var(--slate)]">
             <div className="text-[var(--mist)] text-xs mb-2">Influence</div>
             <InfluenceBadge
-              score={influence.influence_score}
+              score={influence.trailblazer_score}
               rank={influence.rank}
               showScore
               showProgress

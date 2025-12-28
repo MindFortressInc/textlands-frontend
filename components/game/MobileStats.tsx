@@ -131,7 +131,7 @@ export function MobileStats({ character, zoneName, influence, onLeaderboardClick
                 <div className="pt-2 border-t border-[var(--slate)]">
                   <div className="text-[var(--mist)] mb-1">Influence</div>
                   <InfluenceBadge
-                    score={influence.influence_score}
+                    score={influence.trailblazer_score}
                     rank={influence.rank}
                     size="sm"
                     onClick={onLeaderboardClick}

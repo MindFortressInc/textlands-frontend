@@ -103,6 +103,7 @@ export async function checkHealth(): Promise<boolean> {
 export interface UserPreferences {
   show_reasoning: boolean;
   show_on_failure: boolean;
+  language_code?: string;
 }
 
 export async function getPreferences(): Promise<UserPreferences> {
@@ -290,8 +291,9 @@ export async function completeScene(
   );
 }
 
-export async function getActiveScene(characterId: string): Promise<IntimacyResponse> {
-  return fetchAPI<IntimacyResponse>(`/intimacy/active?character_id=${characterId}`);
+export async function getActiveScene(guestId?: string): Promise<IntimacyResponse> {
+  const params = guestId ? `?guest_id=${guestId}` : "";
+  return fetchAPI<IntimacyResponse>(`/intimacy/active${params}`);
 }
 
 // ============ INFINITE WORLDS API ============
@@ -369,9 +371,27 @@ export async function getWorldLeaderboard(worldId: string): Promise<LeaderboardE
   return fetchAPI<LeaderboardEntry[]>(`/infinite/worlds/${worldId}/leaderboard`);
 }
 
-// Get global leaderboard
+// Get global leaderboard (maps API fields to frontend format)
+interface GlobalLeaderboardEntryRaw {
+  rank: number;
+  player_id: string;
+  total_trailblazer_score: number;
+  total_entities_created: number;
+  worlds_explored: number;
+  last_active: string | null;
+}
+
 export async function getGlobalLeaderboard(): Promise<LeaderboardEntry[]> {
-  return fetchAPI<LeaderboardEntry[]>("/infinite/leaderboard/global");
+  const raw = await fetchAPI<GlobalLeaderboardEntryRaw[]>("/infinite/leaderboard/global");
+  return raw.map((entry) => ({
+    rank: entry.rank,
+    player_id: entry.player_id,
+    trailblazer_score: entry.total_trailblazer_score,
+    governance_points: 0,
+    currency: 0,
+    entities_created: entry.total_entities_created,
+    last_played_at: entry.last_active || "",
+  }));
 }
 
 // Get infinite world campfire (character selection)
@@ -450,6 +470,15 @@ export async function createCampfireCharacter(
 
 // ============ PLAYER PREFERENCES API ============
 
+// API response format
+interface PlayerNsfwPreferencesRaw {
+  nsfw_enabled: boolean;
+  nsfw_prompt_count: number;
+  nsfw_auto_blocked: boolean;
+  prompts_remaining: number;
+}
+
+// Frontend-friendly format (with mapped fields)
 export interface PlayerNsfwPreferences {
   nsfw_enabled: boolean;
   age_verified: boolean;
@@ -458,17 +487,36 @@ export interface PlayerNsfwPreferences {
 }
 
 export async function getPlayerPreferences(playerId: string): Promise<PlayerNsfwPreferences> {
-  return fetchAPI<PlayerNsfwPreferences>(`/infinite/player/${playerId}/preferences`);
+  const raw = await fetchAPI<PlayerNsfwPreferencesRaw>(`/infinite/player/${playerId}/preferences`);
+  // Map API fields to frontend expectations
+  return {
+    nsfw_enabled: raw.nsfw_enabled,
+    age_verified: raw.prompts_remaining < 3, // Verified if they haven't rejected 3 times
+    rejection_count: raw.nsfw_prompt_count,
+    auto_blocked: raw.nsfw_auto_blocked,
+  };
 }
 
 export async function updatePlayerPreferences(
   playerId: string,
   prefs: Partial<PlayerNsfwPreferences>
 ): Promise<PlayerNsfwPreferences> {
-  return fetchAPI<PlayerNsfwPreferences>(`/infinite/player/${playerId}/preferences`, {
+  // Map frontend fields to API format
+  const apiPrefs: Partial<PlayerNsfwPreferencesRaw> = {};
+  if (prefs.nsfw_enabled !== undefined) apiPrefs.nsfw_enabled = prefs.nsfw_enabled;
+  if (prefs.auto_blocked !== undefined) apiPrefs.nsfw_auto_blocked = prefs.auto_blocked;
+
+  const raw = await fetchAPI<PlayerNsfwPreferencesRaw>(`/infinite/player/${playerId}/preferences`, {
     method: "POST",
-    body: JSON.stringify(prefs),
+    body: JSON.stringify(apiPrefs),
   });
+
+  return {
+    nsfw_enabled: raw.nsfw_enabled,
+    age_verified: raw.prompts_remaining < 3,
+    rejection_count: raw.nsfw_prompt_count,
+    auto_blocked: raw.nsfw_auto_blocked,
+  };
 }
 
 export interface NsfwPromptResponse {
@@ -567,11 +615,27 @@ export async function updateEntityState(
 
 // ============ PLAYER INFLUENCE API ============
 
+export interface TierProgress {
+  current_tier: number;
+  next_tier: number;
+  points_needed: number;
+  progress_percent: number;
+}
+
 export interface PlayerInfluence {
-  world_id: string;
   player_id: string;
-  influence_score: number;
-  contributions: number;
+  world_id: string;
+  trailblazer_score: number;
+  tier: number;
+  title: string;
+  powers: string[];
+  governance_points: number;
+  currency: number;
+  is_world_creator: boolean;
+  entities_created_count: number;
+  total_passive_income: number;
+  decay_at_risk: boolean;
+  tier_progress: TierProgress;
   rank?: number;
 }
 

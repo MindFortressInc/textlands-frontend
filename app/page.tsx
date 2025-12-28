@@ -1482,8 +1482,8 @@ export default function GamePage() {
   useEffect(() => {
     if (phase === "game" && !isDemo) {
       // Check for active scene
-      if (!activeScene && character) {
-        api.getActiveScene(character.id).then((result) => {
+      if (!activeScene && playerId) {
+        api.getActiveScene(playerId).then((result) => {
           if (result.scene) {
             setActiveScene(result.scene);
           }
@@ -1499,7 +1499,7 @@ export default function GamePage() {
         }).catch(() => {});
       }
     }
-  }, [phase, isDemo, activeScene, activeCombat, character]);
+  }, [phase, isDemo, activeScene, activeCombat, character, playerId]);
 
   // Fetch player influence on game start
   useEffect(() => {
@@ -1645,7 +1645,7 @@ export default function GamePage() {
           {influence && (
             <div className="hidden sm:block">
               <InfluenceBadge
-                score={influence.influence_score}
+                score={influence.trailblazer_score}
                 rank={influence.rank}
                 size="sm"
                 onClick={() => setLeaderboardOpen(true)}
