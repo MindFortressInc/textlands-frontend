@@ -1037,9 +1037,9 @@ export default function GamePage() {
     // For non-demo mode, start session via the API
     if (!isDemo) {
       try {
-        const { session, opening_narrative } = await api.startSession({
+        const { session, opening_narrative } = await api.startInfiniteSession({
           world_id: selectedWorld.id,
-          character_id: char.id,
+          entity_id: char.id,
         });
 
         setCharacter({

@@ -406,9 +406,8 @@ export interface InfiniteSessionRequest {
 }
 
 export interface InfiniteSessionResponse {
-  session_id: string;
-  world_id: string;
-  entity_id: string;
+  session: SessionInfo;
+  message: string;
   opening_narrative: string;
 }
 
