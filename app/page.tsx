@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { GameLog, CommandInput, CharacterPanel, QuickActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal, SaveProgressModal, AccountRequiredModal, BillingPanel, InfluenceBadge, LeaderboardModal, CharacterCreationModal } from "@/components/game";
+import { GameLog, CommandInput, CharacterPanel, QuickActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal, AuthModal, BillingPanel, InfluenceBadge, LeaderboardModal, CharacterCreationModal, PlayerStatsModal, EntityTimelineModal, WorldTemplatesModal, EntityGenerationModal } from "@/components/game";
 import { ThemePicker } from "@/components/ThemePicker";
 import type { Character, GameLogEntry, Genre, World, WorldsByGenre, CampfireResponse, CharacterOption, ActiveScene as ActiveSceneType, NegotiationRequest, CombatSession, ReasoningInfo, InfiniteWorld, InfiniteCampfireResponse, InfiniteCampfireCharacter, AccountPromptReason } from "@/types/game";
 import * as api from "@/lib/api";
-import type { RealmGroup, PlayerInfluence } from "@/lib/api";
+import type { RealmGroup, PlayerInfluence, LocationFootprint } from "@/lib/api";
+import type { PlayerWorldStats } from "@/types/game";
 
 // ========== HELPERS ==========
 
@@ -368,12 +369,13 @@ const REALM_INFO: Record<string, { name: string; icon: string }> = {
 };
 
 // New Infinite Worlds browser - grouped by realm
-function WorldBrowser({ realmGroups, onSelect, onBack, nsfwEnabled, onRequestNsfw }: {
+function WorldBrowser({ realmGroups, onSelect, onBack, nsfwEnabled, onRequestNsfw, onTemplatesClick }: {
   realmGroups: RealmGroup[];
   onSelect: (world: InfiniteWorld) => void;
   onBack: () => void;
   nsfwEnabled: boolean;
   onRequestNsfw: () => void;
+  onTemplatesClick?: () => void;
 }) {
   const [expandedRealm, setExpandedRealm] = useState<string | null>(null);
 
@@ -410,7 +412,18 @@ function WorldBrowser({ realmGroups, onSelect, onBack, nsfwEnabled, onRequestNsf
           <span className="text-[var(--amber)] font-bold tracking-wider">CHOOSE YOUR REALM</span>
           <div className="text-[var(--mist)] text-[10px] tracking-widest">{totalWorlds} WORLDS AVAILABLE</div>
         </div>
-        <ThemePicker />
+        <div className="flex items-center gap-2">
+          {onTemplatesClick && (
+            <button
+              onClick={onTemplatesClick}
+              className="text-[var(--mist)] hover:text-[var(--amber)] transition-colors text-sm px-2 py-1"
+              title="Browse Templates"
+            >
+              Templates
+            </button>
+          )}
+          <ThemePicker />
+        </div>
       </header>
 
       <div className="flex-1 overflow-y-auto p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
@@ -794,12 +807,31 @@ export default function GamePage() {
   const [charCreatorOpen, setCharCreatorOpen] = useState(false);
   const [charCreatorLoading, setCharCreatorLoading] = useState(false);
 
-  // Guest account prompt state
-  const [showSavePrompt, setShowSavePrompt] = useState(false);
+  // Location footprints state
+  const [footprints, setFootprints] = useState<LocationFootprint[]>([]);
+  const [loadingFootprints, setLoadingFootprints] = useState(false);
+  const [currentLocationEntityId, setCurrentLocationEntityId] = useState<string | null>(null);
+
+  // Player stats modal state
+  const [playerStatsOpen, setPlayerStatsOpen] = useState(false);
+  const [playerWorldStats, setPlayerWorldStats] = useState<PlayerWorldStats | null>(null);
+
+  // Entity timeline modal state
+  const [entityTimelineOpen, setEntityTimelineOpen] = useState(false);
+  const [entityTimelineId, setEntityTimelineId] = useState<string | null>(null);
+  const [entityTimelineName, setEntityTimelineName] = useState<string | null>(null);
+
+  // World templates modal state
+  const [worldTemplatesOpen, setWorldTemplatesOpen] = useState(false);
+
+  // Entity generation modal state
+  const [entityGenerationOpen, setEntityGenerationOpen] = useState(false);
+
+  // Auth modal state (magic link login)
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authModalReason, setAuthModalReason] = useState<AccountPromptReason | undefined>();
+  const [authModalIncentive, setAuthModalIncentive] = useState<string | undefined>();
   const [savePromptDismissed, setSavePromptDismissed] = useState(false);
-  const [showAccountRequired, setShowAccountRequired] = useState(false);
-  const [accountPromptReason, setAccountPromptReason] = useState<AccountPromptReason | undefined>();
-  const [accountPromptIncentive, setAccountPromptIncentive] = useState<string | undefined>();
 
   // ========== INITIALIZATION ==========
 
@@ -1129,6 +1161,47 @@ export default function GamePage() {
     }
   };
 
+  // Fetch location footprints
+  const fetchFootprints = async (locationEntityId: string) => {
+    if (isDemo) return;
+    setLoadingFootprints(true);
+    setCurrentLocationEntityId(locationEntityId);
+    try {
+      const data = await api.getLocationFootprints(locationEntityId);
+      setFootprints(data);
+    } catch {
+      setFootprints([]);
+    }
+    setLoadingFootprints(false);
+  };
+
+  // Leave message at current location
+  const handleLeaveMessage = async (message: string) => {
+    if (!currentLocationEntityId || isDemo) return;
+    await api.leaveLocationMessage(currentLocationEntityId, message);
+    // Refresh footprints to show new message
+    await fetchFootprints(currentLocationEntityId);
+  };
+
+  // Open player stats modal
+  const handleOpenPlayerStats = async () => {
+    if (!selectedWorld || !playerId || isDemo) return;
+    setPlayerStatsOpen(true);
+    try {
+      const stats = await api.getPlayerWorldStats(selectedWorld.id, playerId);
+      setPlayerWorldStats(stats);
+    } catch {
+      setPlayerWorldStats(null);
+    }
+  };
+
+  // Open entity timeline modal
+  const handleOpenEntityTimeline = (entityId: string, entityName?: string) => {
+    setEntityTimelineId(entityId);
+    setEntityTimelineName(entityName || null);
+    setEntityTimelineOpen(true);
+  };
+
   // Legacy: Select genre (for old flow)
   const enterGenres = () => setPhase("genres");
 
@@ -1282,9 +1355,9 @@ export default function GamePage() {
         } else if (result.requires_account) {
           // Blocking prompt - must create account to continue
           addLog("narrative", result.narrative);
-          setAccountPromptReason(result.account_prompt_reason);
-          setAccountPromptIncentive(result.account_prompt_incentive);
-          setShowAccountRequired(true);
+          setAuthModalReason(result.account_prompt_reason);
+          setAuthModalIncentive(result.account_prompt_incentive);
+          setShowAuthModal(true);
         } else {
           // Normal response - add narrative with reasoning if available
           setEntries((prev) => [
@@ -1300,13 +1373,29 @@ export default function GamePage() {
             setCharacter(result.character);
           }
 
+          // Update location and fetch footprints if location changed
+          if (result.location_entity_id) {
+            fetchFootprints(result.location_entity_id);
+            if (result.location_name) {
+              setZoneName(result.location_name);
+            }
+          }
+
+          // Track examined entity for timeline access
+          if (result.examined_entity_id) {
+            setEntityTimelineId(result.examined_entity_id);
+            setEntityTimelineName(result.examined_entity_name || null);
+          }
+
           if (result.error) {
             addLog("system", result.error);
           }
 
           // Soft prompt - dismissible save nudge (after 5 actions)
           if (result.show_save_prompt && !savePromptDismissed) {
-            setShowSavePrompt(true);
+            setAuthModalReason(undefined);
+            setAuthModalIncentive(undefined);
+            setShowAuthModal(true);
           }
         }
       }
@@ -1481,9 +1570,9 @@ export default function GamePage() {
 
       // Check for death recovery prompt (guest died)
       if (result.requires_account) {
-        setAccountPromptReason(result.account_prompt_reason);
-        setAccountPromptIncentive(result.account_prompt_incentive);
-        setShowAccountRequired(true);
+        setAuthModalReason(result.account_prompt_reason);
+        setAuthModalIncentive(result.account_prompt_incentive);
+        setShowAuthModal(true);
         setProcessing(false);
         return;
       }
@@ -1557,11 +1646,17 @@ export default function GamePage() {
           onBack={() => setPhase("landing")}
           nsfwEnabled={nsfwEnabled}
           onRequestNsfw={() => requestAgeVerification()}
+          onTemplatesClick={() => setWorldTemplatesOpen(true)}
         />
         <AgeGateModal
           isOpen={showAgeGate}
           onConfirm={handleAgeVerified}
           onCancel={handleAgeGateCancelled}
+        />
+        <WorldTemplatesModal
+          isOpen={worldTemplatesOpen}
+          onClose={() => setWorldTemplatesOpen(false)}
+          isDemo={isDemo}
         />
       </>
     );
@@ -1657,25 +1752,52 @@ export default function GamePage() {
         playerId={playerId}
         isDemo={isDemo}
       />
-      <SaveProgressModal
-        isOpen={showSavePrompt}
-        onSignUp={() => {
-          setShowSavePrompt(false);
-          setBillingOpen(true);
+      <PlayerStatsModal
+        isOpen={playerStatsOpen}
+        onClose={() => setPlayerStatsOpen(false)}
+        stats={playerWorldStats}
+        influence={influence}
+        worldName={selectedWorld?.name}
+        onLeaderboardClick={() => {
+          setPlayerStatsOpen(false);
+          setLeaderboardOpen(true);
         }}
-        onDismiss={() => {
-          setShowSavePrompt(false);
-          setSavePromptDismissed(true);
-        }}
+        isDemo={isDemo}
       />
-      <AccountRequiredModal
-        isOpen={showAccountRequired}
-        reason={accountPromptReason}
-        incentive={accountPromptIncentive}
-        onSignUp={() => {
-          setShowAccountRequired(false);
-          setBillingOpen(true);
+      <EntityTimelineModal
+        isOpen={entityTimelineOpen}
+        onClose={() => {
+          setEntityTimelineOpen(false);
+          setEntityTimelineId(null);
+          setEntityTimelineName(null);
         }}
+        entityId={entityTimelineId}
+        entityName={entityTimelineName || undefined}
+        isDemo={isDemo}
+      />
+      <WorldTemplatesModal
+        isOpen={worldTemplatesOpen}
+        onClose={() => setWorldTemplatesOpen(false)}
+        isDemo={isDemo}
+      />
+      <EntityGenerationModal
+        isOpen={entityGenerationOpen}
+        onClose={() => setEntityGenerationOpen(false)}
+        worldId={selectedWorld?.id || null}
+        worldName={selectedWorld?.name}
+        isDemo={isDemo}
+      />
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => {
+          setShowAuthModal(false);
+          // If it was a soft prompt (no reason), mark as dismissed
+          if (!authModalReason) {
+            setSavePromptDismissed(true);
+          }
+        }}
+        reason={authModalReason}
+        incentive={authModalIncentive}
       />
 
       {/* Header */}
@@ -1699,6 +1821,13 @@ export default function GamePage() {
               />
             </div>
           )}
+          <button
+            onClick={() => setEntityGenerationOpen(true)}
+            className="text-[var(--mist)] hover:text-[var(--amber)] transition-colors text-xs hidden sm:block"
+            title="Forge - Create Entities"
+          >
+            +
+          </button>
           <button
             onClick={() => setBillingOpen(true)}
             className="text-[var(--mist)] hover:text-[var(--amber)] transition-colors text-xs hidden sm:block"
@@ -1755,7 +1884,13 @@ export default function GamePage() {
           /* Normal Game Interface */
           <div className="flex-1 flex flex-col min-w-0">
             <GameLog entries={entries} showReasoning={showReasoning} />
-            <QuickActions onCommand={handleCommand} disabled={processing} />
+            <QuickActions
+              onCommand={handleCommand}
+              disabled={processing}
+              onTimelineClick={() => setEntityTimelineOpen(true)}
+              hasExaminedEntity={!!entityTimelineId}
+              onForgeClick={() => setEntityGenerationOpen(true)}
+            />
             <CommandInput
               onSubmit={handleCommand}
               disabled={processing}
@@ -1771,6 +1906,10 @@ export default function GamePage() {
             zoneName={zoneName}
             influence={influence}
             onLeaderboardClick={() => setLeaderboardOpen(true)}
+            onStatsClick={handleOpenPlayerStats}
+            footprints={footprints}
+            onLeaveMessage={handleLeaveMessage}
+            loadingFootprints={loadingFootprints}
           />
         </div>
       </div>

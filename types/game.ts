@@ -250,6 +250,12 @@ export interface DoActionResponse {
   error?: string;
   action_id?: string;
   reasoning?: ReasoningInfo;
+  // Location info for footprints
+  location_entity_id?: string;
+  location_name?: string;
+  // Entity context for timeline/examine
+  examined_entity_id?: string;
+  examined_entity_name?: string;
   // NSFW content blocking
   nsfw_blocked?: boolean;
   nsfw_trigger?: string;

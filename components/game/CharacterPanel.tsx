@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import type { Character } from "@/types/game";
-import type { PlayerInfluence } from "@/lib/api";
+import type { PlayerInfluence, LocationFootprint } from "@/lib/api";
 import { InfluenceBadge } from "./InfluenceBadge";
 
 interface CharacterPanelProps {
@@ -9,6 +10,10 @@ interface CharacterPanelProps {
   zoneName?: string;
   influence?: PlayerInfluence | null;
   onLeaderboardClick?: () => void;
+  onStatsClick?: () => void;
+  footprints?: LocationFootprint[];
+  onLeaveMessage?: (message: string) => Promise<void>;
+  loadingFootprints?: boolean;
 }
 
 function StatBar({ current, max, type }: { current: number; max: number; type: "hp" | "mana" | "xp" }) {
@@ -20,7 +25,43 @@ function StatBar({ current, max, type }: { current: number; max: number; type: "
   );
 }
 
-export function CharacterPanel({ character, zoneName, influence, onLeaderboardClick }: CharacterPanelProps) {
+export function CharacterPanel({
+  character,
+  zoneName,
+  influence,
+  onLeaderboardClick,
+  onStatsClick,
+  footprints,
+  onLeaveMessage,
+  loadingFootprints,
+}: CharacterPanelProps) {
+  const [footprintsExpanded, setFootprintsExpanded] = useState(false);
+  const [messageInput, setMessageInput] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
+
+  const handleSendMessage = async () => {
+    if (!messageInput.trim() || !onLeaveMessage) return;
+    setSendingMessage(true);
+    try {
+      await onLeaveMessage(messageInput.trim());
+      setMessageInput("");
+    } finally {
+      setSendingMessage(false);
+    }
+  };
+
+  const formatTimeAgo = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return "just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays}d ago`;
+  };
   if (!character) {
     return (
       <div className="w-56 bg-[var(--shadow)] border-l border-[var(--slate)] p-4 text-[var(--mist)] text-sm">
@@ -94,6 +135,74 @@ export function CharacterPanel({ character, zoneName, influence, onLeaderboardCl
         <div className="p-3 border-t border-[var(--slate)] bg-[var(--stone)]">
           <div className="text-[var(--mist)] text-xs">Location</div>
           <div className="text-[var(--fog)]">{zoneName}</div>
+        </div>
+      )}
+
+      {/* Footprints */}
+      {footprints !== undefined && (
+        <div className="border-t border-[var(--slate)]">
+          <button
+            onClick={() => setFootprintsExpanded(!footprintsExpanded)}
+            className="w-full p-3 flex items-center justify-between text-xs hover:bg-[var(--stone)] transition-colors"
+          >
+            <span className="text-[var(--mist)]">
+              Travelers {footprints.length > 0 && `(${footprints.length})`}
+            </span>
+            <span className="text-[var(--mist)]">
+              {footprintsExpanded ? "−" : "+"}
+            </span>
+          </button>
+
+          {footprintsExpanded && (
+            <div className="px-3 pb-3 space-y-2">
+              {loadingFootprints ? (
+                <div className="text-[var(--mist)] text-xs animate-pulse">Loading...</div>
+              ) : footprints.length === 0 ? (
+                <div className="text-[var(--mist)] text-xs">No recent visitors</div>
+              ) : (
+                <div className="space-y-2 max-h-32 overflow-y-auto">
+                  {footprints.slice(0, 10).map((fp, i) => (
+                    <div key={`${fp.player_id}-${i}`} className="text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-[var(--fog)]">{fp.display_name}</span>
+                        <span className="text-[var(--mist)]">{formatTimeAgo(fp.visited_at)}</span>
+                      </div>
+                      {fp.message && (
+                        <div className="text-[var(--mist)] italic mt-0.5 truncate">
+                          &quot;{fp.message}&quot;
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Leave message input */}
+              {onLeaveMessage && (
+                <div className="pt-2 border-t border-[var(--slate)]">
+                  <div className="flex gap-1">
+                    <input
+                      type="text"
+                      value={messageInput}
+                      onChange={(e) => setMessageInput(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+                      placeholder="Leave a note..."
+                      maxLength={100}
+                      disabled={sendingMessage}
+                      className="flex-1 px-2 py-1 text-xs bg-[var(--void)] border border-[var(--slate)] rounded text-[var(--text)] placeholder-[var(--mist)] focus:border-[var(--amber-dim)] focus:outline-none"
+                    />
+                    <button
+                      onClick={handleSendMessage}
+                      disabled={!messageInput.trim() || sendingMessage}
+                      className="px-2 py-1 text-xs bg-[var(--stone)] border border-[var(--slate)] rounded text-[var(--mist)] hover:text-[var(--text)] hover:border-[var(--amber-dim)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {sendingMessage ? "..." : "Send"}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -210,13 +210,13 @@
 
 These endpoints are connected but have no user-facing UI:
 
-1. **Leaderboards** - `getWorldLeaderboard()`, `getGlobalLeaderboard()`, `getPlayerWorldStats()`
-2. **Location Interaction** - `getLocationFootprints()`, `leaveLocationMessage()`, `recordLocationVisit()`
-3. **Entity Timeline** - `getEntityTimeline()`, `addEntityTimelineEvent()`
-4. **Custom Character** - `createCampfireCharacter()`
-5. **Entity Generation** - `generateEntity()`, `getWorldEntities()`
-6. **World Templates** - `getWorldTemplates()`, `getWorldTemplate()`
-7. **Player Influence** - `getPlayerInfluence()`
+1. ~~**Leaderboards**~~ - `getWorldLeaderboard()`, `getGlobalLeaderboard()`, `getPlayerWorldStats()` ✅ LeaderboardModal exists
+2. ~~**Location Interaction**~~ - `getLocationFootprints()`, `leaveLocationMessage()`, `recordLocationVisit()` ✅ CharacterPanel footprints section
+3. ~~**Entity Timeline**~~ - `getEntityTimeline()`, `addEntityTimelineEvent()` ✅ EntityTimelineModal + QuickActions trigger
+4. ~~**Custom Character**~~ - `createCampfireCharacter()` ✅ CharacterCreationModal exists
+5. ~~**Entity Generation**~~ - `generateEntity()`, `getWorldEntities()` ✅ EntityGenerationModal with Forge button
+6. ~~**World Templates**~~ - `getWorldTemplates()`, `getWorldTemplate()` ✅ WorldTemplatesModal + WorldBrowser button
+7. ~~**Player Influence**~~ - `getPlayerInfluence()` ✅ CharacterPanel influence + PlayerStatsModal
 
 ---
 
