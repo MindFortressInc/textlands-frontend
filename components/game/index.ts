@@ -3,6 +3,7 @@ export { CommandInput } from "./CommandInput";
 export { CharacterPanel } from "./CharacterPanel";
 export { MobileStats } from "./MobileStats";
 export { QuickActions } from "./QuickActions";
+export { SuggestedActions } from "./SuggestedActions";
 export { SceneNegotiation } from "./SceneNegotiation";
 export { ActiveScene } from "./ActiveScene";
 export { RelationshipStatus } from "./RelationshipStatus";

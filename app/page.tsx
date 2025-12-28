@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { GameLog, CommandInput, CharacterPanel, QuickActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal, AuthModal, BillingPanel, InfluenceBadge, LeaderboardModal, CharacterCreationModal, PlayerStatsModal, EntityTimelineModal, WorldTemplatesModal, EntityGenerationModal, WorldCreationModal } from "@/components/game";
+import { GameLog, CommandInput, CharacterPanel, QuickActions, SuggestedActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal, AuthModal, BillingPanel, InfluenceBadge, LeaderboardModal, CharacterCreationModal, PlayerStatsModal, EntityTimelineModal, WorldTemplatesModal, EntityGenerationModal, WorldCreationModal } from "@/components/game";
 import { ThemePicker } from "@/components/ThemePicker";
 import type { Character, GameLogEntry, CharacterOption, ActiveScene as ActiveSceneType, NegotiationRequest, CombatSession, ReasoningInfo, InfiniteWorld, InfiniteCampfireResponse, InfiniteCampfireCharacter, AccountPromptReason, WorldTemplate } from "@/types/game";
 import * as api from "@/lib/api";
@@ -437,6 +437,7 @@ export default function GamePage() {
   const [entries, setEntries] = useState<GameLogEntry[]>([]);
   const [zoneName, setZoneName] = useState("...");
   const [processing, setProcessing] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
 
   // Scene/Intimacy state
   const [activeScene, setActiveScene] = useState<ActiveSceneType | null>(null);
@@ -623,7 +624,7 @@ export default function GamePage() {
               log("narrative", result.narrative, undefined, result.reasoning, result.action_id),
             ]);
             if (result.suggested_actions?.length) {
-              setEntries((prev) => [...prev, log("system", `Try: ${result.suggested_actions.join(", ")}`)]);
+              setSuggestions(result.suggested_actions);
             }
           }
         }).catch(() => {
@@ -806,6 +807,7 @@ export default function GamePage() {
   const handleCommand = useCallback(async (command: string) => {
     if (!character) return;
     addLog("action", command);
+    setSuggestions([]); // Clear previous suggestions
 
     const cmd = command.toLowerCase().trim();
     const [action, ...rest] = cmd.split(/\s+/);
@@ -863,8 +865,9 @@ export default function GamePage() {
             log("narrative", result.narrative, undefined, result.reasoning, result.action_id),
           ]);
 
+          // Store suggestions for clickable chips
           if (result.suggested_actions?.length) {
-            addLog("system", `Try: ${result.suggested_actions.join(", ")}`);
+            setSuggestions(result.suggested_actions);
           }
 
           if (result.character) {
@@ -1340,6 +1343,11 @@ export default function GamePage() {
           /* Normal Game Interface */
           <div className="flex-1 flex flex-col min-w-0">
             <GameLog entries={entries} showReasoning={showReasoning} />
+            <SuggestedActions
+              suggestions={suggestions}
+              onSelect={handleCommand}
+              disabled={processing}
+            />
             <QuickActions
               onCommand={handleCommand}
               disabled={processing}
