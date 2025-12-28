@@ -10,7 +10,7 @@ export function AgeGateModal({ isOpen, onConfirm, onCancel }: AgeGateModalProps)
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-4">
       <div className="w-full max-w-sm bg-[var(--void)] border border-[var(--stone)] rounded-lg overflow-hidden">
         {/* Header */}
         <div className="p-4 border-b border-[var(--stone)]">
