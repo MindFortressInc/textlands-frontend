@@ -210,29 +210,9 @@ export async function getInfiniteWorld(worldId: string): Promise<InfiniteWorld> 
 // Create a new world
 export interface CreateWorldRequest {
   name: string;
-  tagline: string;
-  description: string;
-  realm: string;
+  description?: string;  // AI generates world rules from this
   template_slug?: string;
   is_nsfw?: boolean;
-  physics_rules?: {
-    tech_level?: string;
-    magic_exists?: boolean;
-    magic_system?: string;
-  };
-  society_rules?: {
-    class_system?: string;
-    economy_type?: string;
-  };
-  content_rules?: {
-    romance_level?: string;
-    violence_level?: string;
-  };
-  tone_rules?: {
-    primary_tone?: string;
-    stakes_level?: string;
-    moral_complexity?: string;
-  };
 }
 
 export interface CreateWorldResponse {
