@@ -1009,7 +1009,7 @@ export default function GamePage() {
           addLog("system", "Usage: leave message \"your message here\"");
         }
       } else if (action === "stats") {
-        const { stats: s } = character;
+        const s = character.stats || { hp: 0, max_hp: 100, mana: 0, max_mana: 50, gold: 0, xp: 0, level: 1 };
         addLog("system", `${character.name} - Lv.${s.level} ${character.race} ${character.character_class}\nHP: ${s.hp}/${s.max_hp} | MP: ${s.mana}/${s.max_mana} | Gold: ${s.gold} | XP: ${s.xp}`);
       } else if (["inventory", "inv", "i"].includes(action)) {
         addLog("system", character.inventory.length ? `Inventory: ${character.inventory.join(", ")}` : "Your pack is empty.");
