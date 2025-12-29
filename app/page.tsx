@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { GameLog, CommandInput, CharacterPanel, QuickActions, SuggestedActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal, AuthModal, BillingPanel, InfluenceBadge, LeaderboardModal, CharacterCreationModal, PlayerStatsModal, EntityTimelineModal, WorldTemplatesModal, EntityGenerationModal, WorldCreationModal, SocialPanel, ChatPanel } from "@/components/game";
 import { ThemePicker } from "@/components/ThemePicker";
 import type { Character, GameLogEntry, CharacterOption, ActiveScene as ActiveSceneType, NegotiationRequest, CombatSession, ReasoningInfo, InfiniteWorld, InfiniteCampfireResponse, InfiniteCampfireCharacter, AccountPromptReason, WorldTemplate } from "@/types/game";
+import type { RosterCharacter } from "@/lib/api";
 import * as api from "@/lib/api";
 import type { LandGroup, PlayerInfluence, LocationFootprint, LandKey } from "@/lib/api";
 import type { PlayerWorldStats } from "@/types/game";
@@ -94,7 +95,20 @@ function ErrorView({ message, onRetry }: { message: string; onRetry: () => void 
   );
 }
 
-function LandingView({ onEnter }: { onEnter: () => void }) {
+function LandingView({ onEnter, onLogin, onResumeCharacter, isLoggedIn, roster, loadingRoster }: {
+  onEnter: () => void;
+  onLogin: () => void;
+  onResumeCharacter: (char: RosterCharacter) => void;
+  isLoggedIn: boolean;
+  roster: RosterCharacter[];
+  loadingRoster: boolean;
+}) {
+  const [selectedChar, setSelectedChar] = useState<RosterCharacter | null>(null);
+  const [showPicker, setShowPicker] = useState(false);
+
+  // Filter to active characters only
+  const activeChars = roster.filter(c => c.status === "active");
+
   return (
     <main className="h-dvh flex flex-col items-center justify-center bg-atmospheric p-4 pt-[max(1rem,env(safe-area-inset-top))] animate-fade-in">
       {/* Decorative top line */}
@@ -115,12 +129,74 @@ function LandingView({ onEnter }: { onEnter: () => void }) {
           Choose your world. Become your character.
         </p>
 
+        {/* Character picker for logged-in users with characters */}
+        {isLoggedIn && activeChars.length > 0 && (
+          <div className="space-y-3">
+            <div className="relative">
+              <button
+                onClick={() => setShowPicker(!showPicker)}
+                className="w-full px-4 py-3 bg-[var(--shadow)] border border-[var(--slate)] rounded text-left hover:border-[var(--amber-dim)] transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    {selectedChar ? (
+                      <>
+                        <span className="text-[var(--amber)] font-bold">{selectedChar.character_name}</span>
+                        <span className="text-[var(--mist)] text-xs ml-2">in {selectedChar.world_name}</span>
+                      </>
+                    ) : (
+                      <span className="text-[var(--mist)]">Select a character...</span>
+                    )}
+                  </div>
+                  <span className="text-[var(--mist)]">{showPicker ? "▲" : "▼"}</span>
+                </div>
+              </button>
+
+              {/* Dropdown */}
+              {showPicker && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-[var(--shadow)] border border-[var(--slate)] rounded max-h-48 overflow-y-auto z-10">
+                  {activeChars.map((char) => (
+                    <button
+                      key={char.id}
+                      onClick={() => {
+                        setSelectedChar(char);
+                        setShowPicker(false);
+                      }}
+                      className="w-full px-4 py-2 text-left hover:bg-[var(--stone)] transition-colors border-b border-[var(--slate)] last:border-b-0"
+                    >
+                      <span className="text-[var(--amber)]">{char.character_name}</span>
+                      {char.occupation && (
+                        <span className="text-[var(--mist)] text-xs ml-1">({char.occupation})</span>
+                      )}
+                      <span className="text-[var(--text-dim)] text-xs block">{char.world_name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Resume button */}
+            {selectedChar && (
+              <button
+                onClick={() => onResumeCharacter(selectedChar)}
+                className="group relative w-full px-6 py-3 text-[var(--amber)] font-bold bg-[var(--shadow)] border border-[var(--amber-dim)] rounded transition-all duration-200 hover:border-[var(--amber)] hover:bg-[var(--stone)] active:scale-95"
+              >
+                Continue as {selectedChar.character_name}
+              </button>
+            )}
+
+            <div className="text-[var(--slate)] text-[10px]">— or —</div>
+          </div>
+        )}
+
         {/* CTA Button */}
         <button
           onClick={onEnter}
           className="group relative px-10 py-4 text-[var(--amber)] font-bold text-base md:text-lg min-h-[52px] bg-[var(--shadow)] border border-[var(--slate)] rounded transition-all duration-200 hover:border-[var(--amber)] hover:bg-[var(--stone)] active:scale-95"
         >
-          <span className="relative z-10">Begin Your Journey</span>
+          <span className="relative z-10">
+            {isLoggedIn && activeChars.length > 0 ? "New Character" : "Begin Your Journey"}
+          </span>
           <span className="absolute inset-0 rounded bg-gradient-to-r from-transparent via-[var(--amber)] to-transparent opacity-0 group-hover:opacity-10 transition-opacity" />
         </button>
 
@@ -132,12 +208,21 @@ function LandingView({ onEnter }: { onEnter: () => void }) {
 
       {/* Nav links */}
       <div className="absolute bottom-4 left-4 pb-[env(safe-area-inset-bottom)] flex gap-4">
-        <Link
-          href="/characters"
-          className="text-[var(--mist)] text-xs hover:text-[var(--amber)] transition-colors"
-        >
-          Characters
-        </Link>
+        {isLoggedIn ? (
+          <Link
+            href="/characters"
+            className="text-[var(--mist)] text-xs hover:text-[var(--amber)] transition-colors"
+          >
+            {loadingRoster ? "Loading..." : `${activeChars.length} Characters`}
+          </Link>
+        ) : (
+          <button
+            onClick={onLogin}
+            className="text-[var(--mist)] text-xs hover:text-[var(--amber)] transition-colors"
+          >
+            Log In
+          </button>
+        )}
         <Link
           href="/leaderboards"
           className="text-[var(--mist)] text-xs hover:text-[var(--amber)] transition-colors"
@@ -488,6 +573,9 @@ export default function GamePage() {
 
   // Session state
   const [playerId, setPlayerId] = useState<string | null>(null);
+  const [isGuest, setIsGuest] = useState(true);
+  const [roster, setRoster] = useState<RosterCharacter[]>([]);
+  const [loadingRoster, setLoadingRoster] = useState(false);
 
   // Influence & Leaderboard state
   const [influence, setInfluence] = useState<PlayerInfluence | null>(null);
@@ -642,6 +730,7 @@ export default function GamePage() {
 
         if (session) {
           setPlayerId(session.player_id);
+          setIsGuest(session.is_guest ?? true);
 
           // Use content_settings from session (backend bundles this now)
           if (session.content_settings) {
@@ -655,6 +744,15 @@ export default function GamePage() {
             setCurrentSession(session);
             await resumeExistingSession(session);
             return; // Skip landing, go straight to game
+          }
+
+          // Fetch roster for logged-in users without active session
+          if (!session.is_guest) {
+            setLoadingRoster(true);
+            api.getCharacterRoster()
+              .then(setRoster)
+              .catch((err) => console.warn("[Init] Failed to fetch roster:", err.message))
+              .finally(() => setLoadingRoster(false));
           }
         }
 
@@ -785,6 +883,60 @@ export default function GamePage() {
   const [currentSession, setCurrentSession] = useState<api.SessionInfo | null>(null);
 
   const enterWorlds = () => setPhase("worlds");
+
+  // Resume an existing character from roster
+  const resumeCharacter = async (char: RosterCharacter) => {
+    setProcessing(true);
+    try {
+      const { session, opening_narrative } = await api.startSession({
+        world_id: char.world_id,
+        entity_id: char.entity_id,
+      });
+
+      setCurrentSession(session);
+      setCharacter({
+        id: session.character_id || char.entity_id,
+        name: session.character_name || char.character_name,
+        race: "Unknown",
+        character_class: char.occupation || "Wanderer",
+        stats: {
+          hp: char.current_hp ?? 100,
+          max_hp: char.max_hp ?? 100,
+          mana: 50,
+          max_mana: 50,
+          gold: 0,
+          xp: 0,
+          level: 1
+        },
+        current_zone_id: null,
+        inventory: [],
+        equipped: {},
+      });
+
+      // Try to get world info
+      let worldName = char.world_name;
+      try {
+        const world = await api.getInfiniteWorld(char.world_id);
+        setSelectedWorld(world);
+        worldName = world.name;
+      } catch {
+        // World fetch failed, use roster info
+      }
+
+      setZoneName(worldName);
+      setEntries([
+        log("system", `Welcome back, ${char.character_name}.`),
+        log("narrative", opening_narrative || `You return to ${worldName}...`),
+        log("system", "Type 'look' to see your surroundings"),
+      ]);
+      setPhase("game");
+    } catch (err) {
+      console.error("[ResumeCharacter] Failed:", err);
+      // Fall back to world browser
+      setPhase("worlds");
+    }
+    setProcessing(false);
+  };
 
   // Leave current world and return to world browser
   const leaveWorld = async () => {
@@ -1305,7 +1457,23 @@ export default function GamePage() {
   }
 
   if (phase === "landing") {
-    return <LandingView onEnter={enterWorlds} />;
+    const isLoggedIn = !!playerId && !isGuest;
+    return (
+      <>
+        <LandingView
+          onEnter={enterWorlds}
+          onLogin={() => setShowAuthModal(true)}
+          onResumeCharacter={resumeCharacter}
+          isLoggedIn={isLoggedIn}
+          roster={roster}
+          loadingRoster={loadingRoster}
+        />
+        <AuthModal
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+        />
+      </>
+    );
   }
 
   // New: Infinite Worlds browser (replaces genre grid + world list)
