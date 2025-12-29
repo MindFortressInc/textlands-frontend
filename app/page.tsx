@@ -197,7 +197,7 @@ function WorldBrowser({ landGroups, onSelect, onBack, nsfwEnabled, nsfwAutoBlock
         </button>
         <div className="text-center">
           <span className="text-[var(--amber)] font-bold tracking-wider">CHOOSE YOUR LAND</span>
-          <div className="text-[var(--mist)] text-[10px] tracking-widest">{totalWorlds} WORLDS AVAILABLE</div>
+          <div className="text-[var(--mist)] text-[10px] tracking-widest">{totalWorlds} REALMS AVAILABLE</div>
         </div>
         <div className="flex items-center gap-2">
           <ThemePicker />

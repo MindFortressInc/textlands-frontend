@@ -999,7 +999,15 @@ export async function getCharacterGraveyard(): Promise<GraveyardEntry[]> {
 
 // ============ CATEGORY LEADERBOARDS API ============
 
-export type LeaderboardCategory = "trailblazer" | "wealth" | "combat" | "social" | "exploration";
+// Frontend display categories
+export type LeaderboardCategory = "trailblazer" | "slayers" | "outlaws";
+
+// Map frontend categories to backend API categories
+const CATEGORY_API_MAP: Record<LeaderboardCategory, string> = {
+  trailblazer: "world_shapers",
+  slayers: "slayers",
+  outlaws: "outlaws",
+};
 
 export interface CategoryLeaderboardEntry {
   rank: number;
@@ -1026,8 +1034,9 @@ export async function getWorldCategoryLeaderboard(
   category: LeaderboardCategory,
   limit = 100
 ): Promise<CategoryLeaderboardEntry[]> {
+  const apiCategory = CATEGORY_API_MAP[category];
   return fetchAPI<CategoryLeaderboardEntry[]>(
-    `/infinite/worlds/${worldId}/leaderboards/${category}?limit=${limit}`
+    `/infinite/worlds/${worldId}/leaderboards/${apiCategory}?limit=${limit}`
   );
 }
 
@@ -1036,8 +1045,9 @@ export async function getGlobalCategoryLeaderboard(
   category: LeaderboardCategory,
   limit = 100
 ): Promise<CategoryLeaderboardEntry[]> {
+  const apiCategory = CATEGORY_API_MAP[category];
   return fetchAPI<CategoryLeaderboardEntry[]>(
-    `/infinite/leaderboards/global/${category}?limit=${limit}`
+    `/infinite/leaderboards/global/${apiCategory}?limit=${limit}`
   );
 }
 

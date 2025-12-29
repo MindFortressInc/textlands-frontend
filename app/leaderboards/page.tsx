@@ -12,10 +12,8 @@ import type {
 
 const CATEGORIES: { key: LeaderboardCategory; label: string; icon: string }[] = [
   { key: "trailblazer", label: "Trailblazer", icon: "★" },
-  { key: "wealth", label: "Wealth", icon: "◆" },
-  { key: "combat", label: "Combat", icon: "⚔" },
-  { key: "social", label: "Social", icon: "♡" },
-  { key: "exploration", label: "Exploration", icon: "◎" },
+  { key: "slayers", label: "Slayers", icon: "⚔" },
+  { key: "outlaws", label: "Outlaws", icon: "☠" },
 ];
 
 function LeaderboardTable({
