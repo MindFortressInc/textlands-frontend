@@ -41,6 +41,13 @@ async function fetchAPI<T>(
 }
 
 // Session types
+export interface ContentSettings {
+  age_category: string;      // "adult", "teen", "rejected"
+  content_mode: string;      // "safe", "standard", "mature"
+  nsfw_enabled: boolean;
+  nsfw_auto_blocked: boolean;
+}
+
 export interface SessionInfo {
   player_id: string;
   is_guest: boolean;
@@ -50,6 +57,7 @@ export interface SessionInfo {
   character_name: string | null;
   world_id: string | null;
   world_name: string | null;
+  content_settings?: ContentSettings;
 }
 
 export interface StartSessionRequest {

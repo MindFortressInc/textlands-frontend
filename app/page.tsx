@@ -172,8 +172,8 @@ function WorldBrowser({ landGroups, onSelect, onBack, nsfwEnabled, nsfwAutoBlock
   const sfwLands = landGroups.filter(g => !g.is_locked);
   const nsfwLands = landGroups.filter(g => g.is_locked);
 
-  // Get all SFW realms flat
-  const allSfwWorlds = sfwLands.flatMap(g => g.realms).filter(w => !w.is_nsfw || nsfwEnabled);
+  // Get all SFW realms flat (backend already filters based on content_settings)
+  const allSfwWorlds = sfwLands.flatMap(g => g.realms);
 
   // Show flat list if < 10 SFW worlds, otherwise group by land
   const showFlat = allSfwWorlds.length < 10;
@@ -186,10 +186,8 @@ function WorldBrowser({ landGroups, onSelect, onBack, nsfwEnabled, nsfwAutoBlock
     setExpandedLand(expandedLand === land ? null : land);
   };
 
-  const totalWorlds = landGroups.reduce((sum, g) => {
-    if (nsfwEnabled) return sum + g.realm_count;
-    return sum + g.realms.filter(w => !w.is_nsfw).length;
-  }, 0);
+  // Backend returns already-filtered worlds based on content_settings
+  const totalWorlds = landGroups.reduce((sum, g) => sum + g.realm_count, 0);
 
   return (
     <main className="h-dvh flex flex-col bg-atmospheric pt-[max(0.5rem,env(safe-area-inset-top))] animate-fade-in">
@@ -236,7 +234,6 @@ function WorldBrowser({ landGroups, onSelect, onBack, nsfwEnabled, nsfwAutoBlock
             ) : (
               // Grouped by land
               sfwLands.map((group) => {
-                const filteredWorlds = group.realms.filter(w => !w.is_nsfw || nsfwEnabled);
                 const isExpanded = expandedLand === group.land;
 
                 return (
@@ -248,7 +245,7 @@ function WorldBrowser({ landGroups, onSelect, onBack, nsfwEnabled, nsfwAutoBlock
                     >
                       <div className="text-left">
                         <span className="text-[var(--amber)] font-bold block">{group.display_name}</span>
-                        <span className="text-[var(--mist)] text-xs">{filteredWorlds.length} worlds</span>
+                        <span className="text-[var(--mist)] text-xs">{group.realms.length} worlds</span>
                       </div>
                       <span className="text-[var(--mist)] text-lg">{isExpanded ? "−" : "+"}</span>
                     </button>
@@ -256,7 +253,7 @@ function WorldBrowser({ landGroups, onSelect, onBack, nsfwEnabled, nsfwAutoBlock
                     {/* Expanded World List */}
                     {isExpanded && (
                       <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {filteredWorlds.map((world) => (
+                        {group.realms.map((world) => (
                           <button
                             key={world.id}
                             onClick={() => onSelect(world)}
@@ -646,15 +643,11 @@ export default function GamePage() {
         if (session) {
           setPlayerId(session.player_id);
 
-          // Fetch server-side NSFW preferences
-          try {
-            const nsfwPrefs = await api.getPlayerPreferences(session.player_id);
-            setNsfwEnabled(nsfwPrefs.nsfw_enabled);
-            setNsfwVerified(nsfwPrefs.age_verified);
-            setNsfwRejections(nsfwPrefs.rejection_count);
-            setNsfwAutoBlocked(nsfwPrefs.auto_blocked);
-          } catch {
-            // Keep localStorage values as fallback
+          // Use content_settings from session (backend bundles this now)
+          if (session.content_settings) {
+            setNsfwEnabled(session.content_settings.nsfw_enabled);
+            setNsfwAutoBlocked(session.content_settings.nsfw_auto_blocked);
+            setNsfwVerified(session.content_settings.age_category === "adult");
           }
 
           // Resume existing session if player has active character in a world
