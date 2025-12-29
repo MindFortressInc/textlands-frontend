@@ -1006,6 +1006,14 @@ export default function GamePage() {
       }
     }
 
+    // Refetch land groups to include NSFW lands now that user is verified
+    try {
+      const updatedLandGroups = await api.getInfiniteWorldsGrouped();
+      setLandGroups(updatedLandGroups);
+    } catch {
+      // Refetch failed, user may need to refresh
+    }
+
     // Retry pending NSFW command if any
     if (pendingNsfwCommand) {
       const commandToRetry = pendingNsfwCommand;
@@ -1772,7 +1780,15 @@ export default function GamePage() {
   }
 
   /// New: Infinite Worlds campfire (character selection)
-  if (phase === "infinite-campfire" && infiniteCampfire && selectedWorld) {
+  if (phase === "infinite-campfire") {
+    // Still loading campfire data - show loading screen
+    if (!infiniteCampfire || !selectedWorld) {
+      return (
+        <main className="h-dvh flex items-center justify-center bg-[var(--void)]">
+          <div className="text-[var(--mist)]">Loading campfire...</div>
+        </main>
+      );
+    }
     return (
       <>
         <InfiniteCampfireView
