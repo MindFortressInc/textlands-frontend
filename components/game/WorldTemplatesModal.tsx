@@ -37,8 +37,8 @@ export function WorldTemplatesModal({
       try {
         const data = await api.getWorldTemplates();
         setTemplates(data);
-      } catch {
-        // Silently fail
+      } catch (err) {
+        console.error("[Templates] Failed to fetch:", err);
       }
       setLoading(false);
     };

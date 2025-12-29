@@ -49,7 +49,8 @@ export function EntityGenerationModal({
       try {
         const data = await api.getWorldEntities(worldId, browseType === "all" ? undefined : browseType);
         setEntities(data);
-      } catch {
+      } catch (err) {
+        console.error("[Entities] Failed to fetch:", err);
         setEntities([]);
       }
       setLoadingEntities(false);

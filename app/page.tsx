@@ -808,6 +808,7 @@ export default function GamePage() {
 
   // Select an infinite world - check for existing character first
   const selectInfiniteWorld = async (world: InfiniteWorld) => {
+    if (processing) return;
     setSelectedWorld(world);
     setProcessing(true);
 
@@ -842,7 +843,7 @@ export default function GamePage() {
 
   // Select a character from infinite campfire and start game
   const selectInfiniteCharacter = async (char: InfiniteCampfireCharacter) => {
-    if (!selectedWorld || !infiniteCampfire) return;
+    if (!selectedWorld || !infiniteCampfire || processing) return;
 
     setProcessing(true);
 
@@ -941,7 +942,8 @@ export default function GamePage() {
     try {
       const data = await api.getLocationFootprints(locationEntityId);
       setFootprints(data);
-    } catch {
+    } catch (err) {
+      console.error("[Footprints] Failed to fetch:", err);
       setFootprints([]);
     }
     setLoadingFootprints(false);
@@ -962,7 +964,8 @@ export default function GamePage() {
     try {
       const stats = await api.getPlayerWorldStats(selectedWorld.id, playerId);
       setPlayerWorldStats(stats);
-    } catch {
+    } catch (err) {
+      console.error("[PlayerStats] Failed to fetch:", err);
       setPlayerWorldStats(null);
     }
   };

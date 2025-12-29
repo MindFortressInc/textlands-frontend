@@ -9,8 +9,8 @@ Scanner: `npx tsx scripts/error-scanner.ts`
 |----------|-------|------|
 | CRITICAL | 0 | 0 |
 | HIGH | 6 | 0 |
-| MEDIUM | 2 | 0 |
-| LOW | 3 | 0 |
+| MEDIUM | 5 | 0 |
+| LOW | 0 | 2 |
 
 **Scanner Commands:**
 - `npx tsx scripts/error-scanner.ts` - Full scan
@@ -134,11 +134,13 @@ const stats = character.stats || { hp: 0, max_hp: 100, mana: 0, max_mana: 50, go
 ## MEDIUM Severity
 
 ### TLF-004: Empty Catch Blocks Without Context
-- Status: OPEN
+- Status: FIXED
 - Severity: MEDIUM
 - Discovered: 2025-12-28
+- Fixed: 2025-12-28
 - Affected Files:
   - `app/page.tsx` (multiple locations)
+  - `components/game/*.tsx` (various modals)
 
 **What to Look For:**
 ```typescript
@@ -167,9 +169,10 @@ Impossible to debug when things fail. At minimum, log the error.
 ---
 
 ### TLF-005: API Errors Not Shown to User
-- Status: OPEN
+- Status: FIXED (logging added)
 - Severity: MEDIUM
 - Discovered: 2025-12-28
+- Fixed: 2025-12-28
 - Affected Files:
   - `lib/api.ts:35-37`
 
@@ -223,11 +226,12 @@ async function fetchAPI<T>(endpoint: string, options: RequestInit = {}): Promise
 ---
 
 ### TLF-007: Race Condition in Character Selection
-- Status: OPEN
+- Status: FIXED
 - Severity: MEDIUM
 - Discovered: 2025-12-28
+- Fixed: 2025-12-28
 - Affected Files:
-  - `app/page.tsx:708-742`
+  - `app/page.tsx` (selectInfiniteWorld, selectInfiniteCharacter)
 
 **What to Look For:**
 ```typescript
@@ -239,8 +243,8 @@ setProcessing(false);
 **Why It's a Problem:**
 If user double-clicks a character, two sessions could start. `processing` flag helps but isn't foolproof.
 
-**Fix:**
-Add request deduplication or disable buttons during processing (already partially implemented).
+**Fix Applied:**
+Added `if (processing) return;` guard at the start of both `selectInfiniteWorld` and `selectInfiniteCharacter` functions.
 
 ---
 
@@ -346,6 +350,7 @@ These patterns were identified by reviewing past fix commits. Adding to scanner 
 
 | Date | Error ID | Action | Notes |
 |------|----------|--------|-------|
+| 2025-12-28 | TLF-004,005,007 | Fixed | Added error logging, fixed race condition |
 | 2025-12-28 | TLF-014 | Fixed | Added defensive checks for missing character.stats |
 | 2025-12-28 | - | Created | Initial error log with 9 issues identified |
 | 2025-12-28 | TLF-002 | Fixed | Added ErrorBoundary to layout.tsx |

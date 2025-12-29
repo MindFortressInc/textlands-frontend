@@ -42,8 +42,8 @@ export function LeaderboardModal({
           const data = await api.getGlobalLeaderboard();
           setGlobalLeaderboard(data);
         }
-      } catch {
-        // Silently fail - show empty state
+      } catch (err) {
+        console.error("[Leaderboard] Failed to fetch:", err);
       }
       setLoading(false);
     };

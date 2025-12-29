@@ -37,8 +37,8 @@ export function EntityTimelineModal({
       try {
         const data = await api.getEntityTimeline(entityId);
         setEvents(data);
-      } catch {
-        // Silently fail
+      } catch (err) {
+        console.error("[Timeline] Failed to fetch:", err);
       }
       setLoading(false);
     };

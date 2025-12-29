@@ -173,8 +173,8 @@ export function SocialPanel({
       await api.acceptFriendRequest(requestId);
       setRequests((prev) => prev.filter((r) => r.request_id !== requestId));
       loadSocialData();
-    } catch {
-      // Silently fail - could add toast notification
+    } catch (err) {
+      console.error("[Social] Failed to accept friend request:", err);
     }
   };
 
@@ -182,8 +182,8 @@ export function SocialPanel({
     try {
       await api.declineFriendRequest(requestId);
       setRequests((prev) => prev.filter((r) => r.request_id !== requestId));
-    } catch {
-      // Silently fail
+    } catch (err) {
+      console.error("[Social] Failed to decline friend request:", err);
     }
   };
 
@@ -206,7 +206,8 @@ export function SocialPanel({
         setMessages(res.messages.reverse());
         await api.markConversationRead(existingConvo.id);
         loadSocialData(); // Refresh unread count
-      } catch {
+      } catch (err) {
+        console.error("[Social] Failed to load messages:", err);
         setMessages([]);
       } finally {
         setLoadingMessages(false);
@@ -247,8 +248,8 @@ export function SocialPanel({
           );
         }
       }
-    } catch {
-      // Could show error - remove optimistic message on failure
+    } catch (err) {
+      console.error("[Social] Failed to send message:", err);
       setMessages((prev) => prev.filter((m) => m.id !== optimisticMsg.id));
     } finally {
       setSendingMessage(false);
