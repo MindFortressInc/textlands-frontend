@@ -17,7 +17,7 @@ TextLands is a "fancy terminal" - the frontend is basically a display layer. **9
 
 ---
 
-## Core Frontend Endpoints (28 total)
+## Core Frontend Endpoints (27 total)
 
 These are the endpoints the web frontend actually needs.
 
@@ -25,7 +25,7 @@ These are the endpoints the web frontend actually needs.
 | Method | Endpoint | API Function | Status |
 |--------|----------|--------------|--------|
 | GET | `/health` | `checkHealth()` | 🚀 Demo mode detection |
-| GET | `/session/current` | `getSession()` | 🚀 Load player on init |
+| GET | `/session/current` | `getSession()` | 🚀 Load player + content_settings |
 | POST | `/session/start` | `startSession()` | 🚀 Legacy curated (still works) |
 | POST | `/session/claim` | `claimGuestSession()` | 🚀 Claim guest to account |
 | DELETE | `/session/guest` | `endGuestSession()` | 🚀 End guest session |
@@ -67,12 +67,14 @@ These are the endpoints the web frontend actually needs.
 | POST | `/intimacy/scene/safeword` | `invokeSafeword()` | 🚀 Safety exit |
 | POST | `/intimacy/scene/complete` | `completeScene()` | 🚀 End scene |
 
-### NSFW Preferences (3)
+### NSFW Preferences (2)
 | Method | Endpoint | API Function | Status |
 |--------|----------|--------------|--------|
-| GET | `/infinite/player/{id}/preferences` | `getPlayerPreferences()` | 🚀 NSFW state |
-| POST | `/infinite/player/{id}/preferences` | `updatePlayerPreferences()` | 🚀 Toggle NSFW |
+| POST | `/infinite/player/{id}/preferences` | `updatePlayerPreferences()` | 🚀 Toggle NSFW (settings) |
 | POST | `/infinite/player/{id}/nsfw-prompt` | `handleNsfwPrompt()` | 🚀 Age verification |
+
+> **Note:** NSFW state on init now comes from `session.content_settings` (bundled in `/session/current`).
+> `getPlayerPreferences()` still exists but is no longer called on app load.
 
 ### Billing (12)
 | Method | Endpoint | API Function | Status |
@@ -167,10 +169,10 @@ These were deleted in the Dec 2025 cleanup.
 
 | Category | Count |
 |----------|-------|
-| 🚀 Core Frontend | 28 |
+| 🚀 Core Frontend | 27 |
 | ✅ Nice-to-Have UI | 17 |
 | 🗑️ Removed | 15 |
-| **Total in api.ts** | **45** |
+| **Total in api.ts** | **44** |
 
 ### Before/After
 | Metric | Before | After |
@@ -186,4 +188,5 @@ These were deleted in the Dec 2025 cleanup.
 - Service file: `lib/api.ts`
 - All endpoints require cookie-based session auth
 - Demo mode falls back to canned responses when API unavailable
-- NSFW preferences sync to server but cache locally for offline fallback
+- NSFW state bundled in `session.content_settings` - no separate fetch needed
+- Backend pre-filters worlds based on content_settings - no client-side filtering
