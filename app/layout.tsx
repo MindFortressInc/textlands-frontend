@@ -3,6 +3,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/lib/themes/ThemeProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { DynamicFavicon } from "@/components/DynamicFavicon";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export const metadata: Metadata = {
   title: "Textlands",
@@ -31,12 +32,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <AuthProvider>
-          <ThemeProvider>
-            <DynamicFavicon />
-            {children}
-          </ThemeProvider>
-        </AuthProvider>
+        <ErrorBoundary>
+          <AuthProvider>
+            <ThemeProvider>
+              <DynamicFavicon />
+              {children}
+            </ThemeProvider>
+          </AuthProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );

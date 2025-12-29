@@ -639,3 +639,285 @@ export async function unlockPlaytime(): Promise<UnlockResponse> {
 }
 
 // Consequence system (bounties, infractions, deaths) removed - backend handles via doAction
+
+// ============ FRIENDS API ============
+
+export interface Friend {
+  friend_id: string;
+  name: string;
+  level?: number;
+  is_online: boolean;
+  last_seen_at?: string;
+  friendship_since: string;
+}
+
+export interface FriendRequest {
+  request_id: string;
+  player_id: string;
+  player_name: string;
+  requested_at: string;
+}
+
+export interface FriendListResponse {
+  friends: Friend[];
+  count: number;
+}
+
+export interface PendingRequestsResponse {
+  requests: FriendRequest[];
+  count: number;
+}
+
+export interface FriendRequestResponse {
+  success: boolean;
+  message: string;
+  request_id?: string;
+  friendship_id?: string;
+}
+
+export interface BlockedPlayer {
+  player_id: string;
+  player_name?: string;
+  blocked_at: string;
+  reason?: string;
+}
+
+export interface BlockedListResponse {
+  blocked: BlockedPlayer[];
+  count: number;
+}
+
+// Get friend list with online status
+export async function getFriends(): Promise<FriendListResponse> {
+  return fetchAPI<FriendListResponse>("/friends");
+}
+
+// Get incoming friend requests
+export async function getIncomingRequests(): Promise<PendingRequestsResponse> {
+  return fetchAPI<PendingRequestsResponse>("/friends/requests/incoming");
+}
+
+// Get outgoing friend requests
+export async function getOutgoingRequests(): Promise<PendingRequestsResponse> {
+  return fetchAPI<PendingRequestsResponse>("/friends/requests/outgoing");
+}
+
+// Send friend request
+export async function sendFriendRequest(targetPlayerId: string): Promise<FriendRequestResponse> {
+  return fetchAPI<FriendRequestResponse>(`/friends/request/${targetPlayerId}`, {
+    method: "POST",
+  });
+}
+
+// Accept friend request
+export async function acceptFriendRequest(requestId: string): Promise<FriendRequestResponse> {
+  return fetchAPI<FriendRequestResponse>(`/friends/accept/${requestId}`, {
+    method: "POST",
+  });
+}
+
+// Decline friend request
+export async function declineFriendRequest(requestId: string): Promise<FriendRequestResponse> {
+  return fetchAPI<FriendRequestResponse>(`/friends/decline/${requestId}`, {
+    method: "POST",
+  });
+}
+
+// Cancel outgoing friend request
+export async function cancelFriendRequest(requestId: string): Promise<FriendRequestResponse> {
+  return fetchAPI<FriendRequestResponse>(`/friends/cancel/${requestId}`, {
+    method: "DELETE",
+  });
+}
+
+// Remove friend
+export async function removeFriend(friendPlayerId: string): Promise<FriendRequestResponse> {
+  return fetchAPI<FriendRequestResponse>(`/friends/${friendPlayerId}`, {
+    method: "DELETE",
+  });
+}
+
+// Block player
+export async function blockPlayer(playerId: string, reason?: string): Promise<FriendRequestResponse> {
+  const params = reason ? `?reason=${encodeURIComponent(reason)}` : "";
+  return fetchAPI<FriendRequestResponse>(`/friends/block/${playerId}${params}`, {
+    method: "POST",
+  });
+}
+
+// Unblock player
+export async function unblockPlayer(playerId: string): Promise<FriendRequestResponse> {
+  return fetchAPI<FriendRequestResponse>(`/friends/block/${playerId}`, {
+    method: "DELETE",
+  });
+}
+
+// Get blocked players
+export async function getBlockedPlayers(): Promise<BlockedListResponse> {
+  return fetchAPI<BlockedListResponse>("/friends/blocked");
+}
+
+// ============ DIRECT MESSAGING API ============
+
+export interface DirectMessage {
+  id: string;
+  sender_id: string;
+  sender_name: string;
+  content: string;
+  created_at: string;
+  delivered_at?: string;
+  read_at?: string;
+}
+
+export interface Conversation {
+  id: string;
+  other_player_id: string;
+  other_player_name: string;
+  last_message_preview?: string;
+  last_message_at: string;
+  unread_count: number;
+  is_online: boolean;
+}
+
+export interface ConversationListResponse {
+  conversations: Conversation[];
+  count: number;
+}
+
+export interface MessageHistoryResponse {
+  messages: DirectMessage[];
+  count: number;
+  has_more: boolean;
+}
+
+export interface SendMessageResponse {
+  success: boolean;
+  message_id?: string;
+  conversation_id?: string;
+  error?: string;
+}
+
+export interface UnreadCountResponse {
+  unread_count: number;
+}
+
+// Get conversation list
+export async function getConversations(limit = 20, offset = 0): Promise<ConversationListResponse> {
+  return fetchAPI<ConversationListResponse>(`/dm/conversations?limit=${limit}&offset=${offset}`);
+}
+
+// Get messages in a conversation
+export async function getMessages(
+  conversationId: string,
+  limit = 50,
+  beforeId?: string
+): Promise<MessageHistoryResponse> {
+  const params = beforeId ? `?limit=${limit}&before_id=${beforeId}` : `?limit=${limit}`;
+  return fetchAPI<MessageHistoryResponse>(`/dm/messages/${conversationId}${params}`);
+}
+
+// Send direct message
+export async function sendDirectMessage(
+  targetPlayerId: string,
+  content: string
+): Promise<SendMessageResponse> {
+  return fetchAPI<SendMessageResponse>(`/dm/send/${targetPlayerId}`, {
+    method: "POST",
+    body: JSON.stringify({ content }),
+  });
+}
+
+// Mark conversation as read
+export async function markConversationRead(conversationId: string): Promise<{ success: boolean }> {
+  return fetchAPI<{ success: boolean }>(`/dm/messages/${conversationId}/read`, {
+    method: "POST",
+  });
+}
+
+// Get total unread count
+export async function getUnreadCount(): Promise<UnreadCountResponse> {
+  return fetchAPI<UnreadCountResponse>("/dm/unread");
+}
+
+// ============ ONLINE STATUS API ============
+
+export interface OnlineStats {
+  websocket_connections: number;
+  total_players: number;
+}
+
+export async function getOnlineStats(): Promise<OnlineStats> {
+  return fetchAPI<OnlineStats>("/realtime/stats/online");
+}
+
+// ============ CHAT API ============
+
+export type LandKey = "fantasy" | "scifi" | "contemporary" | "historical" | "horror" | "adults_only";
+
+export interface ChatMessage {
+  id: string;
+  sender_id: string;
+  sender_name: string;
+  sender_realm?: string;
+  sender_land?: string;
+  message: string;
+  timestamp: string;
+}
+
+export interface ChatHistoryResponse {
+  messages: ChatMessage[];
+  count: number;
+}
+
+export interface ChatSubscriptions {
+  subscriptions: string[];
+  current_land?: string;
+}
+
+// Get zone chat history
+export async function getZoneChat(zoneId: string, limit = 50): Promise<ChatHistoryResponse> {
+  return fetchAPI<ChatHistoryResponse>(`/realtime/zones/${zoneId}/chat?limit=${limit}`);
+}
+
+// Get land chat history
+export async function getLandChat(landKey: LandKey, limit = 50): Promise<ChatHistoryResponse> {
+  return fetchAPI<ChatHistoryResponse>(`/chat/land/${landKey}?limit=${limit}`);
+}
+
+// Get global chat history
+export async function getGlobalChat(limit = 50): Promise<ChatHistoryResponse> {
+  return fetchAPI<ChatHistoryResponse>(`/chat/global?limit=${limit}`);
+}
+
+// Get player's chat subscriptions
+export async function getChatSubscriptions(playerId: string): Promise<ChatSubscriptions> {
+  return fetchAPI<ChatSubscriptions>(`/chat/subscriptions/${playerId}`);
+}
+
+// Get players in a zone
+export interface ZonePlayer {
+  player_id: string;
+  name: string;
+  level?: number;
+}
+
+export async function getZonePlayers(zoneId: string): Promise<ZonePlayer[]> {
+  const res = await fetchAPI<{ players: ZonePlayer[]; count: number }>(`/realtime/zones/${zoneId}/players`);
+  return res.players;
+}
+
+// ============ MESSAGE UPVOTE API ============
+
+export interface UpvoteResponse {
+  success: boolean;
+  upvotes: number;
+}
+
+export async function upvoteLocationMessage(
+  entityId: string,
+  messageId: string
+): Promise<UpvoteResponse> {
+  return fetchAPI<UpvoteResponse>(`/infinite/entities/${entityId}/messages/${messageId}/upvote`, {
+    method: "POST",
+  });
+}
