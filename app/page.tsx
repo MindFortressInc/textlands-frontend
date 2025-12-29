@@ -1,12 +1,23 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { GameLog, CommandInput, CharacterPanel, QuickActions, SuggestedActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal, AuthModal, BillingPanel, InfluenceBadge, LeaderboardModal, CharacterCreationModal, PlayerStatsModal, EntityTimelineModal, WorldTemplatesModal, EntityGenerationModal, WorldCreationModal } from "@/components/game";
+import { GameLog, CommandInput, CharacterPanel, QuickActions, SuggestedActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal, AuthModal, BillingPanel, InfluenceBadge, LeaderboardModal, CharacterCreationModal, PlayerStatsModal, EntityTimelineModal, WorldTemplatesModal, EntityGenerationModal, WorldCreationModal, SocialPanel, ChatPanel } from "@/components/game";
 import { ThemePicker } from "@/components/ThemePicker";
 import type { Character, GameLogEntry, CharacterOption, ActiveScene as ActiveSceneType, NegotiationRequest, CombatSession, ReasoningInfo, InfiniteWorld, InfiniteCampfireResponse, InfiniteCampfireCharacter, AccountPromptReason, WorldTemplate } from "@/types/game";
 import * as api from "@/lib/api";
-import type { LandGroup, PlayerInfluence, LocationFootprint } from "@/lib/api";
+import type { LandGroup, PlayerInfluence, LocationFootprint, LandKey } from "@/lib/api";
 import type { PlayerWorldStats } from "@/types/game";
+import { safeStorage } from "@/lib/errors";
+import { useWebSocket } from "@/lib/useWebSocket";
+import type {
+  ChatMessageEvent,
+  LandChatMessageEvent,
+  GlobalChatMessageEvent,
+  FriendOnlineEvent,
+  FriendOfflineEvent,
+  FriendRequestReceivedEvent,
+  DMReceivedEvent,
+} from "@/lib/useWebSocket";
 
 // ========== HELPERS ==========
 
@@ -502,33 +513,98 @@ export default function GamePage() {
   const [authModalIncentive, setAuthModalIncentive] = useState<string | undefined>();
   const [savePromptDismissed, setSavePromptDismissed] = useState(false);
 
+  // Social panel state (mobile)
+  const [showSocialPanel, setShowSocialPanel] = useState(false);
+
+  // Chat panel state
+  const [showChatPanel, setShowChatPanel] = useState(false);
+
+  // WebSocket real-time events
+  const [lastZoneMessage, setLastZoneMessage] = useState<ChatMessageEvent | null>(null);
+  const [lastLandMessage, setLastLandMessage] = useState<LandChatMessageEvent | null>(null);
+  const [lastGlobalMessage, setLastGlobalMessage] = useState<GlobalChatMessageEvent | null>(null);
+  const [lastFriendOnline, setLastFriendOnline] = useState<FriendOnlineEvent | null>(null);
+  const [lastFriendOffline, setLastFriendOffline] = useState<FriendOfflineEvent | null>(null);
+  const [lastFriendRequest, setLastFriendRequest] = useState<FriendRequestReceivedEvent | null>(null);
+  const [lastDMReceived, setLastDMReceived] = useState<DMReceivedEvent | null>(null);
+
+  // WebSocket connection
+  const ws = useWebSocket({
+    playerId: phase === "game" ? playerId : null,
+    handlers: {
+      onChatMessage: setLastZoneMessage,
+      onLandChatMessage: setLastLandMessage,
+      onGlobalChatMessage: setLastGlobalMessage,
+      onFriendOnline: setLastFriendOnline,
+      onFriendOffline: setLastFriendOffline,
+      onFriendRequestReceived: setLastFriendRequest,
+      onDMReceived: setLastDMReceived,
+      onConnect: () => console.log("[WS] Connected"),
+      onDisconnect: () => console.log("[WS] Disconnected"),
+      onError: (e) => console.error("[WS] Error:", e.message),
+    },
+  });
+
   // ========== INITIALIZATION ==========
 
   // Load NSFW preferences from localStorage (fallback for demo mode)
   useEffect(() => {
-    const stored = localStorage.getItem("textlands_nsfw");
-    if (stored) {
-      try {
-        const { enabled, verified, rejections, autoBlocked } = JSON.parse(stored);
-        setNsfwEnabled(!!enabled);
-        setNsfwVerified(!!verified);
-        setNsfwRejections(rejections || 0);
-        setNsfwAutoBlocked(!!autoBlocked);
-      } catch {
-        // Invalid stored data, use defaults
-      }
+    const stored = safeStorage.getJSON<{
+      enabled?: boolean;
+      verified?: boolean;
+      rejections?: number;
+      autoBlocked?: boolean;
+    }>("textlands_nsfw", {});
+    if (stored.enabled !== undefined) {
+      setNsfwEnabled(!!stored.enabled);
+      setNsfwVerified(!!stored.verified);
+      setNsfwRejections(stored.rejections || 0);
+      setNsfwAutoBlocked(!!stored.autoBlocked);
     }
   }, []);
 
   // Cache NSFW preferences to localStorage (for offline/demo fallback)
   useEffect(() => {
-    localStorage.setItem("textlands_nsfw", JSON.stringify({
+    safeStorage.setJSON("textlands_nsfw", {
       enabled: nsfwEnabled,
       verified: nsfwVerified,
       rejections: nsfwRejections,
       autoBlocked: nsfwAutoBlocked,
-    }));
+    });
   }, [nsfwEnabled, nsfwVerified, nsfwRejections, nsfwAutoBlocked]);
+
+  // Resume existing session helper
+  const resumeExistingSession = useCallback(async (session: api.SessionInfo) => {
+    // Try to get world info for the session
+    let worldData: InfiniteWorld | null = null;
+    if (session.world_id) {
+      try {
+        worldData = await api.getInfiniteWorld(session.world_id);
+        setSelectedWorld(worldData);
+      } catch {
+        // World may have been deleted, continue with session info only
+      }
+    }
+
+    setCharacter({
+      id: session.character_id || "",
+      name: session.character_name || "Unknown",
+      race: "Unknown",
+      character_class: "Wanderer",
+      stats: { hp: 100, max_hp: 100, mana: 50, max_mana: 50, gold: 0, xp: 0, level: 1 },
+      current_zone_id: null,
+      inventory: [],
+      equipped: {},
+    });
+
+    setZoneName(session.world_name || worldData?.name || "Unknown");
+    setEntries([
+      log("system", `Welcome back, ${session.character_name || "traveler"}.`),
+      log("system", `Resuming in ${session.world_name || "your world"}...`),
+      log("system", "Type 'look' to see your surroundings"),
+    ]);
+    setPhase("game");
+  }, []);
 
   useEffect(() => {
     async function init() {
@@ -542,10 +618,13 @@ export default function GamePage() {
       // Fetch session, worlds, and preferences in parallel
       try {
         const [session, groupedData, prefs] = await Promise.all([
-          api.getSession().catch(() => null),
+          api.getSession().catch((err) => { console.warn("[Init] No session:", err.message); return null; }),
           api.getInfiniteWorldsGrouped(),
-          api.getPreferences().catch(() => ({ show_reasoning: false, show_on_failure: true })),
+          api.getPreferences().catch((err) => { console.warn("[Init] Using default prefs:", err.message); return { show_reasoning: false, show_on_failure: true }; }),
         ]);
+
+        setLandGroups(groupedData);
+        setShowReasoning(prefs.show_reasoning);
 
         if (session) {
           setPlayerId(session.player_id);
@@ -560,9 +639,15 @@ export default function GamePage() {
           } catch {
             // Keep localStorage values as fallback
           }
+
+          // Resume existing session if player has active character in a world
+          if (session.character_id && session.world_id) {
+            setCurrentSession(session);
+            await resumeExistingSession(session);
+            return; // Skip landing, go straight to game
+          }
         }
-        setLandGroups(groupedData);
-        setShowReasoning(prefs.show_reasoning);
+
         setPhase("landing");
       } catch {
         setConnectionError("Failed to load game data. Please try again.");
@@ -570,7 +655,7 @@ export default function GamePage() {
     }
 
     init();
-  }, []);
+  }, [resumeExistingSession]);
 
   // ========== AGE GATE HANDLERS ==========
 
@@ -686,14 +771,55 @@ export default function GamePage() {
 
   // ========== PHASE TRANSITIONS ==========
 
+  // Track current session for world switching logic
+  const [currentSession, setCurrentSession] = useState<api.SessionInfo | null>(null);
+
   const enterWorlds = () => setPhase("worlds");
 
-  // New: Select an infinite world and go to campfire for character selection
+  // Leave current world and return to world browser
+  const leaveWorld = async () => {
+    setProcessing(true);
+    try {
+      await api.endGuestSession();
+      setCurrentSession(null);
+      setCharacter(null);
+      setSelectedWorld(null);
+      setEntries([]);
+      setPhase("worlds");
+    } catch (err) {
+      console.error("[LeaveWorld] Failed:", err);
+      // Even if backend fails, reset local state
+      setCurrentSession(null);
+      setCharacter(null);
+      setPhase("worlds");
+    }
+    setProcessing(false);
+  };
+
+  // Select an infinite world - check for existing character first
   const selectInfiniteWorld = async (world: InfiniteWorld) => {
     setSelectedWorld(world);
     setProcessing(true);
 
     try {
+      // Check if user already has a session in this world
+      const session = await api.getSession().catch(() => null);
+
+      if (session?.character_id && session?.world_id === world.id) {
+        // User already has a character in this world - resume directly
+        setCurrentSession(session);
+        await resumeExistingSession(session);
+        setProcessing(false);
+        return;
+      }
+
+      // If user has a session in a different world, end it first
+      if (session?.character_id && session?.world_id && session.world_id !== world.id) {
+        await api.endGuestSession();
+        setCurrentSession(null);
+      }
+
+      // No existing character in this world - show campfire
       const campfire = await api.getInfiniteCampfire(world.id);
       setInfiniteCampfire(campfire);
       setPhase("infinite-campfire");
@@ -716,6 +842,7 @@ export default function GamePage() {
         entity_id: char.id,
       });
 
+      setCurrentSession(session);
       setCharacter({
         id: session.character_id || char.id,
         name: session.character_name || char.name,
@@ -735,7 +862,46 @@ export default function GamePage() {
       ]);
       setPhase("game");
     } catch (err) {
-      setConnectionError(`Failed to start session: ${err instanceof Error ? err.message : "Unknown error"}`);
+      const errorMsg = err instanceof Error ? err.message : "Unknown error";
+
+      // Handle 409 Conflict - session already exists
+      if (errorMsg.includes("409") || errorMsg.toLowerCase().includes("conflict") || errorMsg.toLowerCase().includes("active session")) {
+        // Try to end existing session and retry
+        try {
+          await api.endGuestSession();
+          // Retry once
+          const { session, opening_narrative } = await api.startSession({
+            world_id: selectedWorld.id,
+            entity_id: char.id,
+          });
+
+          setCurrentSession(session);
+          setCharacter({
+            id: session.character_id || char.id,
+            name: session.character_name || char.name,
+            race: "Unknown",
+            character_class: char.occupation || "Wanderer",
+            stats: { hp: 100, max_hp: 100, mana: 50, max_mana: 50, gold: 0, xp: 0, level: 1 },
+            current_zone_id: null,
+            inventory: [],
+            equipped: {},
+          });
+
+          setZoneName(session.world_name || selectedWorld.name);
+          setEntries([
+            log("system", `Entering ${session.world_name || selectedWorld.name}`),
+            log("narrative", opening_narrative || infiniteCampfire.intro_text),
+            log("system", "Type 'help' for commands, or just describe what you want to do"),
+          ]);
+          setPhase("game");
+          setProcessing(false);
+          return;
+        } catch (retryErr) {
+          setConnectionError(`Failed to start session: ${retryErr instanceof Error ? retryErr.message : "Unknown error"}`);
+        }
+      } else {
+        setConnectionError(`Failed to start session: ${errorMsg}`);
+      }
     }
 
     setProcessing(false);
@@ -1073,7 +1239,9 @@ export default function GamePage() {
           if (result.scene) {
             setActiveScene(result.scene);
           }
-        }).catch(() => {});
+        }).catch((err) => {
+          console.error("[Scene] Failed to check active scene:", err);
+        });
       }
 
       // Check for active combat
@@ -1082,7 +1250,9 @@ export default function GamePage() {
           if (combat) {
             setActiveCombat(combat);
           }
-        }).catch(() => {});
+        }).catch((err) => {
+          console.error("[Combat] Failed to check active combat:", err);
+        });
       }
     }
   }, [phase, activeScene, activeCombat, character, playerId]);
@@ -1180,7 +1350,9 @@ export default function GamePage() {
         onClose={() => {
           setSettingsOpen(false);
           // Refresh preferences when closing
-          api.getPreferences().then((prefs) => setShowReasoning(prefs.show_reasoning)).catch(() => {});
+          api.getPreferences()
+            .then((prefs) => setShowReasoning(prefs.show_reasoning))
+            .catch((err) => console.error("[Settings] Failed to refresh preferences:", err));
         }}
         nsfwEnabled={nsfwEnabled}
         onNsfwToggle={handleNsfwToggle}
@@ -1263,6 +1435,13 @@ export default function GamePage() {
       {/* Header */}
       <header className="bg-[var(--shadow)] border-b border-[var(--slate)] px-3 py-2 md:px-4 flex items-center justify-between shrink-0 pt-[max(0.5rem,env(safe-area-inset-top))]">
         <div className="flex items-center gap-2">
+          <button
+            onClick={leaveWorld}
+            className="text-[var(--mist)] hover:text-[var(--amber)] transition-colors text-sm"
+            title="Leave World"
+          >
+            ‹
+          </button>
           <span className="text-[var(--amber)] font-bold tracking-wider text-sm md:text-base">TEXTLANDS</span>
           {activeScene && <span className="text-[var(--crimson)] text-[10px] uppercase tracking-wide animate-pulse">Scene</span>}
           {activeCombat && <span className="text-[var(--crimson)] text-[10px] uppercase tracking-wide animate-pulse">Combat</span>}
@@ -1280,6 +1459,22 @@ export default function GamePage() {
               />
             </div>
           )}
+          {/* Chat button */}
+          <button
+            onClick={() => setShowChatPanel(true)}
+            className="text-[var(--mist)] hover:text-[var(--amber)] transition-colors text-sm"
+            title="Chat"
+          >
+            #
+          </button>
+          {/* Social button - mobile only */}
+          <button
+            onClick={() => setShowSocialPanel(true)}
+            className="text-[var(--mist)] hover:text-[var(--amber)] transition-colors text-sm md:hidden"
+            title="Friends"
+          >
+            @
+          </button>
           <button
             onClick={() => setEntityGenerationOpen(true)}
             className="text-[var(--mist)] hover:text-[var(--amber)] transition-colors text-xs hidden sm:block"
@@ -1364,7 +1559,7 @@ export default function GamePage() {
         )}
 
         {/* Desktop sidebar */}
-        <div className="hidden md:block">
+        <div className="hidden md:flex">
           <CharacterPanel
             character={character}
             zoneName={zoneName}
@@ -1375,8 +1570,93 @@ export default function GamePage() {
             onLeaveMessage={handleLeaveMessage}
             loadingFootprints={loadingFootprints}
           />
+          <SocialPanel
+            playerId={playerId || undefined}
+            lastFriendOnline={lastFriendOnline}
+            lastFriendOffline={lastFriendOffline}
+            lastFriendRequest={lastFriendRequest}
+            lastDMReceived={lastDMReceived}
+            onSendDM={ws.sendDM}
+          />
         </div>
       </div>
+
+      {/* Mobile social panel slide-out */}
+      {showSocialPanel && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setShowSocialPanel(false)}
+          />
+          {/* Panel */}
+          <div className="absolute top-0 right-0 h-full w-72 bg-[var(--shadow)] border-l border-[var(--slate)] animate-slide-in-right flex flex-col pt-[env(safe-area-inset-top)]">
+            <div className="flex items-center justify-between p-3 border-b border-[var(--slate)]">
+              <span className="text-[var(--amber)] font-bold text-sm">Friends</span>
+              <button
+                onClick={() => setShowSocialPanel(false)}
+                className="text-[var(--mist)] hover:text-[var(--text)] text-lg leading-none"
+              >
+                &times;
+              </button>
+            </div>
+            <div className="flex-1 overflow-hidden [&>div]:w-full [&>div]:border-l-0">
+              <SocialPanel
+                playerId={playerId || undefined}
+                lastFriendOnline={lastFriendOnline}
+                lastFriendOffline={lastFriendOffline}
+                lastFriendRequest={lastFriendRequest}
+                lastDMReceived={lastDMReceived}
+                onSendDM={ws.sendDM}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Chat panel slide-up */}
+      {showChatPanel && (
+        <div className="fixed inset-0 z-50">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setShowChatPanel(false)}
+          />
+          {/* Panel - slide up from bottom */}
+          <div className="absolute bottom-0 left-0 right-0 h-[60vh] md:h-[50vh] md:left-auto md:right-4 md:bottom-4 md:w-96 md:rounded-t-lg bg-[var(--shadow)] border-t md:border border-[var(--slate)] animate-slide-up flex flex-col pb-[env(safe-area-inset-bottom)]">
+            <div className="flex items-center justify-between p-3 border-b border-[var(--slate)] shrink-0">
+              <span className="text-[var(--amber)] font-bold text-sm">Chat</span>
+              <button
+                onClick={() => setShowChatPanel(false)}
+                className="text-[var(--mist)] hover:text-[var(--text)] text-lg leading-none"
+              >
+                &times;
+              </button>
+            </div>
+            <div className="flex-1 overflow-hidden [&>div]:h-full [&>div]:border-l-0">
+              <ChatPanel
+                playerId={playerId || undefined}
+                playerName={character?.name}
+                zoneId={character?.current_zone_id || undefined}
+                zoneName={zoneName}
+                landKey={selectedWorld?.land as LandKey | undefined}
+                worldName={selectedWorld?.name}
+                isConnected={ws.isConnected}
+                onSendChat={ws.sendChat}
+                onSendLandChat={ws.sendLandChat}
+                onSendGlobalChat={ws.sendGlobalChat}
+                onSubscribeLand={ws.subscribeLandChat}
+                onUnsubscribeLand={ws.unsubscribeLandChat}
+                onSubscribeGlobal={ws.subscribeGlobalChat}
+                onUnsubscribeGlobal={ws.unsubscribeGlobalChat}
+                lastZoneMessage={lastZoneMessage}
+                lastLandMessage={lastLandMessage}
+                lastGlobalMessage={lastGlobalMessage}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
