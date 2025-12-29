@@ -32,7 +32,7 @@ export function InfluenceBadge({
         inline-flex flex-col gap-1
         ${isClickable ? "cursor-pointer hover:opacity-80 transition-opacity" : ""}
       `}
-      title={isClickable ? "View Leaderboard" : undefined}
+      title={isClickable ? "View HiScores" : undefined}
     >
       {/* Badge row */}
       <div className={`inline-flex items-center gap-1.5 ${isSmall ? "text-xs" : "text-sm"}`}>

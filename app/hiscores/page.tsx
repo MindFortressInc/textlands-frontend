@@ -198,7 +198,7 @@ export default function LeaderboardsPage() {
             >
               ← Back
             </Link>
-            <h1 className="text-[var(--amber)] font-bold tracking-wider">LEADERBOARDS</h1>
+            <h1 className="text-[var(--amber)] font-bold tracking-wider">HISCORES</h1>
           </div>
           {user?.logged_in && !user.is_guest && (
             <div className="text-sm text-[var(--mist)]">

@@ -436,7 +436,7 @@ function CharacterSelectView({ roster, onSelect, onNewCharacter, loadingRoster }
   );
 }
 
-// Infinite Worlds browser
+// Land selection browser - users pick a land, get auto-placed in a realm
 function WorldBrowser({ landGroups, onSelect, onBack, nsfwEnabled, nsfwAutoBlocked, onRequestNsfw }: {
   landGroups: LandGroup[];
   onSelect: (world: InfiniteWorld) => void;
@@ -445,28 +445,16 @@ function WorldBrowser({ landGroups, onSelect, onBack, nsfwEnabled, nsfwAutoBlock
   nsfwAutoBlocked?: boolean;
   onRequestNsfw: () => void;
 }) {
-  const [expandedLand, setExpandedLand] = useState<string | null>(null);
-
   // Separate SFW and locked/NSFW lands
   const sfwLands = landGroups.filter(g => !g.is_locked);
   const nsfwLands = landGroups.filter(g => g.is_locked);
 
-  // Get all SFW realms flat (backend already filters based on content_settings)
-  const allSfwWorlds = sfwLands.flatMap(g => g.realms);
-
-  // Show flat list if < 10 SFW worlds, otherwise group by land
-  const showFlat = allSfwWorlds.length < 10;
-
-  const handleLandClick = (land: string, isLocked: boolean) => {
-    if (isLocked && !nsfwEnabled) {
-      onRequestNsfw();
-      return;
+  // Select a land → auto-pick first realm (backend will place them appropriately)
+  const handleLandSelect = (group: LandGroup) => {
+    if (group.realms.length > 0) {
+      onSelect(group.realms[0]);
     }
-    setExpandedLand(expandedLand === land ? null : land);
   };
-
-  // Backend returns already-filtered worlds based on content_settings
-  const totalWorlds = landGroups.reduce((sum, g) => sum + g.realm_count, 0);
 
   return (
     <main className="h-dvh flex flex-col bg-atmospheric pt-[max(0.5rem,env(safe-area-inset-top))] animate-fade-in">
@@ -476,7 +464,7 @@ function WorldBrowser({ landGroups, onSelect, onBack, nsfwEnabled, nsfwAutoBlock
         </button>
         <div className="text-center">
           <span className="text-[var(--amber)] font-bold tracking-wider">CHOOSE YOUR LAND</span>
-          <div className="text-[var(--mist)] text-[10px] tracking-widest">{totalWorlds} LANDS AVAILABLE</div>
+          <div className="text-[var(--mist)] text-[10px] tracking-widest">{sfwLands.length} LANDS AVAILABLE</div>
         </div>
         <div className="flex items-center gap-2">
           <ThemePicker />
@@ -485,101 +473,35 @@ function WorldBrowser({ landGroups, onSelect, onBack, nsfwEnabled, nsfwAutoBlock
 
       <div className="flex-1 overflow-y-auto p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         <div className="max-w-6xl mx-auto">
-          {/* World grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 stagger-fade-in">
-            {/* SFW Worlds - flat list if < 10, otherwise grouped by land */}
-            {showFlat ? (
-              // Flat list of all SFW worlds
-              allSfwWorlds.map((world) => (
-                <button
-                  key={world.id}
-                  onClick={() => onSelect(world)}
-                  className="w-full p-4 bg-[var(--shadow)] border border-[var(--slate)] rounded-lg text-left hover:border-[var(--amber-dim)] hover:bg-[var(--void)] transition-colors"
-                >
-                  <div className="flex items-start justify-between gap-2 mb-1">
-                    <span className="text-[var(--amber)] font-bold">{world.name}</span>
-                    {world.is_nsfw && (
-                      <span className="text-[var(--crimson)] text-[10px] tracking-wider">18+</span>
-                    )}
-                  </div>
-                  <p className="text-[var(--text-dim)] text-sm italic line-clamp-2">{world.tagline}</p>
-                  {world.player_count > 0 && (
-                    <div className="mt-2 text-[var(--mist)] text-[10px] tracking-wider">
-                      {world.player_count} exploring
-                    </div>
-                  )}
-                </button>
-              ))
-            ) : (
-              // Grouped by land
-              sfwLands.map((group) => {
-                const isExpanded = expandedLand === group.land;
+            {/* SFW Lands */}
+            {sfwLands.map((group) => (
+              <button
+                key={group.land}
+                onClick={() => handleLandSelect(group)}
+                className="w-full p-4 bg-[var(--shadow)] border border-[var(--slate)] rounded-lg text-left hover:border-[var(--amber-dim)] hover:bg-[var(--void)] transition-colors"
+              >
+                <span className="text-[var(--amber)] font-bold block mb-1">{group.display_name}</span>
+                <p className="text-[var(--text-dim)] text-sm italic line-clamp-2">{group.description}</p>
+              </button>
+            ))}
 
-                return (
-                  <div key={group.land} className={`land-group ${isExpanded ? "md:col-span-2 lg:col-span-3" : ""}`}>
-                    {/* Land Header */}
-                    <button
-                      onClick={() => handleLandClick(group.land, false)}
-                      className="w-full p-4 bg-[var(--shadow)] border border-[var(--slate)] rounded-lg flex items-center justify-between hover:border-[var(--amber-dim)] transition-colors group"
-                    >
-                      <div className="text-left">
-                        <span className="text-[var(--amber)] font-bold block">{group.display_name}</span>
-                        <span className="text-[var(--mist)] text-xs">{group.realms.length} worlds</span>
-                      </div>
-                      <span className="text-[var(--mist)] text-lg">{isExpanded ? "−" : "+"}</span>
-                    </button>
-
-                    {/* Expanded World List */}
-                    {isExpanded && (
-                      <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {group.realms.map((world) => (
-                          <button
-                            key={world.id}
-                            onClick={() => onSelect(world)}
-                            className="w-full p-4 bg-[var(--void)] border border-[var(--stone)] rounded-lg text-left hover:border-[var(--amber-dim)] hover:bg-[var(--shadow)] transition-colors"
-                          >
-                            <div className="flex items-start justify-between gap-2 mb-1">
-                              <span className="text-[var(--amber)] font-bold">{world.name}</span>
-                              {world.is_nsfw && (
-                                <span className="text-[var(--crimson)] text-[10px] tracking-wider">18+</span>
-                              )}
-                            </div>
-                            <p className="text-[var(--text-dim)] text-sm italic line-clamp-2">{world.tagline}</p>
-                            {world.player_count > 0 && (
-                              <div className="mt-2 text-[var(--mist)] text-[10px] tracking-wider">
-                                {world.player_count} exploring
-                              </div>
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })
-            )}
-
-            {/* NSFW/Locked Lands Section */}
+            {/* NSFW/Locked Lands */}
             {nsfwLands.length > 0 && (
               <>
                 {nsfwEnabled ? (
-                  // Show NSFW realms as flat cards when unlocked (no extra click needed)
-                  nsfwLands.flatMap((group) => group.realms).map((world) => (
+                  // Show NSFW lands when unlocked
+                  nsfwLands.map((group) => (
                     <button
-                      key={world.id}
-                      onClick={() => onSelect(world)}
+                      key={group.land}
+                      onClick={() => handleLandSelect(group)}
                       className="w-full p-4 bg-[var(--shadow)] border border-[var(--crimson)]/30 rounded-lg text-left hover:border-[var(--crimson)] hover:bg-[var(--void)] transition-colors"
                     >
                       <div className="flex items-start justify-between gap-2 mb-1">
-                        <span className="text-[var(--amber)] font-bold">{world.name}</span>
+                        <span className="text-[var(--amber)] font-bold">{group.display_name}</span>
                         <span className="text-[var(--crimson)] text-[10px] tracking-wider">18+</span>
                       </div>
-                      <p className="text-[var(--text-dim)] text-sm italic line-clamp-2">{world.tagline}</p>
-                      {world.player_count > 0 && (
-                        <div className="mt-2 text-[var(--mist)] text-[10px] tracking-wider">
-                          {world.player_count} exploring
-                        </div>
-                      )}
+                      <p className="text-[var(--text-dim)] text-sm italic line-clamp-2">{group.description}</p>
                     </button>
                   ))
                 ) : nsfwAutoBlocked ? (
@@ -588,7 +510,7 @@ function WorldBrowser({ landGroups, onSelect, onBack, nsfwEnabled, nsfwAutoBlock
                     <span className="text-xl leading-none mt-0.5">🚫</span>
                     <div className="text-left">
                       <span className="text-[var(--mist)] font-bold block">Adults Only</span>
-                      <span className="text-[var(--slate)] text-xs">{nsfwLands.reduce((sum, g) => sum + g.realm_count, 0)} worlds · Blocked (enable in Settings)</span>
+                      <span className="text-[var(--slate)] text-xs">{nsfwLands.length} lands · Blocked (enable in Settings)</span>
                     </div>
                   </div>
                 ) : (
@@ -600,7 +522,7 @@ function WorldBrowser({ landGroups, onSelect, onBack, nsfwEnabled, nsfwAutoBlock
                     <span className="text-xl leading-none mt-0.5">🔒</span>
                     <div className="text-left">
                       <span className="text-[var(--mist)] font-bold block">Adults Only</span>
-                      <span className="text-[var(--slate)] text-xs">{nsfwLands.reduce((sum, g) => sum + g.realm_count, 0)} worlds · Tap to verify age</span>
+                      <span className="text-[var(--slate)] text-xs">{nsfwLands.length} lands · Tap to verify age</span>
                     </div>
                   </button>
                 )}

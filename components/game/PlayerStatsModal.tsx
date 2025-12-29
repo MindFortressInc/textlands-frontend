@@ -197,7 +197,7 @@ export function PlayerStatsModal({
               }}
               className="flex-1 py-2 px-4 bg-[var(--shadow)] border border-[var(--slate)] rounded text-[var(--mist)] hover:text-[var(--amber)] hover:border-[var(--amber-dim)] transition-colors"
             >
-              View Leaderboard
+              View HiScores
             </button>
           )}
           <button

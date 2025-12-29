@@ -137,7 +137,20 @@ Works without backend - falls back to canned responses. Good for UI development.
 NEXT_PUBLIC_API_URL=https://api.textlands.com
 ```
 
+## Terminology
+
+| Term | Meaning | User Action |
+|------|---------|-------------|
+| **Land** | Genre category (Fantasy, Cyberpunk, Horror) | User selects this - locks character to land |
+| **Realm** | Individual world within a land (Moon, Mars, Thornwood) | Auto-placed, can travel between realms in same land |
+
+- Land selection: "CHOOSE YOUR LAND" ✓
+- Land counts: "6 LANDS AVAILABLE"
+- Never show realm counts to users (thousands exist, auto-assigned)
+- Travel between realms is in-game (spaceship, portal, etc.)
+
 ## Related
 
 - **Backend:** /Users/mattrhodes/Coding/textlands-backend
 - **Backend Docs:** /Users/mattrhodes/Coding/textlands-backend/docs/FRONTEND_INTEGRATION.md
+- **World Architecture:** /Users/mattrhodes/Coding/textlands-backend/docs/game/07-worlds.md (terminology, entity system, governance)

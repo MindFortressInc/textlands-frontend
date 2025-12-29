@@ -60,7 +60,7 @@ export function LeaderboardModal({
       <div className="w-full max-w-lg bg-[var(--void)] border border-[var(--stone)] rounded-lg overflow-hidden max-h-[80vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-[var(--slate)]">
-          <h2 className="text-[var(--amber)] font-bold tracking-wider">LEADERBOARD</h2>
+          <h2 className="text-[var(--amber)] font-bold tracking-wider">HISCORES</h2>
           <button
             onClick={onClose}
             className="text-[var(--mist)] hover:text-[var(--text)] transition-colors text-xl leading-none"
