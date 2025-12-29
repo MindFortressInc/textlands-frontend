@@ -22,8 +22,8 @@ export function ThemePicker() {
           {/* Backdrop */}
           <div className="fixed inset-0 z-40 bg-black/20" onClick={() => setOpen(false)} />
 
-          {/* Dropdown */}
-          <div className="absolute right-0 top-full mt-1 z-50 bg-[var(--shadow)] border border-[var(--slate)] rounded shadow-lg min-w-48 max-h-80 overflow-y-auto">
+          {/* Dropdown - opens upward to avoid going off-screen */}
+          <div className="absolute right-0 bottom-full mb-1 z-50 bg-[var(--shadow)] border border-[var(--slate)] rounded shadow-lg min-w-48 max-h-80 overflow-y-auto">
             {Object.values(availableThemes).map((theme) => (
               <button
                 key={theme.id}
