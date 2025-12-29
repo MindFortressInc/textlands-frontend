@@ -11,12 +11,19 @@ interface User {
   display_name?: string;
 }
 
+// Session context to preserve across auth
+interface SessionContext {
+  world_id?: string;
+  entity_id?: string;
+  character_name?: string;
+}
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
-  requestMagicLink: (email: string) => Promise<{ success: boolean; message: string }>;
+  requestMagicLink: (email: string, sessionContext?: SessionContext) => Promise<{ success: boolean; message: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -47,13 +54,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser({ logged_in: false });
   }, []);
 
-  const requestMagicLink = useCallback(async (email: string) => {
+  const requestMagicLink = useCallback(async (email: string, sessionContext?: SessionContext) => {
     try {
       const res = await fetch(`${API_BASE}/auth/request`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({
+          email,
+          // Pass session context so backend can link guest session to new account
+          ...(sessionContext?.world_id && {
+            pending_world_id: sessionContext.world_id,
+            pending_entity_id: sessionContext.entity_id,
+            pending_character_name: sessionContext.character_name,
+          }),
+        }),
       });
       const data = await res.json();
       return { success: data.success, message: data.message };

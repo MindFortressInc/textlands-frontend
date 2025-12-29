@@ -139,5 +139,5 @@ NEXT_PUBLIC_API_URL=https://api.textlands.com
 
 ## Related
 
-- **Backend:** Matt-Sandbox/side-projects/textlands
-- **Backend Docs:** Matt-Sandbox/side-projects/textlands/docs/FRONTEND_INTEGRATION.md
+- **Backend:** /Users/mattrhodes/Coding/textlands-backend
+- **Backend Docs:** /Users/mattrhodes/Coding/textlands-backend/docs/FRONTEND_INTEGRATION.md

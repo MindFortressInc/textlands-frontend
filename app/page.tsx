@@ -743,7 +743,66 @@ export default function GamePage() {
           if (session.character_id && session.world_id) {
             setCurrentSession(session);
             await resumeExistingSession(session);
+            // Clear any pending session since we successfully restored
+            safeStorage.removeItem("textlands_pending_session");
             return; // Skip landing, go straight to game
+          }
+
+          // Check for pending session from pre-auth (magic link flow)
+          // This handles the case where a guest was playing, triggered auth,
+          // and now returns as an authenticated user
+          if (!session.is_guest) {
+            const pending = safeStorage.getJSON<{
+              world_id?: string;
+              entity_id?: string;
+              character_name?: string;
+              world_name?: string;
+              timestamp?: number;
+            }>("textlands_pending_session", {});
+
+            // Only restore if pending session exists and is less than 30 minutes old
+            const isRecent = pending.timestamp && (Date.now() - pending.timestamp) < 30 * 60 * 1000;
+
+            if (pending.world_id && pending.entity_id && isRecent) {
+              console.log("[Auth] Found pending session, restoring:", pending);
+              try {
+                const { session: newSession, opening_narrative } = await api.startSession({
+                  world_id: pending.world_id,
+                  entity_id: pending.entity_id,
+                });
+
+                // Clear pending session
+                safeStorage.removeItem("textlands_pending_session");
+
+                setCurrentSession(newSession);
+                setCharacter({
+                  id: newSession.character_id || pending.entity_id,
+                  name: newSession.character_name || pending.character_name || "Unknown",
+                  race: "Unknown",
+                  character_class: "Wanderer",
+                  stats: { hp: 100, max_hp: 100, mana: 50, max_mana: 50, gold: 0, xp: 0, level: 1 },
+                  current_zone_id: null,
+                  inventory: [],
+                  equipped: {},
+                });
+
+                setZoneName(newSession.world_name || pending.world_name || "Unknown");
+                setEntries([
+                  log("system", `Welcome back, ${newSession.character_name || pending.character_name || "traveler"}.`),
+                  log("narrative", opening_narrative || `You return to ${pending.world_name}...`),
+                  log("system", "Your progress has been saved to your account."),
+                ]);
+                setPhase("game");
+                return; // Skip landing, restored session
+              } catch (err) {
+                console.warn("[Auth] Failed to restore pending session:", err);
+                // Clear stale pending session
+                safeStorage.removeItem("textlands_pending_session");
+              }
+            } else if (pending.world_id) {
+              // Pending session exists but is stale, clear it
+              safeStorage.removeItem("textlands_pending_session");
+            }
           }
 
           // Fetch roster for logged-in users without active session
@@ -881,6 +940,20 @@ export default function GamePage() {
 
   // Track current session for world switching logic
   const [currentSession, setCurrentSession] = useState<api.SessionInfo | null>(null);
+
+  // Save pending session before auth redirect (so we can restore after magic link)
+  const savePendingSession = useCallback(() => {
+    if (currentSession?.world_id && currentSession?.character_id) {
+      safeStorage.setJSON("textlands_pending_session", {
+        world_id: currentSession.world_id,
+        entity_id: currentSession.character_id,
+        character_name: currentSession.character_name,
+        world_name: currentSession.world_name,
+        timestamp: Date.now(),
+      });
+      console.log("[Auth] Saved pending session for restore after auth");
+    }
+  }, [currentSession]);
 
   const enterWorlds = () => setPhase("worlds");
 
@@ -1191,6 +1264,7 @@ export default function GamePage() {
           addLog("narrative", result.narrative);
           setAuthModalReason(result.account_prompt_reason);
           setAuthModalIncentive(result.account_prompt_incentive);
+          savePendingSession(); // Save session before auth redirect
           setShowAuthModal(true);
         } else {
           // Normal response - add narrative with reasoning if available
@@ -1246,6 +1320,7 @@ export default function GamePage() {
           if (result.show_save_prompt && !savePromptDismissed) {
             setAuthModalReason(undefined);
             setAuthModalIncentive(undefined);
+            savePendingSession(); // Save session before auth redirect
             setShowAuthModal(true);
           }
         }
@@ -1255,7 +1330,7 @@ export default function GamePage() {
     }
 
     setProcessing(false);
-  }, [character, addLog, nsfwAutoBlocked, requestAgeVerification, savePromptDismissed]);
+  }, [character, addLog, nsfwAutoBlocked, requestAgeVerification, savePromptDismissed, savePendingSession]);
 
   // ========== SCENE HANDLERS ==========
 
@@ -1381,6 +1456,7 @@ export default function GamePage() {
       if (result.requires_account) {
         setAuthModalReason(result.account_prompt_reason);
         setAuthModalIncentive(result.account_prompt_incentive);
+        savePendingSession(); // Save session before auth redirect
         setShowAuthModal(true);
         setProcessing(false);
         return;
@@ -1401,7 +1477,7 @@ export default function GamePage() {
       addLog("system", `Combat error: ${error instanceof Error ? error.message : "Unknown"}`);
     }
     setProcessing(false);
-  }, [activeCombat, character, addLog]);
+  }, [activeCombat, character, addLog, savePendingSession]);
 
   // Check for active scene/combat on game start
   useEffect(() => {
@@ -1619,6 +1695,11 @@ export default function GamePage() {
         }}
         reason={authModalReason}
         incentive={authModalIncentive}
+        sessionContext={currentSession?.world_id ? {
+          world_id: currentSession.world_id,
+          entity_id: currentSession.character_id ?? undefined,
+          character_name: currentSession.character_name ?? undefined,
+        } : undefined}
       />
 
       {/* Header */}

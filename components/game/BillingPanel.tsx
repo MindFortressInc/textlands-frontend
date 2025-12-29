@@ -32,17 +32,17 @@ export function BillingPanel({ isOpen, onClose }: BillingPanelProps) {
     setLoading(true);
     try {
       const [sub, tok, play, free] = await Promise.all([
-        api.getSubscription().catch(() => null),
-        api.getTokenBalance().catch(() => null),
-        api.getPlaytime().catch(() => null),
-        api.getFreeUses().catch(() => null),
+        api.getSubscription().catch((err) => { console.error("[Billing] Subscription:", err); return null; }),
+        api.getTokenBalance().catch((err) => { console.error("[Billing] Tokens:", err); return null; }),
+        api.getPlaytime().catch((err) => { console.error("[Billing] Playtime:", err); return null; }),
+        api.getFreeUses().catch((err) => { console.error("[Billing] Free uses:", err); return null; }),
       ]);
       setSubscription(sub);
       setTokens(tok);
       setPlaytime(play);
       setFreeUses(free);
-    } catch {
-      // Ignore errors
+    } catch (err) {
+      console.error("[Billing] Failed to load billing data:", err);
     }
     setLoading(false);
   };

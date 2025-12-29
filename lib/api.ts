@@ -313,6 +313,60 @@ export async function createCampfireCharacter(
   );
 }
 
+// Get character creation options (allowed species, occupations, etc.)
+export interface CharacterOptions {
+  world_id: string;
+  world_name: string;
+  species: string[];
+  occupations: string[];
+  banned_concepts: string[];
+}
+
+export async function getCampfireOptions(worldId: string): Promise<CharacterOptions> {
+  return fetchAPI<CharacterOptions>(`/infinite/worlds/${worldId}/campfire/options`);
+}
+
+// Iterative (conversational) character creation
+export interface IterativeCreateRequest {
+  message: string;
+  session_id: string | null;
+  player_id?: string;
+}
+
+export interface CharacterPreview {
+  name: string | null;
+  species: string | null;
+  gender: string | null;
+  occupation: string | null;
+  backstory_summary: string | null;
+  physical_description: string | null;
+  personality_traits: string[];
+  voice: string | null;
+}
+
+export interface IterativeCreateResponse {
+  session_id: string;
+  phase: "concept" | "appearance" | "personality" | "confirmation";
+  ai_message: string;
+  character_preview: CharacterPreview;
+  done: boolean;
+  entity_id: string | null;
+  suggested_responses: string[];
+}
+
+export async function createCharacterIterative(
+  worldId: string,
+  request: IterativeCreateRequest
+): Promise<IterativeCreateResponse> {
+  return fetchAPI<IterativeCreateResponse>(
+    `/infinite/worlds/${worldId}/campfire/create-iterative`,
+    {
+      method: "POST",
+      body: JSON.stringify(request),
+    }
+  );
+}
+
 // ============ PLAYER PREFERENCES API ============
 
 // API response format
@@ -1232,11 +1286,31 @@ export interface AuthUser {
   is_guest: boolean;
 }
 
+// Session context to preserve across auth
+export interface SessionContext {
+  world_id?: string;
+  entity_id?: string;
+  character_name?: string;
+}
+
 // Request magic link email
-export async function requestMagicLink(email: string, redirectUrl?: string): Promise<MagicLinkResponse> {
+export async function requestMagicLink(
+  email: string,
+  redirectUrl?: string,
+  sessionContext?: SessionContext
+): Promise<MagicLinkResponse> {
   return fetchAPI<MagicLinkResponse>("/auth/request", {
     method: "POST",
-    body: JSON.stringify({ email, redirect_url: redirectUrl }),
+    body: JSON.stringify({
+      email,
+      redirect_url: redirectUrl,
+      // Pass session context so backend can link guest session to new account
+      ...(sessionContext?.world_id && {
+        pending_world_id: sessionContext.world_id,
+        pending_entity_id: sessionContext.entity_id,
+        pending_character_name: sessionContext.character_name,
+      }),
+    }),
   });
 }
 

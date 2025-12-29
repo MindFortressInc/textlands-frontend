@@ -21,13 +21,13 @@ export function DynamicFavicon() {
         <rect width="32" height="32" rx="4" fill="${bg}"/>
         <text
           x="16"
-          y="24"
+          y="23"
           text-anchor="middle"
           font-family="monospace"
           font-weight="bold"
-          font-size="24"
+          font-size="16"
           fill="${accent}"
-        >T</text>
+        >TL</text>
       </svg>
     `;
 

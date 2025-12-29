@@ -260,7 +260,7 @@ export function useWebSocket({
     wsRef.current = ws;
 
     ws.onopen = () => {
-      console.log("[WebSocket] Connected");
+      console.debug("[WebSocket] Connected");
       setIsConnected(true);
       reconnectAttempts.current = 0;
       handlersRef.current.onConnect?.();
@@ -274,7 +274,7 @@ export function useWebSocket({
     };
 
     ws.onclose = (event) => {
-      console.log("[WebSocket] Disconnected:", event.code, event.reason);
+      console.debug("[WebSocket] Disconnected:", event.code, event.reason);
       setIsConnected(false);
       clearTimers();
       handlersRef.current.onDisconnect?.();
@@ -285,7 +285,7 @@ export function useWebSocket({
           baseReconnectDelay * Math.pow(2, reconnectAttempts.current),
           30000
         );
-        console.log(`[WebSocket] Reconnecting in ${delay}ms...`);
+        console.debug(`[WebSocket] Reconnecting in ${delay}ms...`);
         reconnectAttempts.current++;
         reconnectTimeoutRef.current = setTimeout(connect, delay);
       }

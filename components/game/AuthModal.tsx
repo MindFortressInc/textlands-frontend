@@ -4,11 +4,19 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import type { AccountPromptReason } from "@/types/game";
 
+// Session context to preserve across auth
+interface SessionContext {
+  world_id?: string;
+  entity_id?: string;
+  character_name?: string;
+}
+
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   reason?: AccountPromptReason;
   incentive?: string;
+  sessionContext?: SessionContext;
 }
 
 const REASON_CONTENT: Record<AccountPromptReason, { title: string; description: string; icon: string }> = {
@@ -29,7 +37,7 @@ const REASON_CONTENT: Record<AccountPromptReason, { title: string; description: 
   },
 };
 
-export function AuthModal({ isOpen, onClose, reason, incentive }: AuthModalProps) {
+export function AuthModal({ isOpen, onClose, reason, incentive, sessionContext }: AuthModalProps) {
   const { requestMagicLink } = useAuth();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -45,7 +53,8 @@ export function AuthModal({ isOpen, onClose, reason, incentive }: AuthModalProps
     setLoading(true);
     setError("");
 
-    const result = await requestMagicLink(email);
+    // Pass session context so backend can link guest session to new account
+    const result = await requestMagicLink(email, sessionContext);
 
     if (result.success) {
       setSent(true);

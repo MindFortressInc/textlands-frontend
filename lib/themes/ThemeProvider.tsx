@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { themes, defaultTheme, applyTheme, type Theme } from "./index";
+import { safeStorage, setupGlobalErrorHandlers } from "@/lib/errors";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
 
@@ -32,9 +33,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [themeId, setThemeId] = useState(defaultTheme);
   const theme = themes[themeId] || themes[defaultTheme];
 
+  // Set up global error handlers once on mount
   useEffect(() => {
-    // Load saved theme from localStorage
-    const saved = localStorage.getItem("textlands-theme");
+    setupGlobalErrorHandlers();
+  }, []);
+
+  useEffect(() => {
+    // Load saved theme from localStorage (safe for private browsing)
+    const saved = safeStorage.getItem("textlands-theme");
     if (saved && themes[saved]) {
       setThemeId(saved);
     }
@@ -42,7 +48,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     applyTheme(theme);
-    localStorage.setItem("textlands-theme", themeId);
+    safeStorage.setItem("textlands-theme", themeId);
   }, [theme, themeId]);
 
   const setTheme = (id: string) => {
