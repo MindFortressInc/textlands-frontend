@@ -1028,6 +1028,15 @@ export interface PlayerRankings {
   }[];
 }
 
+// Category leaderboard API response wrapper
+interface CategoryLeaderboardResponse {
+  category: string;
+  scope: string;
+  world_id: string | null;
+  time_window: string;
+  entries: CategoryLeaderboardEntry[];
+}
+
 // Get world leaderboard by category
 export async function getWorldCategoryLeaderboard(
   worldId: string,
@@ -1035,9 +1044,10 @@ export async function getWorldCategoryLeaderboard(
   limit = 100
 ): Promise<CategoryLeaderboardEntry[]> {
   const apiCategory = CATEGORY_API_MAP[category];
-  return fetchAPI<CategoryLeaderboardEntry[]>(
+  const response = await fetchAPI<CategoryLeaderboardResponse>(
     `/infinite/worlds/${worldId}/leaderboards/${apiCategory}?limit=${limit}`
   );
+  return response.entries;
 }
 
 // Get global leaderboard by category
@@ -1046,9 +1056,10 @@ export async function getGlobalCategoryLeaderboard(
   limit = 100
 ): Promise<CategoryLeaderboardEntry[]> {
   const apiCategory = CATEGORY_API_MAP[category];
-  return fetchAPI<CategoryLeaderboardEntry[]>(
+  const response = await fetchAPI<CategoryLeaderboardResponse>(
     `/infinite/leaderboards/global/${apiCategory}?limit=${limit}`
   );
+  return response.entries;
 }
 
 // Get player's world rankings
