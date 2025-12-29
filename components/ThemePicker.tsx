@@ -1,16 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useTheme } from "@/lib/themes/ThemeProvider";
+import { UI, calcDropdownPosition, type DropdownDirection } from "@/lib/ui-config";
 
 export function ThemePicker() {
   const { themeId, setTheme, availableThemes } = useTheme();
   const [open, setOpen] = useState(false);
+  const [openDirection, setOpenDirection] = useState<DropdownDirection>("up");
+  const [maxHeight, setMaxHeight] = useState<number>(UI.dropdown.themePickerMaxHeight);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  const handleToggle = () => {
+    if (!open && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const pos = calcDropdownPosition(rect, { maxHeight: UI.dropdown.themePickerMaxHeight });
+      setOpenDirection(pos.direction);
+      setMaxHeight(pos.maxHeight);
+    }
+    setOpen(!open);
+  };
 
   return (
     <div className="relative">
       <button
-        onClick={() => setOpen(!open)}
+        ref={buttonRef}
+        onClick={handleToggle}
         className="text-[var(--mist)] hover:text-[var(--text)] text-xs px-2 py-1.5 md:py-1 border border-[var(--slate)] rounded transition-colors active:bg-[var(--stone)]"
       >
         <span className="hidden sm:inline">Theme: </span>
@@ -22,8 +37,13 @@ export function ThemePicker() {
           {/* Backdrop */}
           <div className="fixed inset-0 z-40 bg-black/20" onClick={() => setOpen(false)} />
 
-          {/* Dropdown - opens upward to avoid going off-screen */}
-          <div className="absolute right-0 bottom-full mb-1 z-50 bg-[var(--shadow)] border border-[var(--slate)] rounded shadow-lg min-w-48 max-h-80 overflow-y-auto">
+          {/* Dropdown - dynamic direction based on available space */}
+          <div
+            className={`absolute right-0 z-50 bg-[var(--shadow)] border border-[var(--slate)] rounded shadow-lg min-w-48 overflow-y-auto ${
+              openDirection === "up" ? "bottom-full mb-1" : "top-full mt-1"
+            }`}
+            style={{ maxHeight }}
+          >
             {Object.values(availableThemes).map((theme) => (
               <button
                 key={theme.id}

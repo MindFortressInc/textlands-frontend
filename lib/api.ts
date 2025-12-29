@@ -58,6 +58,7 @@ export interface SessionInfo {
   world_id: string | null;
   world_name: string | null;
   content_settings?: ContentSettings;
+  character_count?: number; // Number of active characters (for multi-char select flow)
 }
 
 export interface StartSessionRequest {
@@ -1371,4 +1372,65 @@ export async function claimCampfireCharacter(
     `/infinite/worlds/${worldId}/campfire/claim/${characterId}${params}`,
     { method: "POST" }
   );
+}
+
+// ============ SESSION RECOVERY API ============
+
+export interface RecoverySearchRequest {
+  description: string;
+  limit?: number;
+}
+
+export interface RecoveryMatch {
+  session_id: string;
+  character_name: string;
+  world_name: string;
+  race?: string;
+  occupation?: string;
+  last_location?: string;
+  created_at: string;
+  last_active: string;
+  action_count: number;
+  match_score: number;
+  match_reason: string;
+}
+
+export interface RecoverySearchResponse {
+  matches: RecoveryMatch[];
+  query: string;
+}
+
+export async function searchRecoverableSessions(request: RecoverySearchRequest): Promise<RecoverySearchResponse> {
+  return fetchAPI<RecoverySearchResponse>("/recover/search", {
+    method: "POST",
+    body: JSON.stringify(request),
+  });
+}
+
+export interface RecoveryClaimRequest {
+  session_id: string;
+  email: string;
+}
+
+export interface RecoveryClaimResponse {
+  success: boolean;
+  message: string;
+}
+
+export async function claimRecoveredSession(request: RecoveryClaimRequest): Promise<RecoveryClaimResponse> {
+  return fetchAPI<RecoveryClaimResponse>("/recover/claim", {
+    method: "POST",
+    body: JSON.stringify(request),
+  });
+}
+
+export interface EmailLookupResponse {
+  found: boolean;
+  session_id?: string;
+  character_name?: string;
+  world_name?: string;
+}
+
+export async function lookupSessionByEmail(email: string): Promise<EmailLookupResponse> {
+  return fetchAPI<EmailLookupResponse>(`/recover/by-email/${encodeURIComponent(email)}`);
 }

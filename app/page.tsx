@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { GameLog, CommandInput, CharacterPanel, QuickActions, SuggestedActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal, AuthModal, BillingPanel, InfluenceBadge, LeaderboardModal, CharacterCreationModal, PlayerStatsModal, EntityTimelineModal, WorldTemplatesModal, EntityGenerationModal, WorldCreationModal, SocialPanel, ChatPanel, LoadingIndicator } from "@/components/game";
 import { ThemePicker } from "@/components/ThemePicker";
 import type { Character, GameLogEntry, CharacterOption, ActiveScene as ActiveSceneType, NegotiationRequest, CombatSession, ReasoningInfo, InfiniteWorld, InfiniteCampfireResponse, InfiniteCampfireCharacter, AccountPromptReason, WorldTemplate } from "@/types/game";
@@ -9,6 +9,7 @@ import * as api from "@/lib/api";
 import type { LandGroup, PlayerInfluence, LocationFootprint, LandKey } from "@/lib/api";
 import type { PlayerWorldStats } from "@/types/game";
 import { safeStorage } from "@/lib/errors";
+import { UI, calcDropdownPosition, type DropdownDirection } from "@/lib/ui-config";
 import { useWebSocket } from "@/lib/useWebSocket";
 import Link from "next/link";
 import type {
@@ -64,7 +65,7 @@ const TONE_ICONS: Record<string, string> = {
 
 // ========== STATE TYPE ==========
 
-type AppPhase = "loading" | "landing" | "genres" | "worlds" | "campfire" | "infinite-campfire" | "game";
+type AppPhase = "loading" | "landing" | "character-select" | "genres" | "worlds" | "campfire" | "infinite-campfire" | "game";
 
 // ========== INLINE VIEW COMPONENTS ==========
 
@@ -105,9 +106,23 @@ function LandingView({ onEnter, onLogin, onResumeCharacter, isLoggedIn, roster, 
 }) {
   const [selectedChar, setSelectedChar] = useState<RosterCharacter | null>(null);
   const [showPicker, setShowPicker] = useState(false);
+  const [openDirection, setOpenDirection] = useState<DropdownDirection>("down");
+  const [maxDropdownHeight, setMaxDropdownHeight] = useState<number>(UI.dropdown.characterPickerMaxHeight);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   // Filter to active characters only
   const activeChars = roster.filter(c => c.status === "active");
+
+  // Calculate dropdown direction and max height when opening
+  const handleTogglePicker = () => {
+    if (!showPicker && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const pos = calcDropdownPosition(rect, { maxHeight: UI.dropdown.characterPickerMaxHeight });
+      setOpenDirection(pos.direction);
+      setMaxDropdownHeight(pos.maxHeight);
+    }
+    setShowPicker(!showPicker);
+  };
 
   return (
     <main className="h-dvh flex flex-col items-center justify-center bg-atmospheric p-4 pt-[max(1rem,env(safe-area-inset-top))] animate-fade-in">
@@ -134,7 +149,8 @@ function LandingView({ onEnter, onLogin, onResumeCharacter, isLoggedIn, roster, 
           <div className="space-y-3">
             <div className="relative">
               <button
-                onClick={() => setShowPicker(!showPicker)}
+                ref={buttonRef}
+                onClick={handleTogglePicker}
                 className="w-full px-4 py-3 bg-[var(--shadow)] border border-[var(--slate)] rounded text-left hover:border-[var(--amber-dim)] transition-colors"
               >
                 <div className="flex items-center justify-between">
@@ -152,9 +168,14 @@ function LandingView({ onEnter, onLogin, onResumeCharacter, isLoggedIn, roster, 
                 </div>
               </button>
 
-              {/* Dropdown */}
+              {/* Dropdown - dynamic direction based on available space */}
               {showPicker && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-[var(--shadow)] border border-[var(--slate)] rounded max-h-48 overflow-y-auto z-10">
+                <div
+                  className={`absolute left-0 right-0 bg-[var(--shadow)] border border-[var(--slate)] rounded overflow-y-auto z-10 ${
+                    openDirection === "up" ? "bottom-full mb-1" : "top-full mt-1"
+                  }`}
+                  style={{ maxHeight: maxDropdownHeight }}
+                >
                   {activeChars.map((char) => (
                     <button
                       key={char.id}
@@ -223,6 +244,179 @@ function LandingView({ onEnter, onLogin, onResumeCharacter, isLoggedIn, roster, 
             Log In
           </button>
         )}
+        <Link
+          href="/leaderboards"
+          className="text-[var(--mist)] text-xs hover:text-[var(--amber)] transition-colors"
+        >
+          Leaderboards
+        </Link>
+        <Link
+          href="/recover"
+          className="text-[var(--mist)] text-xs hover:text-[var(--amber)] transition-colors"
+        >
+          Lost Journey?
+        </Link>
+      </div>
+
+      {/* Theme picker */}
+      <div className="absolute bottom-4 right-4 pb-[env(safe-area-inset-bottom)]">
+        <ThemePicker />
+      </div>
+
+      {/* Decorative bottom line */}
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-32 h-px bg-gradient-to-r from-transparent via-[var(--amber-dim)] to-transparent opacity-50" />
+    </main>
+  );
+}
+
+// Character Select view for users with 2+ characters
+function CharacterSelectView({ roster, onSelect, onNewCharacter, loadingRoster }: {
+  roster: RosterCharacter[];
+  onSelect: (char: RosterCharacter) => void;
+  onNewCharacter: () => void;
+  loadingRoster: boolean;
+}) {
+  const [selectedChar, setSelectedChar] = useState<RosterCharacter | null>(null);
+  const [showPicker, setShowPicker] = useState(false);
+  const [openDirection, setOpenDirection] = useState<DropdownDirection>("up");
+  const [maxDropdownHeight, setMaxDropdownHeight] = useState<number>(UI.dropdown.characterPickerMaxHeight);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  // Filter to active characters only
+  const activeChars = roster.filter(c => c.status === "active");
+
+  // Auto-select first character if none selected
+  useEffect(() => {
+    if (!selectedChar && activeChars.length > 0) {
+      setSelectedChar(activeChars[0]);
+    }
+  }, [activeChars, selectedChar]);
+
+  // Calculate dropdown direction and max height when opening
+  const handleTogglePicker = () => {
+    if (!showPicker && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const pos = calcDropdownPosition(rect, { maxHeight: UI.dropdown.characterPickerMaxHeight });
+      setOpenDirection(pos.direction);
+      setMaxDropdownHeight(pos.maxHeight);
+    }
+    setShowPicker(!showPicker);
+  };
+
+  return (
+    <main className="h-dvh flex flex-col items-center justify-center bg-atmospheric p-4 pt-[max(1rem,env(safe-area-inset-top))] animate-fade-in">
+      {/* Decorative top line */}
+      <div className="absolute top-8 left-1/2 -translate-x-1/2 w-32 h-px bg-gradient-to-r from-transparent via-[var(--amber-dim)] to-transparent opacity-50" />
+
+      <div className="text-center space-y-8 max-w-md corner-brackets p-8">
+        {/* Title */}
+        <div className="space-y-2">
+          <h1 className="text-[var(--amber)] text-3xl md:text-4xl font-bold tracking-[0.2em] title-glow">
+            TEXTLANDS
+          </h1>
+          <div className="text-[var(--mist)] text-sm">Choose your character</div>
+        </div>
+
+        {/* Character picker */}
+        {loadingRoster ? (
+          <div className="text-[var(--mist)] text-sm animate-pulse">Loading characters...</div>
+        ) : (
+          <div className="space-y-4">
+            {/* Character dropdown */}
+            <div className="relative">
+              <button
+                ref={buttonRef}
+                onClick={handleTogglePicker}
+                className="w-full px-4 py-4 bg-[var(--shadow)] border border-[var(--slate)] rounded-lg text-left hover:border-[var(--amber-dim)] transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    {selectedChar ? (
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[var(--amber)] font-bold text-lg">{selectedChar.character_name}</span>
+                          {selectedChar.occupation && (
+                            <span className="text-[var(--mist)] text-xs">({selectedChar.occupation})</span>
+                          )}
+                        </div>
+                        <span className="text-[var(--text-dim)] text-sm">{selectedChar.world_name}</span>
+                      </div>
+                    ) : (
+                      <span className="text-[var(--mist)]">Select a character...</span>
+                    )}
+                  </div>
+                  <span className="text-[var(--mist)] text-lg">{showPicker ? "▲" : "▼"}</span>
+                </div>
+              </button>
+
+              {/* Dropdown - dynamic direction based on available space */}
+              {showPicker && (
+                <div
+                  className={`absolute left-0 right-0 bg-[var(--shadow)] border border-[var(--slate)] rounded-lg overflow-y-auto z-10 ${
+                    openDirection === "up" ? "bottom-full mb-1" : "top-full mt-1"
+                  }`}
+                  style={{ maxHeight: maxDropdownHeight }}
+                >
+                  {activeChars.map((char) => (
+                    <button
+                      key={char.id}
+                      onClick={() => {
+                        setSelectedChar(char);
+                        setShowPicker(false);
+                      }}
+                      className={`w-full px-4 py-3 text-left hover:bg-[var(--stone)] transition-colors border-b border-[var(--slate)] last:border-b-0 ${
+                        selectedChar?.id === char.id ? "bg-[var(--stone)]" : ""
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-[var(--amber)] font-bold">{char.character_name}</span>
+                        {char.occupation && (
+                          <span className="text-[var(--mist)] text-xs">({char.occupation})</span>
+                        )}
+                      </div>
+                      <span className="text-[var(--text-dim)] text-xs">{char.world_name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Enter button */}
+            <button
+              onClick={() => selectedChar && onSelect(selectedChar)}
+              disabled={!selectedChar}
+              className="group relative w-full px-8 py-4 text-[var(--amber)] font-bold text-lg bg-[var(--shadow)] border border-[var(--amber-dim)] rounded-lg transition-all duration-200 hover:border-[var(--amber)] hover:bg-[var(--stone)] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span className="relative z-10">Enter</span>
+              <span className="absolute inset-0 rounded-lg bg-gradient-to-r from-transparent via-[var(--amber)] to-transparent opacity-0 group-hover:opacity-10 transition-opacity" />
+            </button>
+
+            {/* Divider */}
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-px bg-[var(--slate)]" />
+              <span className="text-[var(--slate)] text-xs">or</span>
+              <div className="flex-1 h-px bg-[var(--slate)]" />
+            </div>
+
+            {/* New Character button */}
+            <button
+              onClick={onNewCharacter}
+              className="w-full px-6 py-3 text-[var(--mist)] text-sm bg-transparent border border-[var(--slate)] rounded-lg transition-colors hover:text-[var(--text)] hover:border-[var(--amber-dim)]"
+            >
+              Create New Character
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Bottom links */}
+      <div className="absolute bottom-4 left-4 pb-[env(safe-area-inset-bottom)] flex gap-4">
+        <Link
+          href="/characters"
+          className="text-[var(--mist)] text-xs hover:text-[var(--amber)] transition-colors"
+        >
+          Manage Characters
+        </Link>
         <Link
           href="/leaderboards"
           className="text-[var(--mist)] text-xs hover:text-[var(--amber)] transition-colors"
@@ -583,7 +777,6 @@ export default function GamePage() {
 
   // Character creation state
   const [charCreatorOpen, setCharCreatorOpen] = useState(false);
-  const [charCreatorLoading, setCharCreatorLoading] = useState(false);
 
   // Location footprints state
   const [footprints, setFootprints] = useState<LocationFootprint[]>([]);
@@ -808,10 +1001,21 @@ export default function GamePage() {
           // Fetch roster for logged-in users without active session
           if (!session.is_guest) {
             setLoadingRoster(true);
-            api.getCharacterRoster()
-              .then(setRoster)
-              .catch((err) => console.warn("[Init] Failed to fetch roster:", err.message))
-              .finally(() => setLoadingRoster(false));
+            try {
+              const rosterData = await api.getCharacterRoster();
+              setRoster(rosterData);
+              setLoadingRoster(false);
+
+              // If user has 2+ active characters, show character select screen
+              const activeCount = session.character_count ?? rosterData.filter(c => c.status === "active").length;
+              if (activeCount >= 2) {
+                setPhase("character-select");
+                return;
+              }
+            } catch (err) {
+              console.warn("[Init] Failed to fetch roster:", err instanceof Error ? err.message : err);
+              setLoadingRoster(false);
+            }
           }
         }
 
@@ -1143,20 +1347,47 @@ export default function GamePage() {
     setProcessing(false);
   };
 
-  // Create custom character from modal
-  const handleCreateCharacter = async (request: api.CreateCharacterRequest) => {
+  // Handle character created from conversational modal
+  const handleCharacterCreated = async (entityId: string) => {
     if (!selectedWorld) return;
 
-    setCharCreatorLoading(true);
+    setCharCreatorOpen(false);
+    setProcessing(true);
+
     try {
-      const result = await api.createCampfireCharacter(selectedWorld.id, request);
-      setCharCreatorOpen(false);
-      // Select the newly created character
-      await selectInfiniteCharacter(result.character);
+      // Claim the character that was created during conversation
+      const claimResult = await api.claimCampfireCharacter(selectedWorld.id, entityId, playerId || undefined);
+
+      // Start session with the claimed character
+      const { session, opening_narrative } = await api.startSession({
+        world_id: selectedWorld.id,
+        entity_id: entityId,
+      });
+
+      setCurrentSession(session);
+      setCharacter({
+        id: session.character_id || entityId,
+        name: session.character_name || claimResult.character_name,
+        race: "Unknown",
+        character_class: "Adventurer",
+        stats: { hp: 100, max_hp: 100, mana: 50, max_mana: 50, gold: 0, xp: 0, level: 1 },
+        current_zone_id: null,
+        inventory: [],
+        equipped: {},
+      });
+
+      setZoneName(session.world_name || selectedWorld.name);
+      setEntries([
+        log("system", `Entering ${session.world_name || selectedWorld.name}`),
+        log("narrative", opening_narrative || infiniteCampfire?.intro_text || "Your adventure begins..."),
+        log("system", "Type 'help' for commands, or just describe what you want to do"),
+      ]);
+      setPhase("game");
     } catch (err) {
-      throw err; // Let modal handle error display
+      console.error("[CharacterCreation] Failed to start session:", err);
+      setEntries([log("system", `Error: ${err instanceof Error ? err.message : "Unknown error"}`)]);
     } finally {
-      setCharCreatorLoading(false);
+      setProcessing(false);
     }
   };
 
@@ -1555,6 +1786,18 @@ export default function GamePage() {
     );
   }
 
+  // Character select for users with 2+ characters
+  if (phase === "character-select") {
+    return (
+      <CharacterSelectView
+        roster={roster}
+        onSelect={resumeCharacter}
+        onNewCharacter={enterWorlds}
+        loadingRoster={loadingRoster}
+      />
+    );
+  }
+
   // New: Infinite Worlds browser (replaces genre grid + world list)
   if (phase === "worlds") {
     return (
@@ -1590,9 +1833,10 @@ export default function GamePage() {
         <CharacterCreationModal
           isOpen={charCreatorOpen}
           onClose={() => setCharCreatorOpen(false)}
-          onSubmit={handleCreateCharacter}
+          onComplete={handleCharacterCreated}
+          worldId={selectedWorld.id}
           worldName={selectedWorld.name}
-          loading={charCreatorLoading}
+          playerId={playerId || undefined}
         />
       </>
     );
