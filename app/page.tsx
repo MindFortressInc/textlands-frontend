@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { GameLog, CommandInput, CharacterPanel, QuickActions, SuggestedActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal, AuthModal, BillingPanel, InfluenceBadge, LeaderboardModal, CharacterCreationModal, PlayerStatsModal, EntityTimelineModal, WorldTemplatesModal, EntityGenerationModal, WorldCreationModal, SocialPanel, ChatPanel, LoadingIndicator } from "@/components/game";
+import { GameLog, CommandInput, CharacterPanel, QuickActions, SuggestedActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal, AuthModal, BillingPanel, InfluenceBadge, LeaderboardModal, CharacterCreationModal, PlayerStatsModal, EntityTimelineModal, WorldTemplatesModal, EntityGenerationModal, WorldCreationModal, SocialPanel, ChatPanel, LoadingIndicator, InventoryPanel, CurrencyPanel } from "@/components/game";
 import { ThemePicker } from "@/components/ThemePicker";
 import type { Character, GameLogEntry, CharacterOption, ActiveScene as ActiveSceneType, NegotiationRequest, CombatSession, ReasoningInfo, InfiniteWorld, InfiniteCampfireResponse, InfiniteCampfireCharacter, AccountPromptReason, WorldTemplate } from "@/types/game";
 import type { RosterCharacter } from "@/lib/api";
@@ -245,10 +245,10 @@ function LandingView({ onEnter, onLogin, onResumeCharacter, isLoggedIn, roster, 
           </button>
         )}
         <Link
-          href="/leaderboards"
+          href="/hiscores"
           className="text-[var(--mist)] text-xs hover:text-[var(--amber)] transition-colors"
         >
-          Leaderboards
+          HiScores
         </Link>
         <Link
           href="/recover"
@@ -418,10 +418,10 @@ function CharacterSelectView({ roster, onSelect, onNewCharacter, loadingRoster }
           Manage Characters
         </Link>
         <Link
-          href="/leaderboards"
+          href="/hiscores"
           className="text-[var(--mist)] text-xs hover:text-[var(--amber)] transition-colors"
         >
-          Leaderboards
+          HiScores
         </Link>
       </div>
 
@@ -813,6 +813,12 @@ export default function GamePage() {
 
   // Chat panel state
   const [showChatPanel, setShowChatPanel] = useState(false);
+
+  // Inventory panel state
+  const [showInventory, setShowInventory] = useState(false);
+
+  // Currency panel state
+  const [showCurrency, setShowCurrency] = useState(false);
 
   // WebSocket real-time events
   const [lastZoneMessage, setLastZoneMessage] = useState<ChatMessageEvent | null>(null);
@@ -1468,7 +1474,11 @@ export default function GamePage() {
         const s = character.stats || { hp: 0, max_hp: 100, mana: 0, max_mana: 50, gold: 0, xp: 0, level: 1 };
         addLog("system", `${character.name} - Lv.${s.level} ${character.race} ${character.character_class}\nHP: ${s.hp}/${s.max_hp} | MP: ${s.mana}/${s.max_mana} | Gold: ${s.gold} | XP: ${s.xp}`);
       } else if (["inventory", "inv", "i"].includes(action)) {
-        addLog("system", character.inventory.length ? `Inventory: ${character.inventory.join(", ")}` : "Your pack is empty.");
+        setShowInventory(true);
+        addLog("system", "Opening inventory...");
+      } else if (["gold", "money", "currency", "wealth", "wallet"].includes(action)) {
+        setShowCurrency(true);
+        addLog("system", "Opening wallet...");
       } else if (action === "settings") {
         setSettingsOpen(true);
         addLog("system", "Opening settings...");
@@ -1945,6 +1955,16 @@ export default function GamePage() {
           character_name: currentSession.character_name ?? undefined,
         } : undefined}
       />
+      <InventoryPanel
+        isOpen={showInventory}
+        onClose={() => setShowInventory(false)}
+      />
+      <CurrencyPanel
+        isOpen={showCurrency}
+        onClose={() => setShowCurrency(false)}
+        worldId={currentSession?.world_id || null}
+        playerId={playerId}
+      />
 
       {/* Header */}
       <header className="bg-[var(--shadow)] border-b border-[var(--slate)] px-3 py-2 md:px-4 flex items-center justify-between shrink-0 pt-[max(0.5rem,env(safe-area-inset-top))]">
@@ -1997,9 +2017,9 @@ export default function GamePage() {
             ⚔
           </Link>
           <Link
-            href="/leaderboards"
+            href="/hiscores"
             className="text-[var(--mist)] hover:text-[var(--amber)] transition-colors text-xs hidden sm:block"
-            title="Leaderboards"
+            title="HiScores"
           >
             ◆
           </Link>

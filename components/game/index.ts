@@ -27,4 +27,6 @@ export { WorldCreationModal } from "./WorldCreationModal";
 export { SocialPanel } from "./SocialPanel";
 export { ChatPanel } from "./ChatPanel";
 export { LoadingIndicator } from "./LoadingIndicator";
+export { InventoryPanel } from "./InventoryPanel";
+export { CurrencyPanel } from "./CurrencyPanel";
 // Consequence components removed - backend handles via doAction narrative

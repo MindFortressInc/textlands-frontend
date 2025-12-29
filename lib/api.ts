@@ -985,6 +985,55 @@ export async function upvoteLocationMessage(
   });
 }
 
+// ============ INVENTORY API ============
+
+export interface ItemStats {
+  damage?: number;
+  defense?: number;
+  magic?: number;
+  speed?: number;
+}
+
+export interface Item {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  item_type: "weapon" | "armor" | "accessory" | "consumable" | "quest" | "material" | "misc";
+  tier: "common" | "uncommon" | "rare" | "epic" | "legendary";
+  slot?: "weapon" | "offhand" | "head" | "chest" | "legs" | "feet" | "hands" | "accessory";
+  stats: ItemStats;
+  effects: Record<string, unknown>;
+  level_required: number;
+  base_value: number;
+  can_sell: boolean;
+  can_trade: boolean;
+  max_stack: number;
+  icon_url: string | null;
+}
+
+export interface InventoryItem {
+  id: string;
+  item_id: string;
+  item: Item;
+  quantity: number;
+  acquired_from: string | null;
+  is_equipped: boolean;
+  equipped_slot: string | null;
+}
+
+export interface InventoryResponse {
+  items: InventoryItem[];
+  equipped: Record<string, InventoryItem>;
+  total_items: number;
+  total_value: number;
+}
+
+// Get player's inventory
+export async function getInventory(): Promise<InventoryResponse> {
+  return fetchAPI<InventoryResponse>("/characters/inventory");
+}
+
 // ============ CHARACTER ROSTER API ============
 
 export interface RosterCharacter {
@@ -1176,6 +1225,10 @@ export interface RegionalStanding {
   reputation: number;
   reputation_tier: string;
   title: string;
+  standing?: string;
+  citizenship?: boolean;
+  exile?: boolean;
+  bounty?: number;
 }
 
 export interface ExchangeRate {
