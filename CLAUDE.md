@@ -152,5 +152,5 @@ NEXT_PUBLIC_API_URL=https://api.textlands.com
 ## Related
 
 - **Backend:** /Users/mattrhodes/Coding/textlands-backend
-- **Backend Docs:** /Users/mattrhodes/Coding/textlands-backend/docs/FRONTEND_INTEGRATION.md
+- **Frontend Integration Docs:** /Users/mattrhodes/Coding/textlands-backend/docs/frontend/ (architecture, core API, UI strings)
 - **World Architecture:** /Users/mattrhodes/Coding/textlands-backend/docs/game/07-worlds.md (terminology, entity system, governance)

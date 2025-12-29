@@ -115,6 +115,17 @@ export async function updatePreferences(prefs: Partial<UserPreferences>): Promis
   });
 }
 
+// UI Strings - backend-provided localized text
+export interface UIStringsResponse {
+  language_code: string;
+  strings: Record<string, string>;
+  help_text: string;
+}
+
+export async function getUIStrings(languageCode = "en"): Promise<UIStringsResponse> {
+  return fetchAPI<UIStringsResponse>(`/session/ui-strings?language_code=${languageCode}`);
+}
+
 // Get explanation for a past action (on-demand)
 export async function explainAction(actionId: string): Promise<ExplainResponse> {
   return fetchAPI<ExplainResponse>(`/actions/${actionId}/explain`);
@@ -1101,84 +1112,81 @@ export async function getCharacterGraveyard(): Promise<GraveyardEntry[]> {
   return fetchAPI<GraveyardEntry[]>("/characters/roster/graveyard");
 }
 
-// ============ CATEGORY LEADERBOARDS API ============
+// ============ HISCORES API ============
 
-// Frontend display categories
-export type LeaderboardCategory = "trailblazer" | "slayers" | "outlaws";
+export type HiScoreCategory = "trailblazers" | "warriors" | "outlaws" | "tycoons";
+export type HiScoreTimeWindow = "all_time" | "weekly" | "monthly";
 
-// Map frontend categories to backend API categories
-const CATEGORY_API_MAP: Record<LeaderboardCategory, string> = {
-  trailblazer: "world_shapers",
-  slayers: "slayers",
-  outlaws: "outlaws",
-};
-
-export interface CategoryLeaderboardEntry {
+export interface HiScoreEntry {
   rank: number;
   player_id: string;
   display_name?: string;
   score: number;
-  tier?: number;
-  title?: string;
+  // Category-specific fields
+  entities_created?: number;
+  footprints?: number;
+  passive_income?: number;
+  total_kills?: number;
+  kills_by_tier?: { common: number; named: number; legendary: number };
+  bounties_claimed?: number;
+  active_bounty?: number;
+  lifetime_bounty?: number;
+  infractions?: number;
+  currency_wealth?: number;
+  inventory_value?: number;
 }
 
-export interface PlayerRankings {
-  player_id: string;
-  rankings: {
-    category: LeaderboardCategory;
-    rank: number;
-    score: number;
-    percentile: number;
-  }[];
-}
-
-// Category leaderboard API response wrapper
-interface CategoryLeaderboardResponse {
+export interface HiScoreResponse {
   category: string;
   scope: string;
   world_id: string | null;
   time_window: string;
-  entries: CategoryLeaderboardEntry[];
+  entries: HiScoreEntry[];
+  total_count: number;
 }
 
-// Get world leaderboard by category
-export async function getWorldCategoryLeaderboard(
-  worldId: string,
-  category: LeaderboardCategory,
-  limit = 100
-): Promise<CategoryLeaderboardEntry[]> {
-  const apiCategory = CATEGORY_API_MAP[category];
-  const response = await fetchAPI<CategoryLeaderboardResponse>(
-    `/infinite/worlds/${worldId}/leaderboards/${apiCategory}?limit=${limit}`
+export interface PlayerHiScoreRankings {
+  player_id: string;
+  world_id?: string;
+  rankings: Record<string, { rank: number | null; score: number }>;
+}
+
+// Get global hiscores by category
+export async function getGlobalHiScores(
+  category: HiScoreCategory,
+  timeWindow: HiScoreTimeWindow = "all_time",
+  limit = 50
+): Promise<HiScoreResponse> {
+  return fetchAPI<HiScoreResponse>(
+    `/infinite/hiscores/global/${category}?time_window=${timeWindow}&limit=${limit}`
   );
-  return response.entries;
 }
 
-// Get global leaderboard by category
-export async function getGlobalCategoryLeaderboard(
-  category: LeaderboardCategory,
-  limit = 100
-): Promise<CategoryLeaderboardEntry[]> {
-  const apiCategory = CATEGORY_API_MAP[category];
-  const response = await fetchAPI<CategoryLeaderboardResponse>(
-    `/infinite/leaderboards/global/${apiCategory}?limit=${limit}`
-  );
-  return response.entries;
-}
-
-// Get player's world rankings
-export async function getPlayerWorldRankings(
+// Get realm hiscores by category
+export async function getRealmHiScores(
   worldId: string,
-  playerId: string
-): Promise<PlayerRankings> {
-  return fetchAPI<PlayerRankings>(
-    `/infinite/worlds/${worldId}/leaderboards/player/${playerId}`
+  category: HiScoreCategory,
+  timeWindow: HiScoreTimeWindow = "all_time",
+  limit = 50
+): Promise<HiScoreResponse> {
+  return fetchAPI<HiScoreResponse>(
+    `/infinite/worlds/${worldId}/hiscores/${category}?time_window=${timeWindow}&limit=${limit}`
   );
 }
 
 // Get player's global rankings
-export async function getPlayerGlobalRankings(playerId: string): Promise<PlayerRankings> {
-  return fetchAPI<PlayerRankings>(`/infinite/leaderboards/global/player/${playerId}`);
+export async function getPlayerGlobalHiScores(playerId: string): Promise<PlayerHiScoreRankings> {
+  return fetchAPI<PlayerHiScoreRankings>(`/infinite/hiscores/global/player/${playerId}`);
+}
+
+// Get player's realm rankings
+export async function getPlayerRealmHiScores(
+  worldId: string,
+  playerId: string
+): Promise<PlayerHiScoreRankings> {
+  return fetchAPI<PlayerHiScoreRankings>(
+    `/infinite/worlds/${worldId}/hiscores/player/${playerId}`
+  );
 }
 
 // ============ REGIONAL ECONOMY API ============
@@ -1486,4 +1494,35 @@ export interface EmailLookupResponse {
 
 export async function lookupSessionByEmail(email: string): Promise<EmailLookupResponse> {
   return fetchAPI<EmailLookupResponse>(`/recover/by-email/${encodeURIComponent(email)}`);
+}
+
+// ============ SKILLS API ============
+
+export type SkillCategory = "combat" | "gathering" | "crafting" | "social" | "exploration" | "knowledge" | "companion";
+
+export interface SkillAbility {
+  name: string;
+  description: string;
+  unlocked_at: number;
+}
+
+export interface PlayerSkill {
+  skill_name: string;
+  display_name: string;
+  category: SkillCategory;
+  level: number;
+  xp: number;
+  xp_to_next: number;
+  unlocked_abilities: SkillAbility[];
+}
+
+export interface SkillsResponse {
+  skills: PlayerSkill[];
+  total_level: number;
+  highest_skill: string | null;
+}
+
+// Get player's skills
+export async function getSkills(): Promise<SkillsResponse> {
+  return fetchAPI<SkillsResponse>("/characters/skills");
 }

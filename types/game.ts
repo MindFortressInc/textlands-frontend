@@ -193,6 +193,12 @@ export interface InfiniteCampfireResponse {
   intro_text: string;
   tone: string;
   characters: InfiniteCampfireCharacter[];
+  // UI text fields from backend
+  page_title?: string;           // World-appropriate title ("Neural Pod Selection")
+  page_subtitle?: string;        // Flavor text ("Initialize consciousness transfer...")
+  create_custom_prompt?: string; // CTA for custom character
+  content_warnings?: string[];   // ["violence", "adult_themes"]
+  is_nsfw_world: boolean;
 }
 
 // ============ LEGACY TYPES (for backwards compatibility) ============
@@ -274,6 +280,14 @@ export interface StateChanges {
   };
 }
 
+// System message from backend (show as toast/banner)
+export interface SystemMessage {
+  message: string;
+  message_type: "info" | "warning" | "error" | "success";
+  dismissible: boolean;
+  action_button?: { text: string; action: string };
+}
+
 export interface DoActionResponse {
   narrative: string;
   state_changes: StateChanges;
@@ -297,6 +311,8 @@ export interface DoActionResponse {
   account_prompt_reason?: AccountPromptReason;
   account_prompt_incentive?: string;
   show_save_prompt?: boolean;
+  // System message (show as toast)
+  system_message?: SystemMessage;
 }
 
 // Character types

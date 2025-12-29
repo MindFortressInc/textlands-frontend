@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/lib/themes/ThemeProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { UIStringsProvider } from "@/contexts/UIStringsContext";
 import { DynamicFavicon } from "@/components/DynamicFavicon";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
@@ -38,10 +39,12 @@ export default function RootLayout({
       <body>
         <ErrorBoundary>
           <AuthProvider>
-            <ThemeProvider>
-              <DynamicFavicon />
-              {children}
-            </ThemeProvider>
+            <UIStringsProvider>
+              <ThemeProvider>
+                <DynamicFavicon />
+                {children}
+              </ThemeProvider>
+            </UIStringsProvider>
           </AuthProvider>
         </ErrorBoundary>
       </body>

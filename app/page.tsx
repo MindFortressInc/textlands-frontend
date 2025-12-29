@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { GameLog, CommandInput, CharacterPanel, QuickActions, SuggestedActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal, AuthModal, BillingPanel, InfluenceBadge, LeaderboardModal, CharacterCreationModal, PlayerStatsModal, EntityTimelineModal, WorldTemplatesModal, EntityGenerationModal, WorldCreationModal, SocialPanel, ChatPanel, LoadingIndicator, InventoryPanel, CurrencyPanel } from "@/components/game";
+import { GameLog, CommandInput, CharacterPanel, QuickActions, SuggestedActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal, AuthModal, BillingPanel, InfluenceBadge, LeaderboardModal, CharacterCreationModal, PlayerStatsModal, EntityTimelineModal, WorldTemplatesModal, EntityGenerationModal, WorldCreationModal, SocialPanel, ChatPanel, LoadingIndicator, InventoryPanel, CurrencyPanel, SkillsPanel } from "@/components/game";
 import { ThemePicker } from "@/components/ThemePicker";
 import type { Character, GameLogEntry, CharacterOption, ActiveScene as ActiveSceneType, NegotiationRequest, CombatSession, ReasoningInfo, InfiniteWorld, InfiniteCampfireResponse, InfiniteCampfireCharacter, AccountPromptReason, WorldTemplate } from "@/types/game";
 import type { RosterCharacter } from "@/lib/api";
@@ -11,6 +11,7 @@ import type { PlayerWorldStats } from "@/types/game";
 import { safeStorage } from "@/lib/errors";
 import { UI, calcDropdownPosition, type DropdownDirection } from "@/lib/ui-config";
 import { useWebSocket } from "@/lib/useWebSocket";
+import { useUIStrings } from "@/contexts/UIStringsContext";
 import Link from "next/link";
 import type {
   ChatMessageEvent,
@@ -104,6 +105,7 @@ function LandingView({ onEnter, onLogin, onResumeCharacter, isLoggedIn, roster, 
   roster: RosterCharacter[];
   loadingRoster: boolean;
 }) {
+  const { t } = useUIStrings();
   const [selectedChar, setSelectedChar] = useState<RosterCharacter | null>(null);
   const [showPicker, setShowPicker] = useState(false);
   const [openDirection, setOpenDirection] = useState<DropdownDirection>("down");
@@ -132,7 +134,7 @@ function LandingView({ onEnter, onLogin, onResumeCharacter, isLoggedIn, roster, 
       <div className="text-center space-y-8 max-w-md corner-brackets p-8">
         {/* Title */}
         <div className="space-y-2">
-          <div className="text-[var(--mist)] text-[10px] tracking-[0.5em] uppercase">Welcome to</div>
+          <div className="text-[var(--mist)] text-[10px] tracking-[0.5em] uppercase">{t("welcome_to", "Welcome to")}</div>
           <h1 className="text-[var(--amber)] text-3xl md:text-5xl font-bold tracking-[0.2em] title-glow">
             TEXTLANDS
           </h1>
@@ -141,7 +143,7 @@ function LandingView({ onEnter, onLogin, onResumeCharacter, isLoggedIn, roster, 
 
         {/* Tagline */}
         <p className="text-[var(--text-dim)] text-sm md:text-base italic">
-          Choose your world. Become your character.
+          {t("tagline", "Choose your land. Become your character.")}
         </p>
 
         {/* Character picker for logged-in users with characters */}
@@ -161,7 +163,7 @@ function LandingView({ onEnter, onLogin, onResumeCharacter, isLoggedIn, roster, 
                         <span className="text-[var(--mist)] text-xs ml-2">in {selectedChar.world_name}</span>
                       </>
                     ) : (
-                      <span className="text-[var(--mist)]">Select a character...</span>
+                      <span className="text-[var(--mist)]">{t("select_character", "Select a character...")}</span>
                     )}
                   </div>
                   <span className="text-[var(--mist)]">{showPicker ? "▲" : "▼"}</span>
@@ -202,7 +204,7 @@ function LandingView({ onEnter, onLogin, onResumeCharacter, isLoggedIn, roster, 
                 onClick={() => onResumeCharacter(selectedChar)}
                 className="group relative w-full px-6 py-3 text-[var(--amber)] font-bold bg-[var(--shadow)] border border-[var(--amber-dim)] rounded transition-all duration-200 hover:border-[var(--amber)] hover:bg-[var(--stone)] active:scale-95"
               >
-                Continue as {selectedChar.character_name}
+                {t("continue_as", "Continue as")} {selectedChar.character_name}
               </button>
             )}
 
@@ -216,14 +218,14 @@ function LandingView({ onEnter, onLogin, onResumeCharacter, isLoggedIn, roster, 
           className="group relative px-10 py-4 text-[var(--amber)] font-bold text-base md:text-lg min-h-[52px] bg-[var(--shadow)] border border-[var(--slate)] rounded transition-all duration-200 hover:border-[var(--amber)] hover:bg-[var(--stone)] active:scale-95"
         >
           <span className="relative z-10">
-            {isLoggedIn && activeChars.length > 0 ? "New Character" : "Begin Your Journey"}
+            {isLoggedIn && activeChars.length > 0 ? t("new_character", "New Character") : t("begin_adventure", "Begin Your Journey")}
           </span>
           <span className="absolute inset-0 rounded bg-gradient-to-r from-transparent via-[var(--amber)] to-transparent opacity-0 group-hover:opacity-10 transition-opacity" />
         </button>
 
         {/* Decorative text */}
         <div className="text-[var(--slate)] text-[10px] tracking-widest">
-          ═══ ENTER THE LANDS ═══
+          {t("enter_the_lands", "ENTER THE LANDS")}
         </div>
       </div>
 
@@ -445,6 +447,8 @@ function WorldBrowser({ landGroups, onSelect, onBack, nsfwEnabled, nsfwAutoBlock
   nsfwAutoBlocked?: boolean;
   onRequestNsfw: () => void;
 }) {
+  const { t } = useUIStrings();
+
   // Separate SFW and locked/NSFW lands
   const sfwLands = landGroups.filter(g => !g.is_locked);
   const nsfwLands = landGroups.filter(g => g.is_locked);
@@ -460,11 +464,11 @@ function WorldBrowser({ landGroups, onSelect, onBack, nsfwEnabled, nsfwAutoBlock
     <main className="h-dvh flex flex-col bg-atmospheric pt-[max(0.5rem,env(safe-area-inset-top))] animate-fade-in">
       <header className="flex items-center justify-between px-4 py-3 border-b border-[var(--slate)] shrink-0">
         <button onClick={onBack} className="text-[var(--mist)] text-sm min-w-[44px] min-h-[44px] flex items-center gap-1 hover:text-[var(--text)] transition-colors">
-          <span className="text-lg">‹</span> Back
+          <span className="text-lg">‹</span> {t("back", "Back")}
         </button>
         <div className="text-center">
-          <span className="text-[var(--amber)] font-bold tracking-wider">CHOOSE YOUR LAND</span>
-          <div className="text-[var(--mist)] text-[10px] tracking-widest">{sfwLands.length} LANDS AVAILABLE</div>
+          <span className="text-[var(--amber)] font-bold tracking-wider">{t("choose_your_land", "CHOOSE YOUR LAND")}</span>
+          <div className="text-[var(--mist)] text-[10px] tracking-widest">{sfwLands.length} {t("lands_available", "LANDS AVAILABLE")}</div>
         </div>
         <div className="flex items-center gap-2">
           <ThemePicker />
@@ -509,8 +513,8 @@ function WorldBrowser({ landGroups, onSelect, onBack, nsfwEnabled, nsfwAutoBlock
                   <div className="w-full p-4 bg-[var(--shadow)] border border-[var(--stone)] rounded-lg flex items-start gap-3 opacity-40">
                     <span className="text-xl leading-none mt-0.5">🚫</span>
                     <div className="text-left">
-                      <span className="text-[var(--mist)] font-bold block">Adults Only</span>
-                      <span className="text-[var(--slate)] text-xs">{nsfwLands.length} lands · Blocked (enable in Settings)</span>
+                      <span className="text-[var(--mist)] font-bold block">{t("adults_only", "Adults Only")}</span>
+                      <span className="text-[var(--slate)] text-xs">{nsfwLands.length} {t("lands_blocked", "lands · Blocked (enable in Settings)")}</span>
                     </div>
                   </div>
                 ) : (
@@ -521,8 +525,8 @@ function WorldBrowser({ landGroups, onSelect, onBack, nsfwEnabled, nsfwAutoBlock
                   >
                     <span className="text-xl leading-none mt-0.5">🔒</span>
                     <div className="text-left">
-                      <span className="text-[var(--mist)] font-bold block">Adults Only</span>
-                      <span className="text-[var(--slate)] text-xs">{nsfwLands.length} lands · Tap to verify age</span>
+                      <span className="text-[var(--mist)] font-bold block">{t("adults_only", "Adults Only")}</span>
+                      <span className="text-[var(--slate)] text-xs">{nsfwLands.length} {t("lands_verify_age", "lands · Tap to verify age")}</span>
                     </div>
                   </button>
                 )}
@@ -543,14 +547,19 @@ function InfiniteCampfireView({ campfire, onSelect, onBack, loading, onCreateOwn
   loading: boolean;
   onCreateOwn?: () => void;
 }) {
+  const { t } = useUIStrings();
+
   return (
     <main className="h-dvh flex flex-col bg-atmospheric pt-[max(0.5rem,env(safe-area-inset-top))] animate-fade-in">
       <header className="flex items-center justify-between px-4 py-3 border-b border-[var(--slate)] shrink-0">
         <button onClick={onBack} className="text-[var(--mist)] text-sm min-w-[44px] min-h-[44px] flex items-center gap-1 hover:text-[var(--text)] transition-colors">
-          <span className="text-lg">‹</span> Back
+          <span className="text-lg">‹</span> {t("back", "Back")}
         </button>
         <div className="text-center">
-          <span className="text-[var(--amber)] font-bold tracking-wider">{campfire.world_name}</span>
+          <span className="text-[var(--amber)] font-bold tracking-wider">{campfire.page_title || campfire.world_name}</span>
+          {campfire.page_subtitle && (
+            <div className="text-[var(--mist)] text-[10px] tracking-widest">{campfire.page_subtitle}</div>
+          )}
         </div>
         <ThemePicker />
       </header>
@@ -741,6 +750,9 @@ export default function GamePage() {
 
   // Currency panel state
   const [showCurrency, setShowCurrency] = useState(false);
+
+  // Skills panel state
+  const [showSkills, setShowSkills] = useState(false);
 
   // WebSocket real-time events
   const [lastZoneMessage, setLastZoneMessage] = useState<ChatMessageEvent | null>(null);
@@ -1401,6 +1413,9 @@ export default function GamePage() {
       } else if (["gold", "money", "currency", "wealth", "wallet"].includes(action)) {
         setShowCurrency(true);
         addLog("system", "Opening wallet...");
+      } else if (["skills", "skill", "abilities"].includes(action)) {
+        setShowSkills(true);
+        addLog("system", "Opening skills...");
       } else if (action === "settings") {
         setSettingsOpen(true);
         addLog("system", "Opening settings...");
@@ -1462,6 +1477,11 @@ export default function GamePage() {
           if (result.examined_entity_id) {
             setEntityTimelineId(result.examined_entity_id);
             setEntityTimelineName(result.examined_entity_name || null);
+          }
+
+          // Handle system message from backend (show as system log entry)
+          if (result.system_message) {
+            addLog("system", result.system_message.message);
           }
 
           // Handle NPC kill consequences
@@ -1887,6 +1907,10 @@ export default function GamePage() {
         worldId={currentSession?.world_id || null}
         playerId={playerId}
       />
+      <SkillsPanel
+        isOpen={showSkills}
+        onClose={() => setShowSkills(false)}
+      />
 
       {/* Header */}
       <header className="bg-[var(--shadow)] border-b border-[var(--slate)] px-3 py-2 md:px-4 flex items-center justify-between shrink-0 pt-[max(0.5rem,env(safe-area-inset-top))]">
@@ -1938,6 +1962,13 @@ export default function GamePage() {
           >
             ⚔
           </Link>
+          <button
+            onClick={() => setShowSkills(true)}
+            className="text-[var(--mist)] hover:text-[var(--amber)] transition-colors text-xs hidden sm:block"
+            title="Skills"
+          >
+            ◈
+          </button>
           <Link
             href="/hiscores"
             className="text-[var(--mist)] hover:text-[var(--amber)] transition-colors text-xs hidden sm:block"

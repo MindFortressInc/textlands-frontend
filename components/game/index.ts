@@ -29,4 +29,5 @@ export { ChatPanel } from "./ChatPanel";
 export { LoadingIndicator } from "./LoadingIndicator";
 export { InventoryPanel } from "./InventoryPanel";
 export { CurrencyPanel } from "./CurrencyPanel";
+export { SkillsPanel } from "./SkillsPanel";
 // Consequence components removed - backend handles via doAction narrative
