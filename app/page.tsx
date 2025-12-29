@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { GameLog, CommandInput, CharacterPanel, QuickActions, SuggestedActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal, AuthModal, BillingPanel, InfluenceBadge, LeaderboardModal, CharacterCreationModal, PlayerStatsModal, EntityTimelineModal, WorldTemplatesModal, EntityGenerationModal, WorldCreationModal, SocialPanel, ChatPanel, LoadingIndicator, InventoryPanel, CurrencyPanel, SkillsPanel } from "@/components/game";
+import { GameLog, CommandInput, CharacterPanel, QuickActions, SuggestedActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal, AuthModal, BillingPanel, InfluenceBadge, LeaderboardModal, CharacterCreationModal, PlayerStatsModal, EntityTimelineModal, WorldTemplatesModal, WorldCreationModal, SocialPanel, ChatPanel, LoadingIndicator, InventoryPanel, CurrencyPanel, SkillsPanel } from "@/components/game";
 import { ThemePicker } from "@/components/ThemePicker";
 import type { Character, GameLogEntry, CharacterOption, ActiveScene as ActiveSceneType, NegotiationRequest, CombatSession, ReasoningInfo, InfiniteWorld, InfiniteCampfireResponse, InfiniteCampfireCharacter, AccountPromptReason, WorldTemplate } from "@/types/game";
 import type { RosterCharacter } from "@/lib/api";
@@ -726,9 +726,6 @@ export default function GamePage() {
   // World templates modal state
   const [worldTemplatesOpen, setWorldTemplatesOpen] = useState(false);
 
-  // Entity generation modal state
-  const [entityGenerationOpen, setEntityGenerationOpen] = useState(false);
-
   // World creation modal state
   const [worldCreationOpen, setWorldCreationOpen] = useState(false);
   const [selectedWorldTemplate, setSelectedWorldTemplate] = useState<WorldTemplate | null>(null);
@@ -1415,13 +1412,13 @@ export default function GamePage() {
       } else if (action === "stats") {
         const s = character.stats || { hp: 0, max_hp: 100, mana: 0, max_mana: 50, gold: 0, xp: 0, level: 1 };
         addLog("system", `${character.name} - Lv.${s.level} ${character.race} ${character.character_class}\nHP: ${s.hp}/${s.max_hp} | MP: ${s.mana}/${s.max_mana} | Gold: ${s.gold} | XP: ${s.xp}`);
-      } else if (["inventory", "inv", "i"].includes(action)) {
+      } else if (action === "inventory") {
         setShowInventory(true);
         addLog("system", "Opening inventory...");
-      } else if (["gold", "money", "currency", "wealth", "wallet"].includes(action)) {
+      } else if (action === "gold" || action === "wallet") {
         setShowCurrency(true);
         addLog("system", "Opening wallet...");
-      } else if (["skills", "skill", "abilities"].includes(action)) {
+      } else if (action === "skills") {
         setShowSkills(true);
         addLog("system", "Opening skills...");
       } else if (action === "settings") {
@@ -1890,12 +1887,6 @@ export default function GamePage() {
         }}
         selectedTemplate={selectedWorldTemplate}
       />
-      <EntityGenerationModal
-        isOpen={entityGenerationOpen}
-        onClose={() => setEntityGenerationOpen(false)}
-        worldId={selectedWorld?.id || null}
-        worldName={selectedWorld?.name}
-      />
       <AuthModal
         isOpen={showAuthModal}
         onClose={() => {
@@ -1993,13 +1984,6 @@ export default function GamePage() {
             ◆
           </Link>
           <button
-            onClick={() => setEntityGenerationOpen(true)}
-            className="text-[var(--mist)] hover:text-[var(--amber)] transition-colors text-xs hidden sm:block"
-            title="Forge - Create Entities"
-          >
-            +
-          </button>
-          <button
             onClick={() => setBillingOpen(true)}
             className="text-[var(--mist)] hover:text-[var(--amber)] transition-colors text-xs hidden sm:block"
             title="Account & Tokens"
@@ -2069,7 +2053,6 @@ export default function GamePage() {
               disabled={processing}
               onTimelineClick={() => setEntityTimelineOpen(true)}
               hasExaminedEntity={!!entityTimelineId}
-              onForgeClick={() => setEntityGenerationOpen(true)}
             />
             <CommandInput
               onSubmit={handleCommand}
