@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { GameLog, CommandInput, CharacterPanel, QuickActions, SuggestedActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal, AuthModal, BillingPanel, InfluenceBadge, LeaderboardModal, CharacterCreationModal, PlayerStatsModal, EntityTimelineModal, WorldTemplatesModal, EntityGenerationModal, WorldCreationModal, SocialPanel, ChatPanel } from "@/components/game";
+import { GameLog, CommandInput, CharacterPanel, QuickActions, SuggestedActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal, AuthModal, BillingPanel, InfluenceBadge, LeaderboardModal, CharacterCreationModal, PlayerStatsModal, EntityTimelineModal, WorldTemplatesModal, EntityGenerationModal, WorldCreationModal, SocialPanel, ChatPanel, LoadingIndicator } from "@/components/game";
 import { ThemePicker } from "@/components/ThemePicker";
 import type { Character, GameLogEntry, CharacterOption, ActiveScene as ActiveSceneType, NegotiationRequest, CombatSession, ReasoningInfo, InfiniteWorld, InfiniteCampfireResponse, InfiniteCampfireCharacter, AccountPromptReason, WorldTemplate } from "@/types/game";
 import type { RosterCharacter } from "@/lib/api";
@@ -1165,6 +1165,9 @@ export default function GamePage() {
         addLog("system", `${character.name} - Lv.${s.level} ${character.race} ${character.character_class}\nHP: ${s.hp}/${s.max_hp} | MP: ${s.mana}/${s.max_mana} | Gold: ${s.gold} | XP: ${s.xp}`);
       } else if (["inventory", "inv", "i"].includes(action)) {
         addLog("system", character.inventory.length ? `Inventory: ${character.inventory.join(", ")}` : "Your pack is empty.");
+      } else if (action === "settings") {
+        setSettingsOpen(true);
+        addLog("system", "Opening settings...");
       } else {
         // API - use natural language endpoint
         const result = await api.doAction(command);
@@ -1738,6 +1741,7 @@ export default function GamePage() {
           /* Normal Game Interface */
           <div className="flex-1 flex flex-col min-w-0">
             <GameLog entries={entries} showReasoning={showReasoning} />
+            <LoadingIndicator show={processing} />
             <SuggestedActions
               suggestions={suggestions}
               onSelect={handleCommand}
