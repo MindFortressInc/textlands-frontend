@@ -9,6 +9,7 @@ import type { LandGroup, PlayerInfluence, LocationFootprint, LandKey } from "@/l
 import type { PlayerWorldStats } from "@/types/game";
 import { safeStorage } from "@/lib/errors";
 import { useWebSocket } from "@/lib/useWebSocket";
+import Link from "next/link";
 import type {
   ChatMessageEvent,
   LandChatMessageEvent,
@@ -127,6 +128,22 @@ function LandingView({ onEnter }: { onEnter: () => void }) {
         <div className="text-[var(--slate)] text-[10px] tracking-widest">
           ═══ ENTER THE LANDS ═══
         </div>
+      </div>
+
+      {/* Nav links */}
+      <div className="absolute bottom-4 left-4 pb-[env(safe-area-inset-bottom)] flex gap-4">
+        <Link
+          href="/characters"
+          className="text-[var(--mist)] text-xs hover:text-[var(--amber)] transition-colors"
+        >
+          Characters
+        </Link>
+        <Link
+          href="/leaderboards"
+          className="text-[var(--mist)] text-xs hover:text-[var(--amber)] transition-colors"
+        >
+          Leaderboards
+        </Link>
       </div>
 
       {/* Theme picker */}
@@ -803,7 +820,7 @@ export default function GamePage() {
 
     try {
       // Check if user already has a session in this world
-      const session = await api.getSession().catch(() => null);
+      const session = await api.getSession().catch((err) => { console.warn("[Session] Check failed:", err.message); return null; });
 
       if (session?.character_id && session?.world_id === world.id) {
         // User already has a character in this world - resume directly
@@ -1475,6 +1492,20 @@ export default function GamePage() {
           >
             @
           </button>
+          <Link
+            href="/characters"
+            className="text-[var(--mist)] hover:text-[var(--amber)] transition-colors text-xs hidden sm:block"
+            title="Characters"
+          >
+            ⚔
+          </Link>
+          <Link
+            href="/leaderboards"
+            className="text-[var(--mist)] hover:text-[var(--amber)] transition-colors text-xs hidden sm:block"
+            title="Leaderboards"
+          >
+            ◆
+          </Link>
           <button
             onClick={() => setEntityGenerationOpen(true)}
             className="text-[var(--mist)] hover:text-[var(--amber)] transition-colors text-xs hidden sm:block"

@@ -921,3 +921,351 @@ export async function upvoteLocationMessage(
     method: "POST",
   });
 }
+
+// ============ CHARACTER ROSTER API ============
+
+export interface RosterCharacter {
+  id: string;
+  entity_id: string;
+  character_name: string;
+  occupation: string | null;
+  world_id: string;
+  world_name: string;
+  status: "active" | "dead" | "retired";
+  current_hp: number | null;
+  max_hp: number | null;
+  died_at: string | null;
+  death_cause: string | null;
+  retired_at: string | null;
+  final_stats: FinalStats | null;
+  created_at: string;
+}
+
+export interface FinalStats {
+  level: number;
+  playtime_minutes: number;
+  quests_completed: number;
+  gold: number;
+}
+
+export interface CharacterSlots {
+  used_slots: number;
+  max_slots: number;
+  available_slots: number;
+  is_plus: boolean;
+}
+
+export interface GraveyardEntry {
+  id: string;
+  character_name: string;
+  occupation: string | null;
+  world_name: string;
+  status: "dead" | "retired";
+  died_at: string | null;
+  death_cause: string | null;
+  retired_at: string | null;
+  final_stats: FinalStats | null;
+}
+
+// Get player's character roster
+export async function getCharacterRoster(): Promise<RosterCharacter[]> {
+  return fetchAPI<RosterCharacter[]>("/characters/roster");
+}
+
+// Get character slot usage
+export async function getCharacterSlots(): Promise<CharacterSlots> {
+  return fetchAPI<CharacterSlots>("/characters/roster/slots");
+}
+
+// Retire a character
+export async function retireCharacter(characterId: string): Promise<{ success: boolean; message: string }> {
+  return fetchAPI<{ success: boolean; message: string }>(`/characters/roster/${characterId}/retire`, {
+    method: "POST",
+  });
+}
+
+// Get graveyard (dead/retired characters)
+export async function getCharacterGraveyard(): Promise<GraveyardEntry[]> {
+  return fetchAPI<GraveyardEntry[]>("/characters/roster/graveyard");
+}
+
+// ============ CATEGORY LEADERBOARDS API ============
+
+export type LeaderboardCategory = "trailblazer" | "wealth" | "combat" | "social" | "exploration";
+
+export interface CategoryLeaderboardEntry {
+  rank: number;
+  player_id: string;
+  display_name?: string;
+  score: number;
+  tier?: number;
+  title?: string;
+}
+
+export interface PlayerRankings {
+  player_id: string;
+  rankings: {
+    category: LeaderboardCategory;
+    rank: number;
+    score: number;
+    percentile: number;
+  }[];
+}
+
+// Get world leaderboard by category
+export async function getWorldCategoryLeaderboard(
+  worldId: string,
+  category: LeaderboardCategory,
+  limit = 100
+): Promise<CategoryLeaderboardEntry[]> {
+  return fetchAPI<CategoryLeaderboardEntry[]>(
+    `/infinite/worlds/${worldId}/leaderboards/${category}?limit=${limit}`
+  );
+}
+
+// Get global leaderboard by category
+export async function getGlobalCategoryLeaderboard(
+  category: LeaderboardCategory,
+  limit = 100
+): Promise<CategoryLeaderboardEntry[]> {
+  return fetchAPI<CategoryLeaderboardEntry[]>(
+    `/infinite/leaderboards/global/${category}?limit=${limit}`
+  );
+}
+
+// Get player's world rankings
+export async function getPlayerWorldRankings(
+  worldId: string,
+  playerId: string
+): Promise<PlayerRankings> {
+  return fetchAPI<PlayerRankings>(
+    `/infinite/worlds/${worldId}/leaderboards/player/${playerId}`
+  );
+}
+
+// Get player's global rankings
+export async function getPlayerGlobalRankings(playerId: string): Promise<PlayerRankings> {
+  return fetchAPI<PlayerRankings>(`/infinite/leaderboards/global/player/${playerId}`);
+}
+
+// ============ REGIONAL ECONOMY API ============
+
+export interface Region {
+  id: string;
+  name: string;
+  description: string;
+  currency_name: string;
+  currency_symbol: string;
+}
+
+export interface RegionalWallet {
+  region_id: string;
+  region_name: string;
+  currency_name: string;
+  currency_symbol: string;
+  balance: number;
+}
+
+export interface ExchangeQuote {
+  from_region: string;
+  to_region: string;
+  from_amount: number;
+  to_amount: number;
+  exchange_rate: number;
+  fee_percent: number;
+  expires_at: string;
+}
+
+export interface ExchangeResult {
+  success: boolean;
+  from_region: string;
+  to_region: string;
+  from_amount: number;
+  to_amount: number;
+  new_from_balance: number;
+  new_to_balance: number;
+}
+
+export interface RegionalStanding {
+  region_id: string;
+  region_name: string;
+  reputation: number;
+  reputation_tier: string;
+  title: string;
+}
+
+export interface ExchangeRate {
+  from_region: string;
+  to_region: string;
+  rate: number;
+  fee_percent: number;
+}
+
+// Get regions in a world
+export async function getWorldRegions(worldId: string): Promise<Region[]> {
+  return fetchAPI<Region[]>(`/infinite/worlds/${worldId}/regions`);
+}
+
+// Get player's regional wallets
+export async function getPlayerCurrencies(
+  worldId: string,
+  playerId: string
+): Promise<RegionalWallet[]> {
+  return fetchAPI<RegionalWallet[]>(
+    `/infinite/worlds/${worldId}/player/${playerId}/currencies`
+  );
+}
+
+// Get exchange quote
+export async function getExchangeQuote(
+  worldId: string,
+  playerId: string,
+  fromRegion: string,
+  toRegion: string,
+  amount: number
+): Promise<ExchangeQuote> {
+  const params = new URLSearchParams({
+    from_region: fromRegion,
+    to_region: toRegion,
+    amount: amount.toString(),
+  });
+  return fetchAPI<ExchangeQuote>(
+    `/infinite/worlds/${worldId}/player/${playerId}/exchange-quote?${params}`
+  );
+}
+
+// Execute currency exchange
+export async function executeCurrencyExchange(
+  worldId: string,
+  playerId: string,
+  fromRegion: string,
+  toRegion: string,
+  amount: number
+): Promise<ExchangeResult> {
+  return fetchAPI<ExchangeResult>(
+    `/infinite/worlds/${worldId}/player/${playerId}/exchange`,
+    {
+      method: "POST",
+      body: JSON.stringify({ from_region: fromRegion, to_region: toRegion, amount }),
+    }
+  );
+}
+
+// Get player's regional standings
+export async function getRegionalStanding(
+  worldId: string,
+  playerId: string
+): Promise<RegionalStanding[]> {
+  return fetchAPI<RegionalStanding[]>(
+    `/infinite/worlds/${worldId}/player/${playerId}/regional-standing`
+  );
+}
+
+// Modify reputation in a region
+export async function modifyRegionReputation(
+  worldId: string,
+  playerId: string,
+  regionId: string,
+  delta: number,
+  reason?: string
+): Promise<RegionalStanding> {
+  return fetchAPI<RegionalStanding>(
+    `/infinite/worlds/${worldId}/player/${playerId}/reputation/${regionId}`,
+    {
+      method: "POST",
+      body: JSON.stringify({ delta, reason }),
+    }
+  );
+}
+
+// Get all exchange rates for a world
+export async function getExchangeRates(worldId: string): Promise<ExchangeRate[]> {
+  return fetchAPI<ExchangeRate[]>(`/infinite/worlds/${worldId}/exchange-rates`);
+}
+
+// ============ MAGIC LINK AUTH API ============
+
+export interface MagicLinkRequest {
+  email: string;
+  redirect_url?: string;
+}
+
+export interface MagicLinkResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface AuthUser {
+  logged_in: boolean;
+  player_id?: string;
+  email?: string;
+  display_name?: string;
+  is_guest: boolean;
+}
+
+// Request magic link email
+export async function requestMagicLink(email: string, redirectUrl?: string): Promise<MagicLinkResponse> {
+  return fetchAPI<MagicLinkResponse>("/auth/request", {
+    method: "POST",
+    body: JSON.stringify({ email, redirect_url: redirectUrl }),
+  });
+}
+
+// Verify magic link token (usually called via redirect, but available for SPA flow)
+export async function verifyMagicLink(token: string): Promise<{ success: boolean; redirect_url?: string }> {
+  return fetchAPI<{ success: boolean; redirect_url?: string }>(`/auth/verify?token=${token}`);
+}
+
+// Get current authenticated user
+export async function getCurrentUser(): Promise<AuthUser> {
+  return fetchAPI<AuthUser>("/auth/me");
+}
+
+// Logout
+export async function logout(): Promise<{ success: boolean }> {
+  return fetchAPI<{ success: boolean }>("/auth/logout", {
+    method: "POST",
+  });
+}
+
+// ============ INFINITE SESSION API ============
+
+export interface InfiniteSessionRequest {
+  world_id: string;
+  entity_id: string;
+}
+
+export interface InfiniteSessionResponse {
+  session: SessionInfo;
+  message: string;
+  opening_narrative?: string;
+}
+
+// Start session with infinite world entity (preferred over /session/start for infinite worlds)
+export async function startInfiniteSession(request: InfiniteSessionRequest): Promise<InfiniteSessionResponse> {
+  return fetchAPI<InfiniteSessionResponse>("/infinite/session/start", {
+    method: "POST",
+    body: JSON.stringify(request),
+  });
+}
+
+// Claim an existing character at campfire
+export interface ClaimCharacterResponse {
+  status: "claimed";
+  character_id: string;
+  character_name: string;
+  player_id: string;
+  world_id: string;
+}
+
+export async function claimCampfireCharacter(
+  worldId: string,
+  characterId: string,
+  playerId?: string
+): Promise<ClaimCharacterResponse> {
+  const params = playerId ? `?player_id=${playerId}` : "";
+  return fetchAPI<ClaimCharacterResponse>(
+    `/infinite/worlds/${worldId}/campfire/claim/${characterId}${params}`,
+    { method: "POST" }
+  );
+}
