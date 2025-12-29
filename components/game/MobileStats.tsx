@@ -29,7 +29,7 @@ export function MobileStats({ character, zoneName, influence, onLeaderboardClick
 
   if (!character) return null;
 
-  const { stats } = character;
+  const stats = character.stats || { hp: 0, max_hp: 100, mana: 0, max_mana: 50, gold: 0, xp: 0, level: 1 };
 
   return (
     <div className="md:hidden bg-[var(--shadow)] border-b border-[var(--slate)] shrink-0">

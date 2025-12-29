@@ -70,7 +70,7 @@ export function CharacterPanel({
     );
   }
 
-  const { stats } = character;
+  const stats = character.stats || { hp: 0, max_hp: 100, mana: 0, max_mana: 50, gold: 0, xp: 0, level: 1 };
 
   return (
     <div className="w-56 bg-[var(--shadow)] border-l border-[var(--slate)] flex flex-col text-sm">

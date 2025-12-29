@@ -1047,7 +1047,12 @@ export default function GamePage() {
           }
 
           if (result.character) {
-            setCharacter(result.character);
+            // Ensure stats exist (backend may omit in some responses)
+            const char = result.character;
+            if (!char.stats) {
+              char.stats = { hp: 100, max_hp: 100, mana: 50, max_mana: 50, gold: 0, xp: 0, level: 1 };
+            }
+            setCharacter(char);
           }
 
           // Update location and fetch footprints if location changed
