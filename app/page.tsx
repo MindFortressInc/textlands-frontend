@@ -169,6 +169,9 @@ export default function GamePage() {
   // Skills panel state
   const [showSkills, setShowSkills] = useState(false);
 
+  // Mobile input focus state (hides quick actions when typing)
+  const [inputFocused, setInputFocused] = useState(false);
+
   // WebSocket real-time events
   const [lastZoneMessage, setLastZoneMessage] = useState<ChatMessageEvent | null>(null);
   const [lastLandMessage, setLastLandMessage] = useState<LandChatMessageEvent | null>(null);
@@ -1429,16 +1432,19 @@ export default function GamePage() {
               onSelect={handleCommand}
               disabled={processing}
             />
-            <QuickActions
-              onCommand={handleCommand}
-              disabled={processing}
-              onTimelineClick={() => setEntityTimelineOpen(true)}
-              hasExaminedEntity={!!entityTimelineId}
-            />
+            {!inputFocused && (
+              <QuickActions
+                onCommand={handleCommand}
+                disabled={processing}
+                onTimelineClick={() => setEntityTimelineOpen(true)}
+                hasExaminedEntity={!!entityTimelineId}
+              />
+            )}
             <CommandInput
               onSubmit={handleCommand}
               disabled={processing}
               placeholder={processing ? "..." : t("what_do_you_do")}
+              onFocusChange={setInputFocused}
             />
           </div>
         )}

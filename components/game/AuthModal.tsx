@@ -74,7 +74,14 @@ export function AuthModal({ isOpen, onClose, reason, incentive, sessionContext }
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 p-4 animate-fade-in">
       <div className="w-full max-w-sm bg-[var(--void)] border border-[var(--amber-dim)] rounded-lg overflow-hidden">
         {/* Header */}
-        <div className="p-4 border-b border-[var(--stone)] bg-gradient-to-b from-[var(--amber)]/10 to-transparent">
+        <div className="relative p-4 border-b border-[var(--stone)] bg-gradient-to-b from-[var(--amber)]/10 to-transparent">
+          <button
+            onClick={handleClose}
+            className="absolute top-3 right-3 text-[var(--mist)] hover:text-[var(--text)] transition-colors text-xl leading-none"
+            aria-label="Close"
+          >
+            x
+          </button>
           {icon && <div className="text-4xl text-center mb-2">{icon}</div>}
           <h2 className="text-[var(--amber)] font-bold tracking-wider text-center">
             {content ? content.title : t("save_your_progress")}

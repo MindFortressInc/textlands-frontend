@@ -58,31 +58,43 @@ export function LandingView({ onEnter, onLogin, onResumeCharacter, isLoggedIn, r
           {t("tagline", "Choose your land. Become your character.")}
         </p>
 
-        {/* Character picker for logged-in users with characters */}
+        {/* Primary CTA Button */}
+        <button
+          onClick={onEnter}
+          className="group relative px-10 py-4 text-[var(--amber)] font-bold text-base md:text-lg min-h-[52px] bg-[var(--shadow)] border border-[var(--slate)] rounded transition-all duration-200 hover:border-[var(--amber)] hover:bg-[var(--stone)] active:scale-95"
+        >
+          <span className="relative z-10">
+            {t("begin_adventure", "Begin Your Journey")}
+          </span>
+          <span className="absolute inset-0 rounded bg-gradient-to-r from-transparent via-[var(--amber)] to-transparent opacity-0 group-hover:opacity-10 transition-opacity" />
+        </button>
+
+        {/* Secondary: Resume journey (logged-in with characters) */}
         {isLoggedIn && activeChars.length > 0 && (
-          <div className="space-y-3">
+          <div className="space-y-2 pt-2">
+            <div className="text-[var(--slate)] text-[10px] tracking-wide">— {t("or_resume", "or resume your journey")} —</div>
             <div className="relative">
               <button
                 ref={buttonRef}
                 onClick={handleTogglePicker}
-                className="w-full px-4 py-3 bg-[var(--shadow)] border border-[var(--slate)] rounded text-left hover:border-[var(--amber-dim)] transition-colors"
+                className="w-full px-3 py-2 bg-transparent border border-[var(--slate)]/50 rounded text-left hover:border-[var(--slate)] transition-colors text-sm"
               >
                 <div className="flex items-center justify-between">
                   <div>
                     {selectedChar ? (
                       <>
-                        <span className="text-[var(--amber)] font-bold">{selectedChar.character_name}</span>
-                        <span className="text-[var(--mist)] text-xs ml-2">in {selectedChar.world_name}</span>
+                        <span className="text-[var(--mist)]">{selectedChar.character_name}</span>
+                        <span className="text-[var(--slate)] text-xs ml-2">in {selectedChar.world_name}</span>
                       </>
                     ) : (
-                      <span className="text-[var(--mist)]">{t("select_character", "Select a character...")}</span>
+                      <span className="text-[var(--slate)]">{t("select_character", "Select a character...")}</span>
                     )}
                   </div>
-                  <span className="text-[var(--mist)]">{showPicker ? "▲" : "▼"}</span>
+                  <span className="text-[var(--slate)]">{showPicker ? "▲" : "▼"}</span>
                 </div>
               </button>
 
-              {/* Dropdown - dynamic direction based on available space */}
+              {/* Dropdown */}
               {showPicker && (
                 <div
                   className={`absolute left-0 right-0 bg-[var(--shadow)] border border-[var(--slate)] rounded overflow-y-auto z-10 ${
@@ -110,53 +122,45 @@ export function LandingView({ onEnter, onLogin, onResumeCharacter, isLoggedIn, r
               )}
             </div>
 
-            {/* Resume button */}
+            {/* Resume button - only shows when character selected */}
             {selectedChar && (
               <button
                 onClick={() => onResumeCharacter(selectedChar)}
-                className="group relative w-full px-6 py-3 text-[var(--amber)] font-bold bg-[var(--shadow)] border border-[var(--amber-dim)] rounded transition-all duration-200 hover:border-[var(--amber)] hover:bg-[var(--stone)] active:scale-95"
+                className="w-full px-4 py-2 text-[var(--mist)] text-sm bg-transparent border border-[var(--slate)]/50 rounded transition-all duration-200 hover:border-[var(--slate)] hover:text-[var(--text)] active:scale-95"
               >
                 {t("continue_as", "Continue as")} {selectedChar.character_name}
               </button>
             )}
-
-            <div className="text-[var(--slate)] text-[10px]">— or —</div>
           </div>
         )}
 
-        {/* CTA Button */}
-        <button
-          onClick={onEnter}
-          className="group relative px-10 py-4 text-[var(--amber)] font-bold text-base md:text-lg min-h-[52px] bg-[var(--shadow)] border border-[var(--slate)] rounded transition-all duration-200 hover:border-[var(--amber)] hover:bg-[var(--stone)] active:scale-95"
-        >
-          <span className="relative z-10">
-            {isLoggedIn && activeChars.length > 0 ? t("new_character", "New Character") : t("begin_adventure", "Begin Your Journey")}
-          </span>
-          <span className="absolute inset-0 rounded bg-gradient-to-r from-transparent via-[var(--amber)] to-transparent opacity-0 group-hover:opacity-10 transition-opacity" />
-        </button>
+        {/* Secondary: Log in (not logged in) */}
+        {!isLoggedIn && (
+          <div className="pt-2">
+            <button
+              onClick={onLogin}
+              className="text-[var(--slate)] text-xs hover:text-[var(--mist)] transition-colors"
+            >
+              {t("have_account", "Already playing?")} <span className="underline">{t("log_in")}</span>
+            </button>
+          </div>
+        )}
 
         {/* Decorative text */}
-        <div className="text-[var(--slate)] text-[10px] tracking-widest">
+        <div className="text-[var(--slate)] text-[10px] tracking-widest pt-2">
           {t("enter_the_lands", "ENTER THE LANDS")}
         </div>
       </div>
 
       {/* Nav links */}
       <div className="absolute bottom-4 left-4 pb-[env(safe-area-inset-bottom)] flex gap-4">
-        {isLoggedIn ? (
+        {isLoggedIn && activeChars.length > 0 && (
           <Link
             href="/characters"
             className="text-[var(--mist)] text-xs hover:text-[var(--amber)] transition-colors"
           >
             {loadingRoster ? t("loading") : `${activeChars.length} ${t("n_characters")}`}
           </Link>
-        ) : (
-          <button
-            onClick={onLogin}
-            className="text-[var(--mist)] text-xs hover:text-[var(--amber)] transition-colors"
-          >
-            {t("log_in")}
-          </button>
         )}
         <Link
           href="/hiscores"

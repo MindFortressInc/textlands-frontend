@@ -6,12 +6,14 @@ interface CommandInputProps {
   onSubmit: (command: string) => void;
   disabled?: boolean;
   placeholder?: string;
+  onFocusChange?: (focused: boolean) => void;
 }
 
 export function CommandInput({
   onSubmit,
   disabled = false,
   placeholder = "Enter command...",
+  onFocusChange,
 }: CommandInputProps) {
   const [command, setCommand] = useState("");
   const [history, setHistory] = useState<string[]>([]);
@@ -66,6 +68,8 @@ export function CommandInput({
           setHistoryIndex(-1);
         }}
         onKeyDown={handleKeyDown}
+        onFocus={() => onFocusChange?.(true)}
+        onBlur={() => onFocusChange?.(false)}
         disabled={disabled}
         placeholder={placeholder}
         className="command-input flex-1 bg-transparent text-[var(--text)] placeholder:text-[var(--mist)] placeholder:opacity-50 disabled:opacity-50 py-1 md:py-0"
