@@ -1366,6 +1366,76 @@ export async function logout(): Promise<{ success: boolean }> {
   });
 }
 
+// ============ SMS AUTH API ============
+
+export interface SmsOtpRequest {
+  phone: string; // E.164 format: +15551234567
+}
+
+export interface SmsOtpResponse {
+  success: boolean;
+  message: string;
+  expires_in_minutes: number;
+}
+
+export interface SmsVerifyRequest {
+  phone: string;
+  code: string;
+}
+
+export interface SmsVerifyResponse {
+  success: boolean;
+  phone_verified: boolean;
+  account_linked: boolean;
+  user_id?: string;
+  email?: string;
+  session_token?: string;
+  message?: string;
+}
+
+export interface SmsLinkResponse {
+  success: boolean;
+  message: string;
+}
+
+// Request SMS OTP code
+export async function requestSmsOtp(phone: string): Promise<SmsOtpResponse> {
+  return fetchAPI<SmsOtpResponse>("/sms/auth/request", {
+    method: "POST",
+    body: JSON.stringify({ phone }),
+  });
+}
+
+// Verify SMS OTP code
+export async function verifySmsOtp(phone: string, code: string): Promise<SmsVerifyResponse> {
+  return fetchAPI<SmsVerifyResponse>("/sms/auth/verify", {
+    method: "POST",
+    body: JSON.stringify({ phone, code }),
+  });
+}
+
+// Link verified phone to current account (requires session cookie)
+export async function linkPhone(phone: string, userId: string): Promise<SmsLinkResponse> {
+  return fetchAPI<SmsLinkResponse>("/sms/auth/link", {
+    method: "POST",
+    body: JSON.stringify({ phone, user_id: userId }),
+  });
+}
+
+// Phone number formatting helpers
+export function formatPhoneDisplay(value: string): string {
+  const digits = value.replace(/\D/g, "");
+  if (digits.length <= 1) return digits ? `+${digits}` : "";
+  if (digits.length <= 4) return `+${digits.slice(0, 1)} (${digits.slice(1)}`;
+  if (digits.length <= 7) return `+${digits.slice(0, 1)} (${digits.slice(1, 4)}) ${digits.slice(4)}`;
+  return `+${digits.slice(0, 1)} (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7, 11)}`;
+}
+
+export function toE164(value: string): string {
+  const digits = value.replace(/\D/g, "");
+  return `+${digits}`;
+}
+
 // ============ INFINITE SESSION API ============
 
 export interface InfiniteSessionRequest {
