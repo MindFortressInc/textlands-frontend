@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useUIStrings } from "@/contexts/UIStringsContext";
 import { ThemePicker } from "@/components/ThemePicker";
 import type { InfiniteCampfireResponse, InfiniteCampfireCharacter } from "@/types/game";
@@ -14,6 +15,7 @@ interface InfiniteCampfireViewProps {
 
 export function InfiniteCampfireView({ campfire, onSelect, onBack, loading, onCreateOwn }: InfiniteCampfireViewProps) {
   const { t } = useUIStrings();
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   return (
     <main className="h-dvh flex flex-col bg-atmospheric pt-[max(0.5rem,env(safe-area-inset-top))] animate-fade-in">
@@ -49,50 +51,71 @@ export function InfiniteCampfireView({ campfire, onSelect, onBack, loading, onCr
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 stagger-fade-in">
-                {campfire.characters.filter(c => c.is_playable).map((char) => (
-                  <button
-                    key={char.id}
-                    onClick={() => onSelect(char)}
-                    disabled={loading}
-                    className="character-card w-full p-5 text-left disabled:opacity-50 disabled:cursor-not-allowed group"
-                  >
-                    <div className="flex items-start gap-4">
-                      {/* Character portrait placeholder */}
-                      <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-[var(--slate)] to-[var(--stone)] flex items-center justify-center text-[var(--amber)] text-2xl shrink-0 group-hover:from-[var(--amber-dim)] group-hover:to-[var(--slate)] transition-all">
-                        {char.name.charAt(0)}
-                      </div>
+                {campfire.characters.filter(c => c.is_playable).map((char) => {
+                  const isExpanded = expandedId === char.id;
+                  const needsExpand = (char.physical_summary && char.physical_summary.length > 100) ||
+                                      (char.backstory_hook && char.backstory_hook.length > 80);
 
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2 mb-1">
-                          <span className="text-[var(--amber)] font-bold text-lg group-hover:text-[var(--text)] transition-colors">{char.name}</span>
-                          {char.occupation && (
-                            <span className="text-[var(--arcane)] text-[10px] tracking-wider uppercase shrink-0 mt-1">
-                              {char.occupation}
-                            </span>
+                  return (
+                    <div
+                      key={char.id}
+                      className="character-card w-full p-5 text-left group"
+                    >
+                      <div className="flex items-start gap-4">
+                        {/* Character portrait placeholder */}
+                        <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-[var(--slate)] to-[var(--stone)] flex items-center justify-center text-[var(--amber)] text-2xl shrink-0 group-hover:from-[var(--amber-dim)] group-hover:to-[var(--slate)] transition-all">
+                          {char.name.charAt(0)}
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2 mb-1">
+                            <span className="text-[var(--amber)] font-bold text-lg">{char.name}</span>
+                            {char.occupation && (
+                              <span className="text-[var(--arcane)] text-[10px] tracking-wider uppercase shrink-0 mt-1">
+                                {char.occupation}
+                              </span>
+                            )}
+                          </div>
+                          <p className={`text-[var(--text-dim)] text-sm mb-2 ${isExpanded ? "" : "line-clamp-2"}`}>
+                            {char.physical_summary}
+                          </p>
+                          {char.backstory_hook && (
+                            <p className={`text-[var(--mist)] text-xs italic ${isExpanded ? "" : "line-clamp-2"}`}>
+                              {char.backstory_hook}
+                            </p>
+                          )}
+                          {needsExpand && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedId(isExpanded ? null : char.id);
+                              }}
+                              className="text-[var(--amber-dim)] text-xs mt-1 hover:text-[var(--amber)] transition-colors"
+                            >
+                              {isExpanded ? t("show_less", "Show less") : t("show_more", "Show more...")}
+                            </button>
                           )}
                         </div>
-                        <p className="text-[var(--text-dim)] text-sm mb-2 line-clamp-2">
-                          {char.physical_summary}
-                        </p>
-                        {char.backstory_hook && (
-                          <p className="text-[var(--mist)] text-xs italic line-clamp-2">
-                            {char.backstory_hook}
-                          </p>
+                      </div>
+
+                      {/* Footer with personality and select button */}
+                      <div className="mt-3 pt-3 border-t border-[var(--slate)] flex items-center justify-between">
+                        {char.personality_summary && (
+                          <span className="text-[var(--mist)] text-[10px] tracking-wider uppercase">
+                            {char.personality_summary}
+                          </span>
                         )}
+                        <button
+                          onClick={() => onSelect(char)}
+                          disabled={loading}
+                          className="ml-auto px-4 py-1.5 text-[var(--amber)] text-sm font-bold border border-[var(--amber-dim)] rounded hover:bg-[var(--amber-dim)] hover:text-[var(--bg)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {t("play", "Play")} →
+                        </button>
                       </div>
                     </div>
-
-                    {/* Personality tags */}
-                    {char.personality_summary && (
-                      <div className="mt-3 pt-3 border-t border-[var(--slate)] flex items-center justify-between">
-                        <span className="text-[var(--mist)] text-[10px] tracking-wider uppercase">
-                          {char.personality_summary}
-                        </span>
-                        <span className="text-[var(--amber)] text-sm group-hover:translate-x-1 transition-transform">→</span>
-                      </div>
-                    )}
-                  </button>
-                ))}
+                  );
+                })}
 
                 {/* Create Your Own - at bottom for advanced users */}
                 {onCreateOwn && (
