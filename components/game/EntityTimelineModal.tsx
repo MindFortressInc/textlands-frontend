@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import type { TimelineEvent } from "@/lib/api";
 import * as api from "@/lib/api";
+import { useUIStrings } from "@/contexts/UIStringsContext";
 
 interface EntityTimelineModalProps {
   isOpen: boolean;
@@ -26,6 +27,7 @@ export function EntityTimelineModal({
   entityId,
   entityName,
 }: EntityTimelineModalProps) {
+  const { t } = useUIStrings();
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -87,8 +89,8 @@ export function EntityTimelineModal({
             </div>
           ) : events.length === 0 ? (
             <div className="text-center py-8 text-[var(--mist)]">
-              <p>No recorded history</p>
-              <p className="text-sm mt-2">This entity has no timeline events yet</p>
+              <p>{t("no_recorded_history")}</p>
+              <p className="text-sm mt-2">{t("no_timeline_events")}</p>
             </div>
           ) : (
             <div className="space-y-4">

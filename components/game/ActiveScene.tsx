@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import type { ActiveScene as ActiveSceneType } from "@/types/game";
+import { useUIStrings } from "@/contexts/UIStringsContext";
 
 interface ActiveSceneProps {
   scene: ActiveSceneType;
@@ -11,16 +12,6 @@ interface ActiveSceneProps {
   isProcessing: boolean;
 }
 
-const AFTERCARE_OPTIONS: {
-  value: "minimal" | "standard" | "extended";
-  label: string;
-  description: string;
-}[] = [
-  { value: "minimal", label: "Quick", description: "Brief acknowledgment" },
-  { value: "standard", label: "Standard", description: "Tender moment together" },
-  { value: "extended", label: "Extended", description: "Deep connection and care" },
-];
-
 export function ActiveScene({
   scene,
   onAction,
@@ -28,7 +19,19 @@ export function ActiveScene({
   onComplete,
   isProcessing,
 }: ActiveSceneProps) {
+  const { t } = useUIStrings();
   const [input, setInput] = useState("");
+
+  // Aftercare options with translated labels
+  const AFTERCARE_OPTIONS: {
+    value: "minimal" | "standard" | "extended";
+    label: string;
+    description: string;
+  }[] = [
+    { value: "minimal", label: t("aftercare_quick"), description: t("aftercare_quick_desc") },
+    { value: "standard", label: t("aftercare_standard"), description: t("aftercare_standard_desc") },
+    { value: "extended", label: t("aftercare_extended"), description: t("aftercare_extended_desc") },
+  ];
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -86,7 +89,7 @@ export function ActiveScene({
       {isAftercare ? (
         <div className="p-4 border-t border-[var(--stone)]">
           <p className="text-[var(--text-dim)] text-sm mb-4">
-            The scene has concluded. Choose how you&apos;d like to spend this moment together.
+            {t("scene_concluded")}
           </p>
           <div className="grid grid-cols-3 gap-2">
             {AFTERCARE_OPTIONS.map((opt) => (
@@ -130,7 +133,7 @@ export function ActiveScene({
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder={isProcessing ? "..." : "Describe your action..."}
+                placeholder={isProcessing ? "..." : t("describe_your_action")}
                 disabled={isProcessing}
                 className="flex-1 px-4 py-3 rounded bg-[var(--shadow)] border border-[var(--stone)] text-[var(--text)] placeholder:text-[var(--mist)] focus:border-[var(--amber)] focus:outline-none transition-colors disabled:opacity-50"
               />

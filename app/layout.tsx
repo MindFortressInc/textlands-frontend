@@ -3,6 +3,10 @@ import "./globals.css";
 import { ThemeProvider } from "@/lib/themes/ThemeProvider";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { UIStringsProvider } from "@/contexts/UIStringsContext";
+import { SessionProvider } from "@/contexts/SessionContext";
+import { GameProvider } from "@/contexts/GameContext";
+import { SettingsProvider } from "@/contexts/SettingsContext";
+import { CombatProvider } from "@/contexts/CombatContext";
 import { DynamicFavicon } from "@/components/DynamicFavicon";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
@@ -40,10 +44,18 @@ export default function RootLayout({
         <ErrorBoundary>
           <AuthProvider>
             <UIStringsProvider>
-              <ThemeProvider>
-                <DynamicFavicon />
-                {children}
-              </ThemeProvider>
+              <SettingsProvider>
+                <SessionProvider>
+                  <GameProvider>
+                    <CombatProvider>
+                      <ThemeProvider>
+                        <DynamicFavicon />
+                        {children}
+                      </ThemeProvider>
+                    </CombatProvider>
+                  </GameProvider>
+                </SessionProvider>
+              </SettingsProvider>
             </UIStringsProvider>
           </AuthProvider>
         </ErrorBoundary>

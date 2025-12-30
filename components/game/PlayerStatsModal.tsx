@@ -4,6 +4,7 @@ import type { PlayerWorldStats } from "@/types/game";
 import type { PlayerInfluence } from "@/lib/api";
 import { InfluenceBadge } from "./InfluenceBadge";
 import { formatScore } from "@/lib/influence";
+import { useUIStrings } from "@/contexts/UIStringsContext";
 
 interface PlayerStatsModalProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ export function PlayerStatsModal({
   worldName,
   onLeaderboardClick,
 }: PlayerStatsModalProps) {
+  const { t } = useUIStrings();
   if (!isOpen) return null;
 
   const formatPlaytime = (minutes: number) => {
@@ -122,7 +124,7 @@ export function PlayerStatsModal({
                     {/* Decay Warning */}
                     {influence.decay_at_risk && (
                       <div className="text-xs text-[var(--crimson)] p-2 bg-[var(--crimson)]/10 rounded">
-                        Influence decay at risk - play to maintain tier
+                        {t("influence_decay_risk")}
                       </div>
                     )}
                   </div>
@@ -178,7 +180,7 @@ export function PlayerStatsModal({
                       +{formatScore(influence.total_passive_income)}/day
                     </div>
                     <div className="text-xs text-[var(--mist)]">
-                      From entities you created
+                      {t("from_entities_created")}
                     </div>
                   </div>
                 </div>

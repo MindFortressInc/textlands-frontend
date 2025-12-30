@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import type { WorldTemplate } from "@/types/game";
 import * as api from "@/lib/api";
+import { useUIStrings } from "@/contexts/UIStringsContext";
 
 interface WorldCreationModalProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ export function WorldCreationModal({
   onWorldCreated,
   selectedTemplate,
 }: WorldCreationModalProps) {
+  const { t } = useUIStrings();
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,7 +40,7 @@ export function WorldCreationModal({
 
   const handleCreate = async () => {
     if (!name.trim()) {
-      setError("World name is required");
+      setError(t("world_name_required"));
       return;
     }
 
@@ -58,7 +60,7 @@ export function WorldCreationModal({
       }
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create world");
+      setError(err instanceof Error ? err.message : t("failed_to_create_world"));
     }
 
     setCreating(false);
@@ -104,12 +106,12 @@ export function WorldCreationModal({
 
           <div>
             <label className="block text-[var(--text)] text-sm mb-1">
-              Describe your world
+              {t("describe_your_world")}
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="A grimdark fantasy realm where fallen empires war over ancient magic. Technology is medieval, magic is dangerous and costly..."
+              placeholder={t("world_description_placeholder")}
               rows={4}
               className="w-full px-3 py-2 bg-[var(--shadow)] border border-[var(--slate)] rounded text-[var(--text)] placeholder-[var(--mist)] focus:border-[var(--amber-dim)] focus:outline-none resize-none"
               disabled={creating}
@@ -133,7 +135,7 @@ export function WorldCreationModal({
             </div>
             <div>
               <div className="text-[var(--text)] text-sm">Adult Content (18+)</div>
-              <div className="text-[var(--mist)] text-xs">Enable mature themes</div>
+              <div className="text-[var(--mist)] text-xs">{t("enable_mature_themes")}</div>
             </div>
           </label>
 

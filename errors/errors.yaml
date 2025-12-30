@@ -1,0 +1,347 @@
+# TextLands Frontend Error Registry
+# Single source of truth for error patterns, fixes, and scanner rules
+# Last updated: 2025-12-30
+
+TLF-001:
+  title: Swallowed Promise Rejections
+  severity: HIGH
+  status: FIXED
+  discovered: 2025-12-28
+  fixed: 2025-12-28
+  affected_files:
+    - app/page.tsx
+    - components/game/BillingPanel.tsx
+  patterns:
+    - "\\.catch\\s*\\(\\s*\\(\\s*\\)\\s*=>\\s*\\{\\s*\\}\\s*\\)"
+    - "\\.catch\\s*\\(\\s*\\(\\s*\\)\\s*=>\\s*null\\s*\\)"
+  exclude_patterns:
+    - "console\\.error"
+    - "console\\.warn"
+  search_paths:
+    - app/
+    - components/
+    - lib/
+  what_to_look_for: |
+    .catch(() => {});
+    .catch(() => null);
+    Silent failures hide bugs.
+  fix: |
+    All catch blocks now log errors with context tags:
+    .catch(err => console.error('[Context] Failed:', err))
+
+TLF-002:
+  title: Missing ErrorBoundary
+  severity: HIGH
+  status: FIXED
+  discovered: 2025-12-28
+  fixed: 2025-12-28
+  affected_files:
+    - app/layout.tsx
+    - components/ErrorBoundary.tsx
+  patterns: []
+  exclude_patterns: []
+  search_paths: []
+  what_to_look_for: |
+    React apps without ErrorBoundary at root level.
+    Unhandled errors crash entire app.
+  fix: |
+    Added ErrorBoundary component wrapping children in layout.tsx.
+
+TLF-003:
+  title: Unguarded localStorage Access
+  severity: HIGH
+  status: FIXED
+  discovered: 2025-12-28
+  fixed: 2025-12-28
+  affected_files:
+    - app/page.tsx
+    - lib/themes/ThemeProvider.tsx
+  patterns:
+    - "localStorage\\.getItem"
+    - "localStorage\\.setItem"
+  exclude_patterns:
+    - safeStorage
+  search_paths:
+    - app/
+    - lib/
+    - components/
+  what_to_look_for: |
+    Direct localStorage access throws in Safari private mode.
+  fix: |
+    Created lib/errors.ts with safeStorage wrapper.
+    All localStorage access now uses safe methods.
+
+TLF-004:
+  title: Empty Catch Blocks Without Context
+  severity: MEDIUM
+  status: FIXED
+  discovered: 2025-12-28
+  fixed: 2025-12-28
+  affected_files:
+    - app/page.tsx
+    - components/game/*.tsx
+  patterns:
+    - "\\}\\s*catch\\s*\\{"
+    - "catch\\s*\\{\\s*\\n\\s*[^c]"
+  exclude_patterns:
+    - "console\\."
+    - "logger\\."
+  search_paths:
+    - app/
+    - components/
+  what_to_look_for: |
+    } catch { without error variable or logging
+  fix: |
+    } catch (err) { console.error('[Context] Failed:', err); }
+
+TLF-005:
+  title: API Errors Not Shown to User
+  severity: MEDIUM
+  status: FIXED
+  discovered: 2025-12-28
+  fixed: 2025-12-28
+  affected_files:
+    - lib/api.ts
+  patterns: []
+  exclude_patterns: []
+  search_paths: []
+  what_to_look_for: |
+    API errors thrown but not reaching user.
+  fix: |
+    Callers now display errors to users, not just console.log.
+
+TLF-006:
+  title: No Network Error Handling
+  severity: MEDIUM
+  status: OPEN
+  discovered: 2025-12-28
+  affected_files:
+    - lib/api.ts
+  patterns:
+    - "await\\s+fetch\\("
+  exclude_patterns:
+    - "TypeError"
+    - "Network error"
+  search_paths:
+    - lib/api.ts
+  what_to_look_for: |
+    fetch() without network error handling.
+    Crashes if user goes offline.
+  fix: |
+    Add try/catch for TypeError:
+    if (err instanceof TypeError) throw new Error('Network error')
+
+TLF-007:
+  title: Race Condition in Character Selection
+  severity: MEDIUM
+  status: FIXED
+  discovered: 2025-12-28
+  fixed: 2025-12-28
+  affected_files:
+    - app/page.tsx
+  patterns: []
+  exclude_patterns: []
+  search_paths: []
+  what_to_look_for: |
+    Double-click creating duplicate sessions.
+  fix: |
+    Added if (processing) return; guard at start of handlers.
+
+TLF-008:
+  title: Console.log in Production
+  severity: LOW
+  status: OPEN
+  discovered: 2025-12-28
+  affected_files:
+    - various
+  patterns:
+    - "console\\.log\\("
+  exclude_patterns:
+    - "console\\.error"
+    - "console\\.warn"
+    - "console\\.debug"
+  search_paths:
+    - app/
+    - components/
+    - lib/
+  what_to_look_for: |
+    console.log() clutters browser console in production.
+  fix: |
+    Use console.debug for dev, remove or use structured logging.
+
+TLF-009:
+  title: any Type Usage
+  severity: LOW
+  status: OPEN
+  discovered: 2025-12-28
+  affected_files:
+    - various
+  patterns:
+    - ":\\s*any"
+    - "as\\s+any"
+  exclude_patterns: []
+  search_paths:
+    - app/
+    - components/
+    - lib/
+    - types/
+  what_to_look_for: |
+    : any or as any bypasses TypeScript checking.
+  fix: |
+    Use proper types or unknown with type guards.
+
+TLF-010:
+  title: API Type/Schema Drift
+  severity: HIGH
+  status: OPEN
+  discovered: 2025-12-28
+  affected_files:
+    - types/game.ts
+    - lib/api.ts
+  patterns: []
+  exclude_patterns: []
+  search_paths: []
+  what_to_look_for: |
+    Backend changes field names, frontend types go stale.
+    worlds→realms, world_count→realm_count
+  fix: |
+    Document API contracts, run integration tests.
+
+TLF-011:
+  title: Modal Z-Index Layering
+  severity: MEDIUM
+  status: FIXED
+  discovered: 2025-12-28
+  fixed: 2025-12-28
+  affected_files:
+    - components/game/AgeGateModal.tsx
+  patterns: []
+  exclude_patterns: []
+  search_paths: []
+  what_to_look_for: |
+    Modals not appearing above other panels.
+  fix: |
+    Use consistent z-index scale (define in CSS variables).
+
+TLF-012:
+  title: Safari Safe Area Handling
+  severity: MEDIUM
+  status: FIXED
+  discovered: 2025-12-28
+  fixed: 2025-12-28
+  affected_files:
+    - app/globals.css
+    - various components
+  patterns: []
+  exclude_patterns: []
+  search_paths: []
+  what_to_look_for: |
+    iPhone notch/home indicator overlapping content.
+  fix: |
+    Use max() with env(safe-area-inset-*) for minimum padding.
+
+TLF-013:
+  title: CORS Credential Mode
+  severity: HIGH
+  status: FIXED
+  discovered: 2025-12-28
+  fixed: 2025-12-28
+  affected_files:
+    - lib/api.ts
+  patterns: []
+  exclude_patterns: []
+  search_paths: []
+  what_to_look_for: |
+    credentials: 'include' breaking after backend changes.
+  fix: |
+    Backend fixed CORS configuration.
+
+TLF-014:
+  title: Missing character.stats Crashes UI
+  severity: HIGH
+  status: FIXED
+  discovered: 2025-12-28
+  fixed: 2025-12-28
+  affected_files:
+    - app/page.tsx
+    - components/game/CharacterPanel.tsx
+    - components/game/MobileStats.tsx
+  patterns:
+    - "character\\.stats\\."
+    - "const\\s*\\{\\s*stats\\s*\\}\\s*=\\s*character"
+  exclude_patterns:
+    - "character\\.stats\\s*\\|\\|"
+    - "character\\.stats\\s*\\?"
+  search_paths:
+    - app/
+    - components/
+  what_to_look_for: |
+    Accessing stats.hp without null check.
+    Backend sometimes returns character without stats.
+  fix: |
+    const stats = character.stats || { hp: 0, max_hp: 100, ... }
+
+TLF-015:
+  title: Props Drilling Through Component Tree
+  severity: MEDIUM
+  status: FIXED
+  discovered: 2025-12-29
+  fixed: 2025-12-30
+  affected_files:
+    - app/page.tsx
+  patterns: []
+  exclude_patterns: []
+  search_paths: []
+  what_to_look_for: |
+    Parent passing state 5+ levels deep via props.
+    Hard to maintain and test.
+  fix: |
+    Created 4 React contexts:
+    - GameContext (character, entries, zoneName, processing)
+    - SessionContext (phase, landGroups, selectedWorld, roster)
+    - SettingsContext (NSFW settings, age gate)
+    - CombatContext (activeCombat, activeScene)
+
+TLF-016:
+  title: Monolithic page.tsx
+  severity: MEDIUM
+  status: FIXED
+  discovered: 2025-12-29
+  fixed: 2025-12-30
+  affected_files:
+    - app/page.tsx
+  patterns: []
+  exclude_patterns: []
+  search_paths: []
+  what_to_look_for: |
+    Single file with 2,166 lines handling all phases.
+    Inline view components impossible to test.
+  fix: |
+    Extracted 6 views to components/views/:
+    LoadingView, ErrorView, LandingView,
+    CharacterSelectView, WorldBrowser, InfiniteCampfireView
+    Result: 2,166 → 1,547 lines (29% reduction)
+
+TLF-017:
+  title: Hardcoded Strings Bypass Localization
+  severity: MEDIUM
+  status: FIXED
+  discovered: 2025-12-29
+  fixed: 2025-12-30
+  affected_files:
+    - app/page.tsx
+    - components/game/*.tsx
+  patterns:
+    - ">\\s*[A-Z][a-z]+\\s+[a-z]+.*</"
+  exclude_patterns:
+    - "\\{t\\("
+    - "\\{.*\\}"
+  search_paths:
+    - app/
+    - components/
+  what_to_look_for: |
+    Hardcoded English text in JSX.
+    Bypasses UIStringsContext localization.
+  fix: |
+    Migrated 100+ strings to t() with fallbacks:
+    {t("begin_adventure", "Begin Your Journey")}

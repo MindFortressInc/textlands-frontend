@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import * as api from "@/lib/api";
+import { useUIStrings } from "@/contexts/UIStringsContext";
 
 interface BillingPanelProps {
   isOpen: boolean;
@@ -15,6 +16,7 @@ const TOKEN_PACKS: { id: api.TokenPack; name: string; tokens: number; price: str
 ];
 
 export function BillingPanel({ isOpen, onClose }: BillingPanelProps) {
+  const { t } = useUIStrings();
   const [subscription, setSubscription] = useState<api.SubscriptionStatus | null>(null);
   const [tokens, setTokens] = useState<api.TokenBalance | null>(null);
   const [playtime, setPlaytime] = useState<api.PlaytimeStatus | null>(null);
@@ -131,7 +133,7 @@ export function BillingPanel({ isOpen, onClose }: BillingPanelProps) {
                     </p>
                     {subscription.cancel_at_period_end ? (
                       <p className="text-[var(--crimson)] text-xs">
-                        Cancels at end of period
+                        {t("cancels_at_period_end")}
                       </p>
                     ) : (
                       <button
@@ -182,7 +184,7 @@ export function BillingPanel({ isOpen, onClose }: BillingPanelProps) {
                       />
                     </div>
                     <p className="text-[var(--mist)] text-xs mt-2">
-                      Resets daily. Buy tokens for extra time.
+                      {t("resets_daily")}
                     </p>
                   </div>
                 </div>
@@ -202,7 +204,7 @@ export function BillingPanel({ isOpen, onClose }: BillingPanelProps) {
                     <span className="text-[var(--mist)] text-xs">tokens</span>
                   </div>
                   <p className="text-[var(--text-dim)] text-xs mt-1">
-                    Use for death recovery, fate rerolls, or extra playtime
+                    {t("token_uses")}
                   </p>
                 </div>
 

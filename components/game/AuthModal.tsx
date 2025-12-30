@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUIStrings } from "@/contexts/UIStringsContext";
 import type { AccountPromptReason } from "@/types/game";
 
 // Session context to preserve across auth
@@ -19,26 +20,15 @@ interface AuthModalProps {
   sessionContext?: SessionContext;
 }
 
-const REASON_CONTENT: Record<AccountPromptReason, { title: string; description: string; icon: string }> = {
-  nsfw_unlock: {
-    title: "UNLOCK INTIMATE CONTENT",
-    description: "Sign in to access mature content and save your progress.",
-    icon: "🔥",
-  },
-  death_recovery: {
-    title: "YOUR CHARACTER HAS FALLEN",
-    description: "Sign in to recover your character and continue your adventure.",
-    icon: "💀",
-  },
-  time_limit: {
-    title: "SESSION LIMIT REACHED",
-    description: "Sign in to continue playing without limits.",
-    icon: "⏰",
-  },
+const REASON_ICONS: Record<AccountPromptReason, string> = {
+  nsfw_unlock: "🔥",
+  death_recovery: "💀",
+  time_limit: "⏰",
 };
 
 export function AuthModal({ isOpen, onClose, reason, incentive, sessionContext }: AuthModalProps) {
   const { requestMagicLink } = useAuth();
+  const { t } = useUIStrings();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -46,7 +36,15 @@ export function AuthModal({ isOpen, onClose, reason, incentive, sessionContext }
 
   if (!isOpen) return null;
 
-  const content = reason ? REASON_CONTENT[reason] : null;
+  // Get reason-specific content using t()
+  const getReasonContent = (r: AccountPromptReason) => ({
+    nsfw_unlock: { title: t("unlock_intimate_content"), description: t("unlock_intimate_desc") },
+    death_recovery: { title: t("character_fallen"), description: t("character_fallen_desc") },
+    time_limit: { title: t("session_limit"), description: t("session_limit_desc") },
+  }[r]);
+
+  const content = reason ? getReasonContent(reason) : null;
+  const icon = reason ? REASON_ICONS[reason] : null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,9 +75,9 @@ export function AuthModal({ isOpen, onClose, reason, incentive, sessionContext }
       <div className="w-full max-w-sm bg-[var(--void)] border border-[var(--amber-dim)] rounded-lg overflow-hidden">
         {/* Header */}
         <div className="p-4 border-b border-[var(--stone)] bg-gradient-to-b from-[var(--amber)]/10 to-transparent">
-          {content && <div className="text-4xl text-center mb-2">{content.icon}</div>}
+          {icon && <div className="text-4xl text-center mb-2">{icon}</div>}
           <h2 className="text-[var(--amber)] font-bold tracking-wider text-center">
-            {content ? content.title : "SAVE YOUR PROGRESS"}
+            {content ? content.title : t("save_your_progress")}
           </h2>
         </div>
 
@@ -89,16 +87,16 @@ export function AuthModal({ isOpen, onClose, reason, incentive, sessionContext }
             // Success state
             <div className="text-center space-y-4">
               <div className="text-4xl">📧</div>
-              <p className="text-[var(--text)]">Check your email!</p>
+              <p className="text-[var(--text)]">{t("check_your_email")}</p>
               <p className="text-[var(--mist)] text-sm">
-                We sent a login link to <span className="text-[var(--amber)]">{email}</span>
+                {t("email_link_sent")} <span className="text-[var(--amber)]">{email}</span>
               </p>
-              <p className="text-[var(--text-dim)] text-xs">Link expires in 15 minutes</p>
+              <p className="text-[var(--text-dim)] text-xs">{t("link_expires")}</p>
               <button
                 onClick={handleClose}
                 className="mt-4 w-full px-4 py-3 rounded bg-[var(--stone)] text-[var(--text)] hover:bg-[var(--slate)] transition-colors"
               >
-                Close
+                {t("close")}
               </button>
             </div>
           ) : (
@@ -109,7 +107,7 @@ export function AuthModal({ isOpen, onClose, reason, incentive, sessionContext }
               )}
               {!content && (
                 <p className="text-[var(--text)] text-center text-sm">
-                  Enter your email to save your character and continue across sessions.
+                  {t("enter_email_to_save")}
                 </p>
               )}
 
@@ -137,11 +135,11 @@ export function AuthModal({ isOpen, onClose, reason, incentive, sessionContext }
                 disabled={loading}
                 className="w-full px-4 py-3 rounded bg-[var(--amber)] text-[var(--void)] font-medium hover:bg-[var(--amber)]/80 transition-colors disabled:opacity-50"
               >
-                {loading ? "Sending..." : "Send Login Link"}
+                {loading ? t("sending") : t("send_login_link")}
               </button>
 
               <p className="text-[var(--mist)] text-xs text-center">
-                No password needed - we&apos;ll email you a magic link
+                {t("no_password_magic_link")}
               </p>
 
               {!reason && (
@@ -150,7 +148,7 @@ export function AuthModal({ isOpen, onClose, reason, incentive, sessionContext }
                   onClick={handleClose}
                   className="w-full px-4 py-2 text-[var(--mist)] text-sm hover:text-[var(--text)] transition-colors"
                 >
-                  Maybe Later
+                  {t("maybe_later")}
                 </button>
               )}
             </form>

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import * as api from "@/lib/api";
 import type { ChatMessage, LandKey } from "@/lib/api";
+import { useUIStrings } from "@/contexts/UIStringsContext";
 import type {
   ChatMessageEvent,
   LandChatMessageEvent,
@@ -61,6 +62,7 @@ export function ChatPanel({
   lastLandMessage,
   lastGlobalMessage,
 }: ChatPanelProps) {
+  const { t } = useUIStrings();
   const [activeTab, setActiveTab] = useState<ChatTab>("zone");
   const [zoneMessages, setZoneMessages] = useState<ChatMessage[]>([]);
   const [landMessages, setLandMessages] = useState<ChatMessage[]>([]);
@@ -267,7 +269,7 @@ export function ChatPanel({
     return (
       <div className="flex flex-col h-full bg-[var(--shadow)] border-l border-[var(--slate)]">
         <div className="p-4 text-[var(--mist)] text-xs text-center">
-          Sign in to use chat
+          {t("sign_in_to_chat")}
         </div>
       </div>
     );
@@ -314,9 +316,9 @@ export function ChatPanel({
           <div className="text-[var(--crimson)] text-xs p-2">{error}</div>
         ) : messages.length === 0 ? (
           <div className="text-[var(--mist)] text-xs p-2 text-center">
-            No messages yet.
+            {t("no_messages_yet")}
             <br />
-            <span className="text-[var(--fog)]">Be the first to say something!</span>
+            <span className="text-[var(--fog)]">{t("be_first_to_say")}</span>
           </div>
         ) : (
           <>

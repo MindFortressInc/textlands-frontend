@@ -5,6 +5,7 @@ import { InfluenceBadge } from "./InfluenceBadge";
 import { formatScore } from "@/lib/influence";
 import * as api from "@/lib/api";
 import type { LeaderboardEntry } from "@/types/game";
+import { useUIStrings } from "@/contexts/UIStringsContext";
 
 interface LeaderboardModalProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ export function LeaderboardModal({
   worldName,
   playerId,
 }: LeaderboardModalProps) {
+  const { t } = useUIStrings();
   const [activeTab, setActiveTab] = useState<Tab>(worldId ? "world" : "global");
   const [worldLeaderboard, setWorldLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [globalLeaderboard, setGlobalLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -109,8 +111,8 @@ export function LeaderboardModal({
             </div>
           ) : currentData.length === 0 ? (
             <div className="text-center py-8 text-[var(--mist)]">
-              <p>No rankings yet</p>
-              <p className="text-sm mt-2">Be the first trailblazer!</p>
+              <p>{t("no_rankings_yet")}</p>
+              <p className="text-sm mt-2">{t("be_first_trailblazer")}</p>
             </div>
           ) : (
             <div className="space-y-2">

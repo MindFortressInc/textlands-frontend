@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import * as api from "@/lib/api";
+import { useUIStrings } from "@/contexts/UIStringsContext";
 
 interface Message {
   role: "user" | "assistant";
@@ -25,6 +26,7 @@ export function CharacterCreationModal({
   worldName,
   playerId,
 }: CharacterCreationModalProps) {
+  const { t } = useUIStrings();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -57,12 +59,12 @@ export function CharacterCreationModal({
       // Show initial AI message
       setMessages([{
         role: "assistant",
-        content: `Welcome to ${worldName}. Tell me about the character you want to play...`
+        content: t("welcome_to_world").replace("{world}", worldName)
       }]);
       setSuggestions([
-        "A battle-hardened warrior",
-        "A cunning rogue with secrets",
-        "A scholar seeking forbidden knowledge"
+        t("character_suggestion_1"),
+        t("character_suggestion_2"),
+        t("character_suggestion_3")
       ]);
 
       setTimeout(() => inputRef.current?.focus(), 100);
@@ -100,7 +102,7 @@ export function CharacterCreationModal({
         setTimeout(() => onComplete(response.entity_id!), 500);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create character");
+      setError(err instanceof Error ? err.message : t("failed_to_create_character"));
     } finally {
       setLoading(false);
     }
@@ -202,7 +204,7 @@ export function CharacterCreationModal({
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Describe your character..."
+                  placeholder={t("describe_your_character")}
                   className="flex-1 bg-transparent border-none outline-none text-[var(--text)] placeholder-[var(--mist)]"
                   disabled={loading}
                 />

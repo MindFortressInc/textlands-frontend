@@ -1,21 +1,23 @@
 #!/usr/bin/env npx tsx
 /**
  * TextLands Frontend Error Scanner
- * Scans codebase for known error patterns from ERROR_LOG.md
+ * Scans codebase for known error patterns from errors/errors.yaml
  *
  * Usage:
  *   npx tsx scripts/error-scanner.ts              # Full scan
  *   npx tsx scripts/error-scanner.ts --quick      # Critical/High only
  *   npx tsx scripts/error-scanner.ts --err TLF-001 # Check specific error
+ *   npx tsx scripts/error-scanner.ts --list       # List all errors
  *   npx tsx scripts/error-scanner.ts --summary    # Just show counts
  *   npx tsx scripts/error-scanner.ts --type-check # Run tsc --noEmit
  *   npx tsx scripts/error-scanner.ts --orphans    # Find unused components
  *   npx tsx scripts/error-scanner.ts --links      # Check for dead links
  */
 
-import { readFileSync, readdirSync, statSync } from "fs";
+import { readFileSync, readdirSync, statSync, existsSync } from "fs";
 import { join, relative } from "path";
 import { execSync } from "child_process";
+import { parse as parseYaml } from "yaml";
 
 // Colors for terminal output
 const Colors = {
@@ -25,6 +27,7 @@ const Colors = {
   BLUE: "\x1b[94m",
   CYAN: "\x1b[96m",
   BOLD: "\x1b[1m",
+  DIM: "\x1b[2m",
   END: "\x1b[0m",
 };
 
@@ -37,152 +40,62 @@ interface Finding {
   description: string;
 }
 
+interface YamlError {
+  title: string;
+  severity: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+  status: "FIXED" | "OPEN";
+  discovered: string;
+  fixed?: string;
+  affected_files: string[];
+  patterns: string[];
+  exclude_patterns: string[];
+  search_paths: string[];
+  what_to_look_for: string;
+  fix: string;
+}
+
 interface ErrorPattern {
   id: string;
   title: string;
   severity: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+  status: "FIXED" | "OPEN";
   patterns: RegExp[];
   excludePatterns: RegExp[];
   searchPaths: string[];
   description: string;
-  wholeFileExclude?: boolean;  // Check entire file for exclusions, not just context
 }
 
-// Define error patterns with their search regex
-const ERROR_PATTERNS: Record<string, ErrorPattern> = {
-  "TLF-001": {
-    id: "TLF-001",
-    title: "Swallowed Promise Rejections",
-    severity: "HIGH",
-    patterns: [
-      /\.catch\s*\(\s*\(\s*\)\s*=>\s*\{\s*\}\s*\)/,
-      /\.catch\s*\(\s*\(\s*\)\s*=>\s*null\s*\)/,
-      /\.catch\s*\(\s*\(\s*\)\s*=>\s*undefined\s*\)/,
-    ],
-    excludePatterns: [
-      /console\.(log|error|warn)/,
-      /logger\./,
-    ],
-    searchPaths: ["app/", "components/", "lib/"],
-    description: "Empty catch blocks hide errors - add logging",
-  },
-  "TLF-002": {
-    id: "TLF-002",
-    title: "Missing ErrorBoundary",
-    severity: "HIGH",
-    patterns: [
-      /export\s+default\s+function\s+RootLayout/,
-    ],
-    excludePatterns: [
-      /ErrorBoundary/,
-    ],
-    searchPaths: ["app/layout.tsx"],
-    description: "Root layout should have ErrorBoundary to catch React errors",
-    wholeFileExclude: true,  // Check entire file for exclusions, not just context
-  },
-  "TLF-003": {
-    id: "TLF-003",
-    title: "Unguarded localStorage Access",
-    severity: "HIGH",
-    patterns: [
-      /localStorage\.(get|set|remove)Item/,
-    ],
-    excludePatterns: [
-      /try\s*\{/,
-      /safeLocalStorage/,
-      /catch/,
-    ],
-    searchPaths: ["app/", "components/", "lib/"],
-    description: "localStorage throws in private browsing - wrap in try/catch",
-  },
-  "TLF-004": {
-    id: "TLF-004",
-    title: "Empty Catch Blocks",
-    severity: "MEDIUM",
-    patterns: [
-      /\}\s*catch\s*\{\s*\n\s*[^}]*\}/,
-      /\}\s*catch\s*\(\s*\)\s*\{/,
-    ],
-    excludePatterns: [
-      /console\.(log|error|warn)/,
-      /logger\./,
-      /\/\/ (ignore|expected|ok|intentional)/i,
-    ],
-    searchPaths: ["app/", "components/", "lib/"],
-    description: "Catch blocks should at minimum log the error",
-  },
-  "TLF-005": {
-    id: "TLF-005",
-    title: "Unhandled Async in useEffect",
-    severity: "MEDIUM",
-    patterns: [
-      /useEffect\s*\(\s*async/,
-    ],
-    excludePatterns: [],
-    searchPaths: ["app/", "components/"],
-    description: "async useEffect callbacks are not awaited - use IIFE pattern",
-  },
-  // TLF-006: DISABLED - Too many false positives
-  // Pattern useState<T>(null) catches UI selection states, not just async data
-  // Keeping for reference but not scanning
-  // "TLF-006": {
-  //   id: "TLF-006",
-  //   title: "Missing Loading State",
-  //   severity: "MEDIUM",
-  //   patterns: [/useState<.*>\(null\)/],
-  //   excludePatterns: [/loading/i, /isLoading/, /setLoading/],
-  //   searchPaths: ["app/", "components/"],
-  //   description: "Async data without loading state shows stale/empty UI",
-  // },
-  "TLF-007": {
-    id: "TLF-007",
-    title: "Hardcoded API URL",
-    severity: "MEDIUM",
-    patterns: [
-      /fetch\s*\(\s*["'`]https?:\/\//,
-      /fetch\s*\(\s*["'`]\/api\//,
-    ],
-    excludePatterns: [
-      /process\.env/,
-      /API_BASE/,
-      /import\.meta/,
-    ],
-    searchPaths: ["app/", "components/"],
-    description: "API URLs should use environment variables",
-  },
-  "TLF-008": {
-    id: "TLF-008",
-    title: "Console.log in Production Code",
-    severity: "LOW",
-    patterns: [
-      /console\.log\s*\(/,
-    ],
-    excludePatterns: [
-      /\/\/ DEBUG/,
-      /\/\/ TODO: remove/,
-      /console\.error/,
-      /console\.warn/,
-    ],
-    searchPaths: ["app/", "components/", "lib/"],
-    description: "Remove console.log before production",
-  },
-  "TLF-009": {
-    id: "TLF-009",
-    title: "any Type Usage",
-    severity: "LOW",
-    patterns: [
-      /:\s*any\b/,
-      /as\s+any\b/,
-    ],
-    excludePatterns: [
-      /\/\/ eslint-disable/,
-      /\/\/ @ts-/,
-      /Record<string,\s*any>/,  // Sometimes needed for dynamic objects
-    ],
-    searchPaths: ["app/", "components/", "lib/", "types/"],
-    description: "Avoid 'any' - use proper types or 'unknown'",
-  },
-};
+function loadErrorPatterns(basePath: string): Record<string, ErrorPattern> {
+  const yamlPath = join(basePath, "errors", "errors.yaml");
+
+  if (!existsSync(yamlPath)) {
+    console.log(`${Colors.YELLOW}Warning: errors/errors.yaml not found${Colors.END}`);
+    return {};
+  }
+
+  const content = readFileSync(yamlPath, "utf-8");
+  const parsed = parseYaml(content) as Record<string, YamlError>;
+
+  const patterns: Record<string, ErrorPattern> = {};
+
+  for (const [id, error] of Object.entries(parsed)) {
+    // Skip fixed errors - they shouldn't appear in scans
+    // But we still want to list them
+
+    patterns[id] = {
+      id,
+      title: error.title,
+      severity: error.severity,
+      status: error.status,
+      patterns: (error.patterns || []).map((p) => new RegExp(p)),
+      excludePatterns: (error.exclude_patterns || []).map((p) => new RegExp(p)),
+      searchPaths: error.search_paths || [],
+      description: error.what_to_look_for?.split("\n")[0] || error.title,
+    };
+  }
+
+  return patterns;
+}
 
 function getAllFiles(dir: string, extensions: string[]): string[] {
   const files: string[] = [];
@@ -211,17 +124,14 @@ function getAllFiles(dir: string, extensions: string[]): string[] {
 function scanFile(filepath: string, pattern: ErrorPattern, basePath: string): Finding[] {
   const findings: Finding[] = [];
 
+  // Skip scanning if pattern has no regex patterns defined
+  if (pattern.patterns.length === 0) {
+    return findings;
+  }
+
   try {
     const content = readFileSync(filepath, "utf-8");
     const lines = content.split("\n");
-
-    // For wholeFileExclude, check entire file first
-    if (pattern.wholeFileExclude) {
-      const wholeFileExcluded = pattern.excludePatterns.some((excl) => excl.test(content));
-      if (wholeFileExcluded) {
-        return findings; // Skip this file entirely
-      }
-    }
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
@@ -229,14 +139,11 @@ function scanFile(filepath: string, pattern: ErrorPattern, basePath: string): Fi
 
       for (const regex of pattern.patterns) {
         if (regex.test(line)) {
-          // Check exclusions in context (3 lines before and after) unless wholeFileExclude
-          let excluded = false;
-          if (!pattern.wholeFileExclude) {
-            const contextStart = Math.max(0, i - 3);
-            const contextEnd = Math.min(lines.length, i + 4);
-            const context = lines.slice(contextStart, contextEnd).join("\n");
-            excluded = pattern.excludePatterns.some((excl) => excl.test(context));
-          }
+          // Check exclusions in context (3 lines before and after)
+          const contextStart = Math.max(0, i - 3);
+          const contextEnd = Math.min(lines.length, i + 4);
+          const context = lines.slice(contextStart, contextEnd).join("\n");
+          const excluded = pattern.excludePatterns.some((excl) => excl.test(context));
 
           if (!excluded) {
             findings.push({
@@ -261,6 +168,11 @@ function scanFile(filepath: string, pattern: ErrorPattern, basePath: string): Fi
 
 function scanForPattern(pattern: ErrorPattern, basePath: string): Finding[] {
   const findings: Finding[] = [];
+
+  // Skip if no search paths defined
+  if (pattern.searchPaths.length === 0) {
+    return findings;
+  }
 
   for (const searchPath of pattern.searchPaths) {
     const fullPath = join(basePath, searchPath);
@@ -314,6 +226,33 @@ function printFinding(finding: Finding): void {
   console.log(`  Issue: ${finding.description}`);
 }
 
+function listErrors(patterns: Record<string, ErrorPattern>): void {
+  console.log(`\n${Colors.BOLD}All Errors (${Object.keys(patterns).length} total):${Colors.END}\n`);
+
+  const severityOrder = ["CRITICAL", "HIGH", "MEDIUM", "LOW"];
+
+  for (const severity of severityOrder) {
+    const errors = Object.values(patterns).filter((p) => p.severity === severity);
+    if (errors.length === 0) continue;
+
+    const color = severity === "CRITICAL" || severity === "HIGH"
+      ? Colors.RED
+      : severity === "MEDIUM"
+        ? Colors.YELLOW
+        : Colors.BLUE;
+
+    console.log(`${color}${severity}:${Colors.END}`);
+
+    for (const error of errors) {
+      const status = error.status === "FIXED"
+        ? `${Colors.GREEN}FIXED${Colors.END}`
+        : `${Colors.YELLOW}OPEN${Colors.END}`;
+      console.log(`  ${error.id}: ${error.title} [${status}]`);
+    }
+    console.log();
+  }
+}
+
 // Find orphaned components (files not imported anywhere)
 function findOrphans(basePath: string): string[] {
   console.log(`\n${Colors.CYAN}Scanning for orphaned files...${Colors.END}`);
@@ -337,24 +276,19 @@ function findOrphans(basePath: string): string[] {
   for (const file of allFiles) {
     try {
       const content = readFileSync(file, "utf-8");
-      // Match various import patterns
       const importMatches = content.matchAll(
         /(?:import|from)\s+["'](@\/[^"']+|\.\.?\/[^"']+)["']/g
       );
       for (const match of importMatches) {
         let importPath = match[1];
-        // Normalize path aliases
         if (importPath.startsWith("@/")) {
           importPath = importPath.replace("@/", "");
         }
-        // Remove leading ./ or ../
         importPath = importPath.replace(/^\.\.?\//, "");
-        // Extract just the component/module name
         const parts = importPath.split("/");
         const lastName = parts[parts.length - 1];
         allImports.add(lastName);
         allImports.add(importPath);
-        // Also add without extension
         allImports.add(lastName.replace(/\.(tsx?|js)$/, ""));
       }
     } catch {
@@ -362,19 +296,14 @@ function findOrphans(basePath: string): string[] {
     }
   }
 
-  // Check each source file
   for (const file of sourceFiles) {
     const relPath = relative(basePath, file);
     const fileName = relPath.split("/").pop() || "";
     const fileNameNoExt = fileName.replace(/\.(tsx?|js)$/, "");
 
-    // Skip index files (they're re-exports)
     if (fileNameNoExt === "index") continue;
-
-    // Skip ThemeProvider (used in layout)
     if (fileNameNoExt === "ThemeProvider") continue;
 
-    // Check if this file is imported anywhere
     const isImported =
       allImports.has(fileName) ||
       allImports.has(fileNameNoExt) ||
@@ -389,7 +318,7 @@ function findOrphans(basePath: string): string[] {
   return orphans;
 }
 
-// Check for dead links (internal routes and external URLs)
+// Check for dead links
 async function checkLinks(basePath: string): Promise<{ file: string; line: number; link: string; status: string }[]> {
   console.log(`\n${Colors.CYAN}Checking for dead links...${Colors.END}`);
 
@@ -399,7 +328,6 @@ async function checkLinks(basePath: string): Promise<{ file: string; line: numbe
     ...getAllFiles(join(basePath, "components"), [".tsx", ".ts"]),
   ];
 
-  // Collect app routes
   const appRoutes = new Set<string>();
   const appDir = join(basePath, "app");
   const routeFiles = getAllFiles(appDir, [".tsx"]);
@@ -413,7 +341,6 @@ async function checkLinks(basePath: string): Promise<{ file: string; line: numbe
     }
   }
 
-  // Pattern for href and Link
   const linkPattern = /(?:href|to)=["'`]([^"'`]+)["'`]/g;
 
   for (const file of allFiles) {
@@ -428,17 +355,12 @@ async function checkLinks(basePath: string): Promise<{ file: string; line: numbe
         for (const match of matches) {
           const link = match[1];
 
-          // Skip dynamic routes, anchors, and external links for now
           if (link.startsWith("#") || link.includes("{") || link.includes("$")) continue;
 
-          // Check internal routes
           if (link.startsWith("/") && !link.startsWith("//")) {
-            // Normalize the link
             const normalizedLink = link.split("?")[0].split("#")[0];
 
-            // Check against known routes
             if (!appRoutes.has(normalizedLink) && normalizedLink !== "/") {
-              // Check if it's a dynamic route pattern
               const isDynamicMatch = [...appRoutes].some((route) => {
                 const routeParts = route.split("/");
                 const linkParts = normalizedLink.split("/");
@@ -458,9 +380,6 @@ async function checkLinks(basePath: string): Promise<{ file: string; line: numbe
               }
             }
           }
-
-          // Check external links (only in --links-external mode for speed)
-          // Skipping external checks by default since they're slow
         }
       }
     } catch {
@@ -478,14 +397,29 @@ async function main(): Promise<void> {
   const typeCheck = args.includes("--type-check");
   const checkOrphans = args.includes("--orphans");
   const checkDeadLinks = args.includes("--links");
+  const listAll = args.includes("--list");
   const errIndex = args.indexOf("--err");
   const specificError = errIndex !== -1 ? args[errIndex + 1] : null;
 
-  // Find project root (where package.json is)
   const basePath = process.cwd();
 
   console.log(`${Colors.BOLD}TextLands Frontend Error Scanner${Colors.END}`);
+  console.log(`${Colors.DIM}Source: errors/errors.yaml${Colors.END}`);
   console.log(`Scanning: ${basePath}`);
+
+  // Load patterns from YAML
+  const ERROR_PATTERNS = loadErrorPatterns(basePath);
+
+  if (Object.keys(ERROR_PATTERNS).length === 0) {
+    console.log(`${Colors.RED}No error patterns loaded${Colors.END}`);
+    process.exit(1);
+  }
+
+  // List mode
+  if (listAll) {
+    listErrors(ERROR_PATTERNS);
+    process.exit(0);
+  }
 
   // Type check only mode
   if (typeCheck) {
@@ -501,7 +435,6 @@ async function main(): Promise<void> {
       for (const orphan of orphans) {
         console.log(`  ${Colors.YELLOW}${orphan}${Colors.END}`);
       }
-      console.log(`\n${Colors.YELLOW}WARNING: These files are not imported anywhere${Colors.END}`);
     } else {
       console.log(`\n${Colors.GREEN}No orphaned files found${Colors.END}`);
     }
@@ -525,7 +458,7 @@ async function main(): Promise<void> {
     process.exit(0);
   }
 
-  // Select patterns to scan
+  // Select patterns to scan (only OPEN errors)
   let patternsToScan: Record<string, ErrorPattern>;
 
   if (specificError) {
@@ -538,11 +471,14 @@ async function main(): Promise<void> {
   } else if (quick) {
     patternsToScan = Object.fromEntries(
       Object.entries(ERROR_PATTERNS).filter(
-        ([, v]) => v.severity === "CRITICAL" || v.severity === "HIGH"
+        ([, v]) => v.status === "OPEN" && (v.severity === "CRITICAL" || v.severity === "HIGH")
       )
     );
   } else {
-    patternsToScan = ERROR_PATTERNS;
+    // Only scan OPEN errors by default
+    patternsToScan = Object.fromEntries(
+      Object.entries(ERROR_PATTERNS).filter(([, v]) => v.status === "OPEN")
+    );
   }
 
   // Run scan
@@ -568,7 +504,6 @@ async function main(): Promise<void> {
     if (allFindings.length > 0) {
       console.log(`\n${Colors.BOLD}Found ${allFindings.length} issues:${Colors.END}`);
 
-      // Group by severity
       for (const severity of ["CRITICAL", "HIGH", "MEDIUM", "LOW"]) {
         const severityFindings = allFindings.filter((f) => f.severity === severity);
         for (const finding of severityFindings) {

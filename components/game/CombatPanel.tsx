@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { CombatSession, CombatParticipant } from "@/types/game";
+import { useUIStrings } from "@/contexts/UIStringsContext";
 
 interface CombatPanelProps {
   combat: CombatSession;
@@ -10,13 +11,6 @@ interface CombatPanelProps {
   isProcessing: boolean;
   lastNarrative?: string;
 }
-
-const ACTIONS: { value: "attack" | "defend" | "skill" | "flee"; label: string; icon: string; description: string }[] = [
-  { value: "attack", label: "Attack", icon: "X", description: "Strike your target" },
-  { value: "defend", label: "Defend", icon: "O", description: "Brace for impact" },
-  { value: "skill", label: "Skill", icon: "*", description: "Use an ability" },
-  { value: "flee", label: "Flee", icon: "<", description: "Attempt escape" },
-];
 
 function HealthBar({ current, max, isPlayer }: { current: number; max: number; isPlayer: boolean }) {
   const percent = Math.max(0, Math.min(100, (current / max) * 100));
@@ -84,12 +78,21 @@ export function CombatPanel({
   isProcessing,
   lastNarrative,
 }: CombatPanelProps) {
+  const { t } = useUIStrings();
   const [selectedTarget, setSelectedTarget] = useState<string | null>(null);
 
   const currentTurnParticipant = combat.participants[combat.current_turn_index];
   const isPlayerTurn = currentTurnParticipant?.id === playerId;
   const players = combat.participants.filter((p) => p.is_player);
   const enemies = combat.participants.filter((p) => !p.is_player);
+
+  // Combat actions with translated labels
+  const ACTIONS: { value: "attack" | "defend" | "skill" | "flee"; label: string; icon: string; description: string }[] = [
+    { value: "attack", label: t("attack"), icon: "X", description: t("attack_desc") },
+    { value: "defend", label: t("defend"), icon: "O", description: t("defend_desc") },
+    { value: "skill", label: t("skill"), icon: "*", description: t("skill_desc") },
+    { value: "flee", label: "Flee", icon: "<", description: "Attempt escape" },
+  ];
 
   const handleAction = (action: "attack" | "defend" | "skill" | "flee") => {
     if (action === "attack" && !selectedTarget && enemies.length > 0) {
@@ -110,7 +113,7 @@ export function CombatPanel({
       <div className="combat-panel p-6 text-center">
         <div className="text-[var(--amber)] text-4xl mb-4">V</div>
         <h2 className="text-[var(--amber)] text-xl font-bold mb-2">VICTORY</h2>
-        <p className="text-[var(--text-dim)]">{lastNarrative || "You are victorious!"}</p>
+        <p className="text-[var(--text-dim)]">{lastNarrative || t("you_are_victorious")}</p>
       </div>
     );
   }
@@ -120,7 +123,7 @@ export function CombatPanel({
       <div className="combat-panel p-6 text-center">
         <div className="text-[var(--crimson)] text-4xl mb-4">X</div>
         <h2 className="text-[var(--crimson)] text-xl font-bold mb-2">DEFEAT</h2>
-        <p className="text-[var(--text-dim)]">{lastNarrative || "You have fallen..."}</p>
+        <p className="text-[var(--text-dim)]">{lastNarrative || t("you_have_fallen")}</p>
       </div>
     );
   }
@@ -130,7 +133,7 @@ export function CombatPanel({
       <div className="combat-panel p-6 text-center">
         <div className="text-[var(--mist)] text-4xl mb-4">&lt;</div>
         <h2 className="text-[var(--mist)] text-xl font-bold mb-2">ESCAPED</h2>
-        <p className="text-[var(--text-dim)]">{lastNarrative || "You fled from battle."}</p>
+        <p className="text-[var(--text-dim)]">{lastNarrative || t("you_fled")}</p>
       </div>
     );
   }

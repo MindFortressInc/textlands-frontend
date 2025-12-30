@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import type { UserPreferences } from "@/lib/api";
 import * as api from "@/lib/api";
+import { useUIStrings } from "@/contexts/UIStringsContext";
 
 interface SettingsPanelProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ export function SettingsPanel({
   nsfwVerified,
   onRequestAgeVerification,
 }: SettingsPanelProps) {
+  const { t } = useUIStrings();
   const [preferences, setPreferences] = useState<UserPreferences>({
     show_reasoning: false,
     show_on_failure: true,
@@ -59,7 +61,7 @@ export function SettingsPanel({
       <div className="settings-panel w-full max-w-md bg-[var(--void)] border border-[var(--stone)] rounded-lg overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-[var(--stone)]">
-          <h2 className="text-[var(--amber)] font-bold tracking-wider">SETTINGS</h2>
+          <h2 className="text-[var(--amber)] font-bold tracking-wider">{t("settings").toUpperCase()}</h2>
           <button
             onClick={onClose}
             className="text-[var(--mist)] hover:text-[var(--text)] transition-colors text-xl leading-none"
@@ -74,10 +76,10 @@ export function SettingsPanel({
           <div>
             <h3 className="text-[var(--text)] font-semibold mb-3 flex items-center gap-2">
               <span className="text-[var(--arcane)]">*</span>
-              Mechanics Display
+              {t("mechanics_display")}
             </h3>
             <p className="text-[var(--text-dim)] text-sm mb-4">
-              Control when you see the underlying mechanics that determine action outcomes.
+              {t("mechanics_display_desc")}
             </p>
 
             <div className="space-y-3">
@@ -96,10 +98,10 @@ export function SettingsPanel({
                 </div>
                 <div className="flex-1">
                   <div className="text-[var(--text)] font-medium group-hover:text-[var(--amber)] transition-colors">
-                    Show Mechanics
+                    {t("show_mechanics")}
                   </div>
                   <div className="text-[var(--text-dim)] text-sm">
-                    Display success chances, factors, and outcomes for all actions
+                    {t("show_mechanics_desc")}
                   </div>
                 </div>
               </label>
@@ -119,10 +121,10 @@ export function SettingsPanel({
                 </div>
                 <div className="flex-1">
                   <div className={`text-[var(--text)] font-medium group-hover:text-[var(--amber)] transition-colors ${preferences.show_reasoning ? "opacity-50" : ""}`}>
-                    Show on Failure Only
+                    {t("show_on_failure_only")}
                   </div>
                   <div className={`text-[var(--text-dim)] text-sm ${preferences.show_reasoning ? "opacity-50" : ""}`}>
-                    Only reveal mechanics when actions fail
+                    {t("show_on_failure_desc")}
                   </div>
                 </div>
               </label>
@@ -133,7 +135,7 @@ export function SettingsPanel({
           <div>
             <h3 className="text-[var(--text)] font-semibold mb-3 flex items-center gap-2">
               <span className="text-[var(--crimson)]">*</span>
-              Content
+              {t("content")}
             </h3>
 
             <div className="space-y-3">
@@ -159,10 +161,10 @@ export function SettingsPanel({
                 </div>
                 <div className="flex-1">
                   <div className="text-[var(--text)] font-medium group-hover:text-[var(--amber)] transition-colors">
-                    Adult Content (18+)
+                    {t("adult_content_18")}
                   </div>
                   <div className="text-[var(--text-dim)] text-sm">
-                    Show mature realms and allow explicit content in all worlds
+                    {t("adult_content_desc")}
                   </div>
                 </div>
               </label>
@@ -172,7 +174,7 @@ export function SettingsPanel({
           {/* Saved indicator */}
           {saved && (
             <div className="text-[var(--arcane)] text-sm text-center animate-fade-in">
-              Preferences saved
+              {t("preferences_saved")}
             </div>
           )}
         </div>
@@ -183,7 +185,7 @@ export function SettingsPanel({
             onClick={onClose}
             className="w-full px-4 py-3 rounded bg-[var(--stone)] text-[var(--text)] hover:bg-[var(--slate)] transition-colors"
           >
-            Close
+            {t("close")}
           </button>
         </div>
       </div>

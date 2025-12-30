@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import type { WorldTemplate } from "@/types/game";
 import * as api from "@/lib/api";
+import { useUIStrings } from "@/contexts/UIStringsContext";
 
 interface WorldTemplatesModalProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ export function WorldTemplatesModal({
   onClose,
   onSelectTemplate,
 }: WorldTemplatesModalProps) {
+  const { t } = useUIStrings();
   const [templates, setTemplates] = useState<WorldTemplate[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<WorldTemplate | null>(null);
@@ -85,8 +87,8 @@ export function WorldTemplatesModal({
             </div>
           ) : templates.length === 0 ? (
             <div className="text-center py-8 text-[var(--mist)]">
-              <p>No templates available</p>
-              <p className="text-sm mt-2">Check back later for new world templates</p>
+              <p>{t("no_templates_available")}</p>
+              <p className="text-sm mt-2">{t("check_back_later")}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
