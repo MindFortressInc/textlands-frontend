@@ -94,16 +94,13 @@ These are the endpoints the web frontend actually needs.
 
 ---
 
-## Nice-to-Have UI Endpoints (17 total)
+## Nice-to-Have UI Endpoints (14 total)
 
 These have UI but aren't core gameplay. Could be removed to simplify.
 
-### Entity & World Tools
+### World Templates
 | Method | Endpoint | API Function | UI Component |
 |--------|----------|--------------|--------------|
-| POST | `/infinite/worlds/{id}/generate` | `generateEntity()` | EntityGenerationModal |
-| GET | `/infinite/worlds/{id}/entities` | `getWorldEntities()` | EntityGenerationModal |
-| GET | `/infinite/entities/{id}` | `getEntity()` | Entity modals |
 | GET | `/infinite/templates` | `getWorldTemplates()` | WorldTemplatesModal |
 | GET | `/infinite/templates/{slug}` | `getWorldTemplate()` | WorldTemplatesModal |
 
@@ -128,9 +125,16 @@ These have UI but aren't core gameplay. Could be removed to simplify.
 
 ---
 
-## Removed from api.ts (15 functions)
+## Removed from api.ts (18 functions)
 
 These were deleted in the Dec 2025 cleanup.
+
+### Entity Forge UI (3)
+| Endpoint | Old Function | Reason |
+|----------|--------------|--------|
+| `POST /infinite/worlds/{id}/generate` | `generateEntity()` | 🗑️ Violates "fancy terminal" architecture |
+| `GET /infinite/worlds/{id}/entities` | `getWorldEntities()` | 🗑️ Violates "fancy terminal" architecture |
+| `GET /infinite/entities/{id}` | `getEntity()` | 🗑️ Violates "fancy terminal" architecture |
 
 ### Legacy Curated World (3)
 | Endpoint | Old Function | Reason |
@@ -170,16 +174,16 @@ These were deleted in the Dec 2025 cleanup.
 | Category | Count |
 |----------|-------|
 | 🚀 Core Frontend | 27 |
-| ✅ Nice-to-Have UI | 17 |
-| 🗑️ Removed | 15 |
-| **Total in api.ts** | **44** |
+| ✅ Nice-to-Have UI | 14 |
+| 🗑️ Removed | 18 |
+| **Total in api.ts** | **41** |
 
 ### Before/After
 | Metric | Before | After |
 |--------|--------|-------|
-| Functions in api.ts | 60 | 45 |
-| Types imported | 27 | 12 |
-| Lines of code | ~755 | ~653 |
+| Functions in api.ts | 60 | 42 |
+| Types imported | 27 | 10 |
+| Lines of code | ~755 | ~620 |
 
 ---
 

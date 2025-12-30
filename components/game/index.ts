@@ -22,7 +22,6 @@ export { CharacterCreationModal } from "./CharacterCreationModal";
 export { PlayerStatsModal } from "./PlayerStatsModal";
 export { EntityTimelineModal } from "./EntityTimelineModal";
 export { WorldTemplatesModal } from "./WorldTemplatesModal";
-export { EntityGenerationModal } from "./EntityGenerationModal";
 export { WorldCreationModal } from "./WorldCreationModal";
 export { SocialPanel } from "./SocialPanel";
 export { ChatPanel } from "./ChatPanel";

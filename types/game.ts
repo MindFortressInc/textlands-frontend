@@ -64,44 +64,7 @@ export interface WorldTemplate {
   fork_count: number;
 }
 
-// Entity types
-export type EntityType = "npc" | "location" | "item" | "faction" | "quest" | "secret";
-
-export interface EntityIdentity {
-  species?: string;
-  gender?: string;
-  age_apparent?: string;
-  physical?: {
-    height?: string;
-    build?: string;
-    hair?: string;
-    eyes?: string;
-    distinguishing_features?: string[];
-    typical_clothing?: string;
-  };
-  personality_core?: string[];
-  backstory_summary?: string;
-  voice?: string;
-}
-
-export interface EntityState {
-  current_location?: string;
-  current_occupation?: string;
-  current_mood?: string;
-  current_goals?: string[];
-  current_problems?: string[];
-  wealth_level?: string;
-}
-
-export interface EntityRelationship {
-  type: string;
-  to_entity_id?: string;
-  to_name?: string;
-  to_type?: string;
-  strength?: number;
-  details?: string;
-}
-
+// Timeline event for entity history
 export interface TimelineEvent {
   id: string;
   event_type: string;
@@ -109,43 +72,6 @@ export interface TimelineEvent {
   occurred_at: string;
   importance: number;
   event_details?: Record<string, unknown>;
-}
-
-// Trailblazer reward for generating content
-export interface TrailblazerReward {
-  governance_points: number;
-  currency: number;
-  trailblazer_points: number;
-  was_first_of_type: boolean;
-}
-
-// Generated entity response
-export interface GeneratedEntity {
-  id: string;
-  world_id: string;
-  entity_type: EntityType;
-  name: string;
-  slug?: string;
-  identity: EntityIdentity;
-  state: EntityState;
-  relationships: EntityRelationship[];
-  is_new: boolean;
-  reward?: TrailblazerReward;
-  generated_by?: string;
-  generation_context?: string;
-  canonical_level?: string;
-  content_rating?: string;
-  content_warnings?: string[];
-  timeline?: TimelineEvent[];
-}
-
-// Generate entity request
-export interface GenerateEntityRequest {
-  entity_type: EntityType;
-  context: string;
-  hints?: Record<string, string>;
-  force_new?: boolean;
-  player_id?: string;
 }
 
 // Player stats in a world

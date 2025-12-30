@@ -7,8 +7,6 @@ import type {
   ExplainResponse,
   InfiniteWorld,
   WorldTemplate,
-  GeneratedEntity,
-  GenerateEntityRequest,
   PlayerWorldStats,
   LeaderboardEntry,
   InfiniteCampfireResponse,
@@ -209,31 +207,6 @@ export async function getWorldTemplates(): Promise<WorldTemplate[]> {
 // Get template details
 export async function getWorldTemplate(slug: string): Promise<WorldTemplate> {
   return fetchAPI<WorldTemplate>(`/infinite/templates/${slug}`);
-}
-
-// Generate entity in a world (earns trailblazer rewards!)
-export async function generateEntity(
-  worldId: string,
-  request: GenerateEntityRequest
-): Promise<GeneratedEntity> {
-  return fetchAPI<GeneratedEntity>(`/infinite/worlds/${worldId}/generate`, {
-    method: "POST",
-    body: JSON.stringify(request),
-  });
-}
-
-// List entities in a world
-export async function getWorldEntities(
-  worldId: string,
-  entityType?: string
-): Promise<GeneratedEntity[]> {
-  const params = entityType ? `?entity_type=${entityType}` : "";
-  return fetchAPI<GeneratedEntity[]>(`/infinite/worlds/${worldId}/entities${params}`);
-}
-
-// Get entity details with timeline
-export async function getEntity(entityId: string): Promise<GeneratedEntity> {
-  return fetchAPI<GeneratedEntity>(`/infinite/entities/${entityId}`);
 }
 
 // Get player stats for a world

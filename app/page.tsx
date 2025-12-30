@@ -71,26 +71,28 @@ type AppPhase = "loading" | "landing" | "character-select" | "genres" | "worlds"
 // ========== INLINE VIEW COMPONENTS ==========
 
 function LoadingView() {
+  const { t } = useUIStrings();
   return (
     <main className="h-dvh flex flex-col items-center justify-center bg-[var(--void)]">
       <div className="text-[var(--amber)] font-bold tracking-[0.3em] text-lg mb-4 title-glow">TEXTLANDS</div>
-      <div className="text-[var(--mist)] text-sm animate-pulse">Connecting...</div>
+      <div className="text-[var(--mist)] text-sm animate-pulse">{t("connecting")}</div>
     </main>
   );
 }
 
 function ErrorView({ message, onRetry }: { message: string; onRetry: () => void }) {
+  const { t } = useUIStrings();
   return (
     <main className="h-dvh flex flex-col items-center justify-center bg-[var(--void)] p-4">
       <div className="text-center space-y-6 max-w-md">
         <div className="text-[var(--crimson)] text-4xl">⚠</div>
-        <div className="text-[var(--amber)] font-bold tracking-[0.3em] text-lg">CONNECTION ERROR</div>
+        <div className="text-[var(--amber)] font-bold tracking-[0.3em] text-lg">{t("connection_error")}</div>
         <p className="text-[var(--text-dim)] text-sm">{message}</p>
         <button
           onClick={onRetry}
           className="px-6 py-3 bg-[var(--shadow)] border border-[var(--slate)] rounded text-[var(--amber)] hover:border-[var(--amber)] transition-colors"
         >
-          Try Again
+          {t("try_again")}
         </button>
       </div>
     </main>
@@ -236,27 +238,27 @@ function LandingView({ onEnter, onLogin, onResumeCharacter, isLoggedIn, roster, 
             href="/characters"
             className="text-[var(--mist)] text-xs hover:text-[var(--amber)] transition-colors"
           >
-            {loadingRoster ? "Loading..." : `${activeChars.length} Characters`}
+            {loadingRoster ? t("loading") : `${activeChars.length} ${t("n_characters")}`}
           </Link>
         ) : (
           <button
             onClick={onLogin}
             className="text-[var(--mist)] text-xs hover:text-[var(--amber)] transition-colors"
           >
-            Log In
+            {t("log_in")}
           </button>
         )}
         <Link
           href="/hiscores"
           className="text-[var(--mist)] text-xs hover:text-[var(--amber)] transition-colors"
         >
-          HiScores
+          {t("hiscores")}
         </Link>
         <Link
           href="/recover"
           className="text-[var(--mist)] text-xs hover:text-[var(--amber)] transition-colors"
         >
-          Lost Journey?
+          {t("lost_journey")}
         </Link>
       </div>
 
@@ -278,6 +280,7 @@ function CharacterSelectView({ roster, onSelect, onNewCharacter, loadingRoster }
   onNewCharacter: () => void;
   loadingRoster: boolean;
 }) {
+  const { t } = useUIStrings();
   const [selectedChar, setSelectedChar] = useState<RosterCharacter | null>(null);
   const [showPicker, setShowPicker] = useState(false);
   const [openDirection, setOpenDirection] = useState<DropdownDirection>("up");

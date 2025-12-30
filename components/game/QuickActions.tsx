@@ -7,7 +7,6 @@ interface QuickActionsProps {
   disabled?: boolean;
   onTimelineClick?: () => void;
   hasExaminedEntity?: boolean;
-  onForgeClick?: () => void;
 }
 
 type ActionMode = "move" | "actions";
@@ -26,7 +25,7 @@ const QUICK_COMMANDS = [
   { label: "Help", command: "help", icon: "?" },
 ] as const;
 
-export function QuickActions({ onCommand, disabled = false, onTimelineClick, hasExaminedEntity, onForgeClick }: QuickActionsProps) {
+export function QuickActions({ onCommand, disabled = false, onTimelineClick, hasExaminedEntity }: QuickActionsProps) {
   const [mode, setMode] = useState<ActionMode>("move");
 
   const handleAction = (command: string) => {
@@ -132,16 +131,6 @@ export function QuickActions({ onCommand, disabled = false, onTimelineClick, has
               >
                 <span className="text-[var(--amber)] text-base">⧗</span>
                 <span className="text-[10px] text-[var(--mist)]">History</span>
-              </button>
-            )}
-            {onForgeClick && (
-              <button
-                onClick={onForgeClick}
-                disabled={disabled}
-                className="quick-btn h-11 flex flex-col items-center justify-center gap-0.5 disabled:opacity-40"
-              >
-                <span className="text-[var(--amber)] text-base">+</span>
-                <span className="text-[10px] text-[var(--mist)]">Forge</span>
               </button>
             )}
           </div>
