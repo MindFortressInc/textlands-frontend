@@ -16,6 +16,11 @@ export interface Theme {
     crimson: string;   // Combat
     arcane: string;    // Dialogue / magic
     mist: string;      // System text
+    // Entity highlight colors for hover tooltips
+    entityNpc: string;      // NPCs/characters
+    entityPlayer: string;   // Other players
+    entityLocation: string; // Places
+    entityItem: string;     // Objects/artifacts
   };
   effects: {
     glow: boolean;         // Text glow effects
@@ -43,6 +48,10 @@ export const themes: Record<string, Theme> = {
       crimson: "#ef4444",
       arcane: "#22d3ee",
       mist: "#6b7280",
+      entityNpc: "#22d3ee",     // cyan
+      entityPlayer: "#f59e0b", // amber
+      entityLocation: "#8b8b8b", // gray
+      entityItem: "#fbbf24",   // gold
     },
     effects: { glow: false, scanlines: false, vignette: false },
     font: "ui-monospace, 'SF Mono', Menlo, Monaco, monospace",
@@ -65,6 +74,10 @@ export const themes: Record<string, Theme> = {
       crimson: "#f87171",
       arcane: "#67e8f9",
       mist: "#9ca3af",
+      entityNpc: "#a78bfa",     // purple
+      entityPlayer: "#fbbf24", // gold
+      entityLocation: "#a1887f", // brown
+      entityItem: "#f59e0b",   // amber
     },
     effects: { glow: true, scanlines: true, vignette: true },
     font: "'JetBrains Mono', monospace",
@@ -87,6 +100,10 @@ export const themes: Record<string, Theme> = {
       crimson: "#ff6633",
       arcane: "#33ffff",
       mist: "#559955",
+      entityNpc: "#66ff66",     // bright green
+      entityPlayer: "#aaff55", // lime
+      entityLocation: "#778855", // olive
+      entityItem: "#ccff33",   // yellow-green
     },
     effects: { glow: true, scanlines: true, vignette: true },
     font: "ui-monospace, monospace",
@@ -109,6 +126,10 @@ export const themes: Record<string, Theme> = {
       crimson: "#ff6644",
       arcane: "#44ddff",
       mist: "#998855",
+      entityNpc: "#ff9944",     // orange
+      entityPlayer: "#ffdd55", // yellow
+      entityLocation: "#aa8855", // brown
+      entityItem: "#ffcc33",   // gold
     },
     effects: { glow: true, scanlines: true, vignette: true },
     font: "ui-monospace, monospace",
@@ -131,6 +152,10 @@ export const themes: Record<string, Theme> = {
       crimson: "#dc2626",
       arcane: "#0891b2",
       mist: "#78716c",
+      entityNpc: "#1e40af",     // blue
+      entityPlayer: "#92400e", // brown
+      entityLocation: "#166534", // green
+      entityItem: "#9a3412",   // rust
     },
     effects: { glow: false, scanlines: false, vignette: false },
     font: "'Georgia', serif",
@@ -153,6 +178,10 @@ export const themes: Record<string, Theme> = {
       crimson: "#ff0044",
       arcane: "#00ffff",
       mist: "#6666aa",
+      entityNpc: "#ff00ff",     // magenta
+      entityPlayer: "#00ffff", // cyan
+      entityLocation: "#4488ff", // blue
+      entityItem: "#ff66aa",   // pink
     },
     effects: { glow: true, scanlines: true, vignette: true },
     font: "ui-monospace, monospace",
@@ -176,6 +205,12 @@ export function applyTheme(theme: Theme): void {
   root.style.setProperty("--crimson", theme.colors.crimson);
   root.style.setProperty("--arcane", theme.colors.arcane);
   root.style.setProperty("--mist", theme.colors.mist);
+
+  // Apply entity highlight colors
+  root.style.setProperty("--entity-npc", theme.colors.entityNpc);
+  root.style.setProperty("--entity-player", theme.colors.entityPlayer);
+  root.style.setProperty("--entity-location", theme.colors.entityLocation);
+  root.style.setProperty("--entity-item", theme.colors.entityItem);
 
   // Apply font
   root.style.setProperty("--font", theme.font);

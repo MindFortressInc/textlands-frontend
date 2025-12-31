@@ -16,6 +16,12 @@
   --mist: #6b7280;
   --font: ui-monospace, 'SF Mono', Menlo, Monaco, monospace;
 
+  /* Entity highlight colors for hover tooltips */
+  --entity-npc: #22d3ee;
+  --entity-player: #f59e0b;
+  --entity-location: #8b8b8b;
+  --entity-item: #fbbf24;
+
   /* Safe area insets for mobile */
   --safe-area-inset-top: env(safe-area-inset-top, 0px);
   --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
@@ -33,6 +39,10 @@
   --color-crimson: var(--crimson);
   --color-arcane: var(--arcane);
   --color-mist: var(--mist);
+  --color-entity-npc: var(--entity-npc);
+  --color-entity-player: var(--entity-player);
+  --color-entity-location: var(--entity-location);
+  --color-entity-item: var(--entity-item);
 }
 
 * {
@@ -730,4 +740,90 @@ body {
     animation: none;
   }
 }
+
+/* ========== ENTITY HOVER TOOLTIPS ========== */
+
+/* Entity link - subtle underline */
+.entity-link {
+  cursor: help;
+  border-bottom: 1px dotted currentColor;
+  transition: opacity 0.15s ease;
+}
+
+.entity-link:hover {
+  opacity: 0.85;
+}
+
+/* Entity tooltip container */
+.entity-tooltip {
+  position: absolute;
+  z-index: 50;
+  min-width: 180px;
+  max-width: 280px;
+  padding: 0.75rem;
+  background: var(--shadow);
+  border: 1px solid var(--slate);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  pointer-events: none;
+  animation: tooltip-fade-in 0.15s ease-out;
+}
+
+@keyframes tooltip-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Tooltip header */
+.entity-tooltip-name {
+  font-weight: 600;
+  margin-bottom: 0.125rem;
+}
+
+.entity-tooltip-role {
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Tooltip divider */
+.entity-tooltip-divider {
+  border-top: 1px solid var(--slate);
+  margin: 0.5rem 0;
+}
+
+/* Tooltip details */
+.entity-tooltip-detail {
+  color: var(--text-dim);
+  font-size: 0.75rem;
+}
+
+.entity-tooltip-detail span {
+  color: var(--text);
+}
+
+/* Tooltip memory quote */
+.entity-tooltip-memory {
+  color: var(--mist);
+  font-style: italic;
+  font-size: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+/* Theme glow for tooltips */
+.theme-glow .entity-tooltip {
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.5);
+}
+
+/* Entity type colors */
+.entity-npc { color: var(--entity-npc); }
+.entity-player { color: var(--entity-player); }
+.entity-location { color: var(--entity-location); }
+.entity-item { color: var(--entity-item); }
 
