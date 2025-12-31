@@ -300,12 +300,26 @@ export default function GamePage() {
           }
 
           // Resume existing session if player has active character in a world
+          // Call startSession to trigger backend session continuity logic (resume narratives, etc.)
           if (session.character_id && session.world_id) {
-            setCurrentSession(session);
-            await resumeExistingSession(session);
-            // Clear any pending session since we successfully restored
-            safeStorage.removeItem("textlands_pending_session");
-            return; // Skip landing, go straight to game
+            try {
+              const { session: resumedSession, opening_narrative } = await api.startSession({
+                world_id: session.world_id,
+                entity_id: session.character_id,
+              });
+              // Merge opening_narrative into session if backend returned it separately
+              if (opening_narrative && !resumedSession.opening_narrative) {
+                resumedSession.opening_narrative = opening_narrative;
+              }
+              setCurrentSession(resumedSession);
+              await resumeExistingSession(resumedSession);
+              // Clear any pending session since we successfully restored
+              safeStorage.removeItem("textlands_pending_session");
+              return; // Skip landing, go straight to game
+            } catch (err) {
+              console.warn("[Init] Failed to resume session:", err);
+              // Fall through to landing page
+            }
           }
 
           // Fallback: check localStorage for active session (handles refresh when backend session is stale)
