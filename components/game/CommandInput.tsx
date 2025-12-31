@@ -74,9 +74,9 @@ export function CommandInput({
         placeholder={placeholder}
         className="command-input flex-1 bg-transparent text-[var(--text)] placeholder:text-[var(--mist)] placeholder:opacity-50 disabled:opacity-50 py-1 md:py-0"
         autoComplete="off"
-        spellCheck={false}
-        autoCapitalize="off"
-        autoCorrect="off"
+        autoCapitalize="sentences"
+        autoCorrect="on"
+        spellCheck={true}
         enterKeyHint="send"
       />
       {command === "" && !disabled && (
