@@ -11,6 +11,7 @@ import type {
   LeaderboardEntry,
   InfiniteCampfireResponse,
   InfiniteCampfireCharacter,
+  CharacterProfile,
 } from "@/types/game";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
@@ -1081,6 +1082,11 @@ export interface InventoryResponse {
 // Get player's inventory
 export async function getInventory(): Promise<InventoryResponse> {
   return fetchAPI<InventoryResponse>("/characters/inventory");
+}
+
+// Get current character's profile
+export async function getCharacterProfile(): Promise<CharacterProfile> {
+  return fetchAPI<CharacterProfile>("/characters/me/profile");
 }
 
 // ============ CHARACTER ROSTER API ============

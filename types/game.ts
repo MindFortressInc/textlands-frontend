@@ -505,6 +505,58 @@ export interface SceneActionRequest {
   scene_id?: string;
 }
 
+// ============ CHARACTER PROFILE ============
+
+export interface CharacterPhysical {
+  height?: string;
+  build?: string;
+  hair?: string;
+  eyes?: string;
+  distinguishing_features?: string[];
+  typical_clothing?: string;
+  first_impression?: string;
+}
+
+export interface CharacterIdentity {
+  species: string;
+  gender: string;
+  age_apparent?: string;
+  physical?: CharacterPhysical;
+  personality_core?: string[];
+  backstory_summary?: string;
+  voice?: string;
+}
+
+export interface CharacterState {
+  current_location?: string;
+  current_mood?: string;
+  current_goals?: string[];
+  current_problems?: string[];
+  wealth_level?: string;
+  hp: number;
+  max_hp: number;
+  currency: number;
+}
+
+export interface ProfileEvent {
+  event_type: string;
+  summary: string;
+  occurred_at: string;
+  importance: number;
+}
+
+export interface CharacterProfile {
+  entity_id: string;
+  name: string;
+  occupation?: string;
+  world_id: string;
+  world_name: string;
+  one_liner?: string;
+  identity: CharacterIdentity;
+  state: CharacterState;
+  recent_events: ProfileEvent[];
+}
+
 // ============ CONSEQUENCE SYSTEM ============
 
 // Bounty on a player for crimes committed
