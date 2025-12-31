@@ -1170,6 +1170,7 @@ export default function GamePage() {
     const isLoggedIn = !!playerId && !isGuest;
     const handleLogout = async () => {
       await api.logout();
+      safeStorage.removeItem("textlands_active_session");
       setPlayerId(null);
       setIsGuest(true);
       setRoster([]);
