@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { GameLog, CommandInput, CharacterPanel, QuickActions, SuggestedActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal, AuthModal, BillingPanel, InfluenceBadge, LeaderboardModal, CharacterCreationModal, PlayerStatsModal, EntityTimelineModal, WorldTemplatesModal, WorldCreationModal, SocialPanel, ChatPanel, LoadingIndicator, InventoryPanel, CurrencyPanel, SkillsPanel } from "@/components/game";
-import { LoadingView, ErrorView, LandingView, CharacterSelectView, WorldBrowser, InfiniteCampfireView } from "@/components/views";
+import { LoadingView, ErrorView, LandingView, WorldBrowser, InfiniteCampfireView } from "@/components/views";
 import { ThemePicker } from "@/components/ThemePicker";
 import type { Character, GameLogEntry, CharacterOption, ActiveScene as ActiveSceneType, NegotiationRequest, CombatSession, ReasoningInfo, InfiniteWorld, InfiniteCampfireResponse, InfiniteCampfireCharacter, AccountPromptReason, WorldTemplate } from "@/types/game";
 import type { RosterCharacter } from "@/lib/api";
@@ -267,6 +267,18 @@ export default function GamePage() {
             setNsfwVerified(session.content_settings.age_category === "adult");
           }
 
+          // Fetch roster for all logged-in users (needed for character switching later)
+          if (!session.is_guest) {
+            setLoadingRoster(true);
+            try {
+              const rosterData = await api.getCharacterRoster();
+              setRoster(rosterData);
+            } catch (err) {
+              console.warn("[Init] Failed to fetch roster:", err instanceof Error ? err.message : err);
+            }
+            setLoadingRoster(false);
+          }
+
           // Resume existing session if player has active character in a world
           if (session.character_id && session.world_id) {
             setCurrentSession(session);
@@ -333,24 +345,10 @@ export default function GamePage() {
             }
           }
 
-          // Fetch roster for logged-in users without active session
+          // Refresh roster for logged-in users without active session
           if (!session.is_guest) {
-            setLoadingRoster(true);
-            try {
-              const rosterData = await api.getCharacterRoster();
-              setRoster(rosterData);
-              setLoadingRoster(false);
-
-              // If user has 2+ active characters, show character select screen
-              const activeCount = session.character_count ?? rosterData.filter(c => c.status === "active").length;
-              if (activeCount >= 2) {
-                setPhase("character-select");
-                return;
-              }
-            } catch (err) {
-              console.warn("[Init] Failed to fetch roster:", err instanceof Error ? err.message : err);
-              setLoadingRoster(false);
-            }
+            const rosterData = await api.getCharacterRoster().catch(() => []);
+            setRoster(rosterData);
           }
         }
 
@@ -548,7 +546,7 @@ export default function GamePage() {
     setProcessing(false);
   };
 
-  // Leave current world and return to world browser
+  // Leave current world and return to appropriate screen
   const leaveWorld = async () => {
     setProcessing(true);
     try {
@@ -557,7 +555,15 @@ export default function GamePage() {
       setCharacter(null);
       setSelectedWorld(null);
       setEntries([]);
-      setPhase("worlds");
+
+      // Auth users with characters go to landing (can pick character or start new)
+      // Guests/users without characters go to worlds
+      const activeChars = roster.filter(c => c.status === "active");
+      if (!isGuest && activeChars.length > 0) {
+        setPhase("landing");
+      } else {
+        setPhase("worlds");
+      }
     } catch (err) {
       console.error("[LeaveWorld] Failed:", err);
       // Even if backend fails, reset local state
@@ -1097,11 +1103,18 @@ export default function GamePage() {
 
   if (phase === "landing") {
     const isLoggedIn = !!playerId && !isGuest;
+    const handleLogout = async () => {
+      await api.logout();
+      setPlayerId(null);
+      setIsGuest(true);
+      setRoster([]);
+    };
     return (
       <>
         <LandingView
           onEnter={enterWorlds}
           onLogin={() => setShowAuthModal(true)}
+          onLogout={handleLogout}
           onResumeCharacter={resumeCharacter}
           isLoggedIn={isLoggedIn}
           roster={roster}
@@ -1115,17 +1128,6 @@ export default function GamePage() {
     );
   }
 
-  // Character select for users with 2+ characters
-  if (phase === "character-select") {
-    return (
-      <CharacterSelectView
-        roster={roster}
-        onSelect={resumeCharacter}
-        onNewCharacter={enterWorlds}
-        loadingRoster={loadingRoster}
-      />
-    );
-  }
 
   // New: Infinite Worlds browser (replaces genre grid + world list)
   if (phase === "worlds") {
