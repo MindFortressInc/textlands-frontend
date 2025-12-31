@@ -9,6 +9,7 @@ export { ActiveScene } from "./ActiveScene";
 export { RelationshipStatus } from "./RelationshipStatus";
 export { ReasoningPanel } from "./ReasoningPanel";
 export { SettingsPanel } from "./SettingsPanel";
+export { ContentSettingsPanel } from "./ContentSettingsPanel";
 export { CombatPanel } from "./CombatPanel";
 export { CombatLog } from "./CombatLog";
 export { AgeGateModal } from "./AgeGateModal";

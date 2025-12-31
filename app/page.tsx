@@ -1204,6 +1204,7 @@ export default function GamePage() {
         onNsfwToggle={handleNsfwToggle}
         nsfwVerified={nsfwVerified}
         onRequestAgeVerification={() => requestAgeVerification()}
+        playerId={playerId}
       />
       <AgeGateModal
         isOpen={showAgeGate}

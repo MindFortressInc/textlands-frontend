@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import type { UserPreferences } from "@/lib/api";
 import * as api from "@/lib/api";
 import { useUIStrings } from "@/contexts/UIStringsContext";
+import { ContentSettingsPanel } from "./ContentSettingsPanel";
 
 interface SettingsPanelProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ interface SettingsPanelProps {
   onNsfwToggle: (enabled: boolean) => void;
   nsfwVerified: boolean;
   onRequestAgeVerification: () => void;
+  playerId?: string | null;
 }
 
 export function SettingsPanel({
@@ -21,6 +23,7 @@ export function SettingsPanel({
   onNsfwToggle,
   nsfwVerified,
   onRequestAgeVerification,
+  playerId,
 }: SettingsPanelProps) {
   const { t } = useUIStrings();
   const [preferences, setPreferences] = useState<UserPreferences>({
@@ -29,6 +32,7 @@ export function SettingsPanel({
   });
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [contentSettingsOpen, setContentSettingsOpen] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -168,6 +172,28 @@ export function SettingsPanel({
                   </div>
                 </div>
               </label>
+
+              {/* Content Intensity Button */}
+              {nsfwEnabled && (
+                <button
+                  onClick={() => setContentSettingsOpen(true)}
+                  className="w-full mt-3 px-4 py-3 bg-[var(--shadow)] border border-[var(--stone)] hover:border-[var(--crimson)] hover:bg-[var(--stone)] transition-all text-left group"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-[var(--text)] font-medium group-hover:text-[var(--crimson)] transition-colors text-sm">
+                        {t("content_intensity") || "Content Intensity"}
+                      </div>
+                      <div className="text-[var(--text-dim)] text-xs mt-0.5">
+                        {t("content_intensity_desc") || "Spicy level, triggers, preferences"}
+                      </div>
+                    </div>
+                    <span className="text-[var(--mist)] group-hover:text-[var(--crimson)] transition-colors">
+                      &rarr;
+                    </span>
+                  </div>
+                </button>
+              )}
             </div>
           </div>
 
@@ -189,6 +215,14 @@ export function SettingsPanel({
           </button>
         </div>
       </div>
+
+      {/* Content Settings Sub-Panel */}
+      <ContentSettingsPanel
+        playerId={playerId ?? null}
+        nsfwEnabled={nsfwEnabled}
+        isOpen={contentSettingsOpen}
+        onClose={() => setContentSettingsOpen(false)}
+      />
     </div>
   );
 }

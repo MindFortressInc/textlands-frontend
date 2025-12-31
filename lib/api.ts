@@ -420,6 +420,69 @@ export async function handleNsfwPrompt(
   });
 }
 
+// ============ CONTENT SETTINGS API ============
+
+// Trigger types that can be blocked
+export type ContentTrigger =
+  | "sexual_violence"
+  | "gore_torture"
+  | "self_harm"
+  | "child_harm"
+  | "animal_harm"
+  | "body_horror"
+  | "addiction"
+  | "infidelity"
+  | "love_triangles";
+
+export interface TriggerOption {
+  id: ContentTrigger;
+  label: string;
+  description: string;
+}
+
+export interface PlayerContentSettings {
+  spicy_level: number; // 1-5
+  blocked_triggers: ContentTrigger[];
+  sensitive_content_shield: boolean;
+}
+
+export interface DiscoveredDesire {
+  dimension: string;
+  label: string;
+  confidence: number; // 0-1
+}
+
+export interface DiscoveredDesiresResponse {
+  desires: DiscoveredDesire[];
+  discovery_count: number;
+}
+
+// Get available trigger types
+export async function getContentTriggers(): Promise<TriggerOption[]> {
+  return fetchAPI<TriggerOption[]>("/infinite/content-triggers");
+}
+
+// Get player's content settings
+export async function getPlayerContentSettings(playerId: string): Promise<PlayerContentSettings> {
+  return fetchAPI<PlayerContentSettings>(`/infinite/player/${playerId}/content-settings`);
+}
+
+// Update player's content settings
+export async function updatePlayerContentSettings(
+  playerId: string,
+  settings: Partial<PlayerContentSettings>
+): Promise<PlayerContentSettings> {
+  return fetchAPI<PlayerContentSettings>(`/infinite/player/${playerId}/content-settings`, {
+    method: "POST",
+    body: JSON.stringify(settings),
+  });
+}
+
+// Get player's discovered desires (read-only)
+export async function getPlayerDesires(playerId: string): Promise<DiscoveredDesiresResponse> {
+  return fetchAPI<DiscoveredDesiresResponse>(`/infinite/player/${playerId}/desires`);
+}
+
 // ============ LOCATION INTERACTION API ============
 
 export interface LocationFootprint {
