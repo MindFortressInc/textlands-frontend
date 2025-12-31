@@ -531,8 +531,6 @@ body {
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
   user-select: none;
-  opacity: 0;
-  transform: translateY(4px);
   min-height: 36px;
 }
 
@@ -544,11 +542,9 @@ body {
 
 @keyframes chip-appear {
   from {
-    opacity: 0;
     transform: translateY(4px);
   }
   to {
-    opacity: 1;
     transform: translateY(0);
   }
 }
@@ -649,15 +645,9 @@ body {
 
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  .suggestion-chip {
-    opacity: 1;
-    transform: none;
-    animation: none;
-  }
-
+  .suggestion-chip,
   .suggestions-visible .suggestion-chip {
     animation: none;
-    opacity: 1;
   }
 }
 
