@@ -7,6 +7,8 @@ import type {
   FriendRequest,
   Conversation,
   DirectMessage,
+  InviteLinkResponse,
+  InviteStatsResponse,
 } from "@/lib/api";
 import type {
   FriendOnlineEvent,
@@ -17,6 +19,7 @@ import type {
 
 interface SocialPanelProps {
   playerId?: string;
+  worldId?: string;
   onSelectConversation?: (friendId: string, friendName: string) => void;
   // WebSocket events
   lastFriendOnline?: FriendOnlineEvent | null;
@@ -27,10 +30,11 @@ interface SocialPanelProps {
   onSendDM?: (targetPlayerId: string, content: string) => void;
 }
 
-type Tab = "friends" | "requests" | "messages";
+type Tab = "friends" | "requests" | "messages" | "invite";
 
 export function SocialPanel({
   playerId,
+  worldId,
   onSelectConversation,
   lastFriendOnline,
   lastFriendOffline,
@@ -394,6 +398,12 @@ export function SocialPanel({
         >
           DMs
         </TabButton>
+        <TabButton
+          active={activeTab === "invite"}
+          onClick={() => setActiveTab("invite")}
+        >
+          Invite
+        </TabButton>
       </div>
 
       {/* Content */}
@@ -435,6 +445,7 @@ export function SocialPanel({
                 formatTimeAgo={formatTimeAgo}
               />
             )}
+            {activeTab === "invite" && <InviteTab worldId={worldId} />}
           </>
         )}
       </div>
@@ -737,6 +748,265 @@ function MessagesTab({
           </button>
         );
       })}
+    </div>
+  );
+}
+
+// Invite tab content
+function InviteTab({ worldId }: { worldId?: string }) {
+  const [inviteData, setInviteData] = useState<InviteLinkResponse | null>(null);
+  const [stats, setStats] = useState<InviteStatsResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+
+  // Email invite state
+  const [email, setEmail] = useState("");
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailStatus, setEmailStatus] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+
+  // SMS invite state
+  const [phone, setPhone] = useState("");
+  const [sendingPhone, setSendingPhone] = useState(false);
+  const [phoneStatus, setPhoneStatus] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+
+  useEffect(() => {
+    async function loadInviteData() {
+      setLoading(true);
+      try {
+        const [linkRes, statsRes] = await Promise.all([
+          api.getInviteLink(worldId).catch(() => null),
+          api.getInviteStats().catch(() => null),
+        ]);
+        setInviteData(linkRes);
+        setStats(statsRes);
+      } catch {
+        // Silent fail
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadInviteData();
+  }, [worldId]);
+
+  const copyLink = async () => {
+    if (!inviteData?.invite_url) return;
+    try {
+      await navigator.clipboard.writeText(inviteData.invite_url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback for older browsers
+      const textArea = document.createElement("textarea");
+      textArea.value = inviteData.invite_url;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textArea);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleShare = async () => {
+    if (!inviteData) return;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: inviteData.share_title,
+          text: inviteData.share_text,
+          url: inviteData.invite_url,
+        });
+      } catch {
+        // User cancelled or share failed
+      }
+    }
+  };
+
+  const sendEmail = async () => {
+    if (!email.trim() || sendingEmail) return;
+    setSendingEmail(true);
+    setEmailStatus(null);
+    try {
+      const res = await api.sendEmailInvite(email.trim(), worldId);
+      if (res.success) {
+        setEmailStatus({ type: "success", message: "Invite sent!" });
+        setEmail("");
+      } else {
+        setEmailStatus({ type: "error", message: res.message || "Failed" });
+      }
+    } catch (err) {
+      setEmailStatus({
+        type: "error",
+        message: err instanceof Error ? err.message : "Failed to send",
+      });
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
+  const sendSms = async () => {
+    if (!phone.trim() || sendingPhone) return;
+    setSendingPhone(true);
+    setPhoneStatus(null);
+    try {
+      const res = await api.sendSmsInvite(phone.trim(), worldId);
+      if (res.success) {
+        setPhoneStatus({ type: "success", message: "Invite sent!" });
+        setPhone("");
+      } else {
+        setPhoneStatus({ type: "error", message: res.message || "Failed" });
+      }
+    } catch (err) {
+      setPhoneStatus({
+        type: "error",
+        message: err instanceof Error ? err.message : "Failed to send",
+      });
+    } finally {
+      setSendingPhone(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="p-4 text-center">
+        <div className="text-[var(--mist)] text-xs animate-pulse">
+          Loading...
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-3 space-y-4 stagger-fade-in">
+      {/* Stats */}
+      {stats && stats.total_referrals > 0 && (
+        <div className="text-center pb-2 border-b border-[var(--slate)]">
+          <div className="text-lg text-[var(--amber)] font-medium">
+            {stats.total_referrals}
+          </div>
+          <div className="text-[10px] text-[var(--mist)]">
+            friend{stats.total_referrals !== 1 ? "s" : ""} invited
+          </div>
+        </div>
+      )}
+
+      {/* Share Link */}
+      <div>
+        <div className="text-[10px] text-[var(--mist)] uppercase tracking-wider mb-1.5">
+          Share Link
+        </div>
+        <div className="flex gap-1">
+          <input
+            type="text"
+            readOnly
+            value={inviteData?.invite_url || ""}
+            className="flex-1 px-2 py-1.5 text-[10px] bg-[var(--void)] border border-[var(--slate)] rounded text-[var(--fog)] truncate"
+          />
+          <button
+            onClick={copyLink}
+            className={`px-2 py-1 text-[10px] border rounded transition-colors ${
+              copied
+                ? "bg-[var(--amber-dim)] border-[var(--amber)] text-[var(--text)]"
+                : "bg-[var(--stone)] border-[var(--slate)] text-[var(--mist)] hover:text-[var(--amber)] hover:border-[var(--amber-dim)]"
+            }`}
+          >
+            {copied ? "Copied!" : "Copy"}
+          </button>
+        </div>
+        {typeof navigator !== "undefined" && "share" in navigator && (
+          <button
+            onClick={handleShare}
+            className="w-full mt-1.5 px-2 py-1.5 text-[10px] bg-[var(--stone)] border border-[var(--slate)] rounded text-[var(--mist)] hover:text-[var(--amber)] hover:border-[var(--amber-dim)] transition-colors"
+          >
+            Share...
+          </button>
+        )}
+      </div>
+
+      {/* Email Invite */}
+      <div>
+        <div className="text-[10px] text-[var(--mist)] uppercase tracking-wider mb-1.5">
+          Send via Email
+        </div>
+        <div className="flex gap-1">
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && sendEmail()}
+            placeholder="friend@email.com"
+            disabled={sendingEmail}
+            className="flex-1 px-2 py-1.5 text-[10px] bg-[var(--void)] border border-[var(--slate)] rounded text-[var(--text)] placeholder-[var(--mist)] focus:border-[var(--amber-dim)] focus:outline-none disabled:opacity-50"
+          />
+          <button
+            onClick={sendEmail}
+            disabled={!email.trim() || sendingEmail}
+            className="px-2 py-1 text-[10px] bg-[var(--stone)] border border-[var(--slate)] rounded text-[var(--mist)] hover:text-[var(--amber)] hover:border-[var(--amber-dim)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {sendingEmail ? "..." : "Send"}
+          </button>
+        </div>
+        {emailStatus && (
+          <div
+            className={`text-[10px] mt-1 ${
+              emailStatus.type === "success"
+                ? "text-green-500"
+                : "text-[var(--crimson)]"
+            }`}
+          >
+            {emailStatus.message}
+          </div>
+        )}
+      </div>
+
+      {/* SMS Invite */}
+      <div>
+        <div className="text-[10px] text-[var(--mist)] uppercase tracking-wider mb-1.5">
+          Send via SMS
+        </div>
+        <div className="flex gap-1">
+          <input
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && sendSms()}
+            placeholder="555-123-4567"
+            disabled={sendingPhone}
+            className="flex-1 px-2 py-1.5 text-[10px] bg-[var(--void)] border border-[var(--slate)] rounded text-[var(--text)] placeholder-[var(--mist)] focus:border-[var(--amber-dim)] focus:outline-none disabled:opacity-50"
+          />
+          <button
+            onClick={sendSms}
+            disabled={!phone.trim() || sendingPhone}
+            className="px-2 py-1 text-[10px] bg-[var(--stone)] border border-[var(--slate)] rounded text-[var(--mist)] hover:text-[var(--amber)] hover:border-[var(--amber-dim)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {sendingPhone ? "..." : "Send"}
+          </button>
+        </div>
+        {phoneStatus && (
+          <div
+            className={`text-[10px] mt-1 ${
+              phoneStatus.type === "success"
+                ? "text-green-500"
+                : "text-[var(--crimson)]"
+            }`}
+          >
+            {phoneStatus.message}
+          </div>
+        )}
+      </div>
+
+      {/* Realm context hint */}
+      {inviteData?.realm_name && (
+        <div className="text-[10px] text-[var(--mist)] text-center pt-2 border-t border-[var(--slate)]">
+          Friends will join you in {inviteData.realm_name}
+        </div>
+      )}
     </div>
   );
 }

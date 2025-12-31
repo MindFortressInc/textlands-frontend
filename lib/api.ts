@@ -1632,3 +1632,62 @@ export interface SkillsResponse {
 export async function getSkills(worldId: string, playerId: string): Promise<SkillsResponse> {
   return fetchAPI<SkillsResponse>(`/infinite/worlds/${worldId}/player/${playerId}/skills`);
 }
+
+// ============ INVITE/REFERRAL API ============
+
+export interface InviteLinkResponse {
+  invite_code: string;
+  invite_url: string;
+  realm_name?: string;
+  share_text: string;
+  share_title: string;
+  total_referrals: number;
+}
+
+export interface InviteStatsResponse {
+  total_referrals: number;
+  total_invite_codes: number;
+}
+
+export interface SendInviteResponse {
+  success: boolean;
+  message: string;
+}
+
+// Get/generate invite link
+export async function getInviteLink(realmId?: string): Promise<InviteLinkResponse> {
+  const params = realmId ? `?realm_id=${realmId}` : "";
+  return fetchAPI<InviteLinkResponse>(`/invites/link${params}`);
+}
+
+// Send email invite
+export async function sendEmailInvite(
+  email: string,
+  realmId?: string,
+  customMessage?: string
+): Promise<SendInviteResponse> {
+  return fetchAPI<SendInviteResponse>("/invites/send/email", {
+    method: "POST",
+    body: JSON.stringify({
+      email,
+      ...(realmId && { realm_id: realmId }),
+      ...(customMessage && { custom_message: customMessage }),
+    }),
+  });
+}
+
+// Send SMS invite
+export async function sendSmsInvite(phone: string, realmId?: string): Promise<SendInviteResponse> {
+  return fetchAPI<SendInviteResponse>("/invites/send/sms", {
+    method: "POST",
+    body: JSON.stringify({
+      phone,
+      ...(realmId && { realm_id: realmId }),
+    }),
+  });
+}
+
+// Get referral stats
+export async function getInviteStats(): Promise<InviteStatsResponse> {
+  return fetchAPI<InviteStatsResponse>("/invites/stats");
+}
