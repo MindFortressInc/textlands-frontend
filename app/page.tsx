@@ -1294,6 +1294,8 @@ export default function GamePage() {
       <SkillsPanel
         isOpen={showSkills}
         onClose={() => setShowSkills(false)}
+        worldId={currentSession?.world_id || null}
+        playerId={playerId}
       />
 
       {/* Header */}

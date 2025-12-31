@@ -7,6 +7,8 @@ import type { SkillsResponse, PlayerSkill, SkillCategory, SkillAbility } from "@
 interface SkillsPanelProps {
   isOpen: boolean;
   onClose: () => void;
+  worldId: string | null;
+  playerId: string | null;
 }
 
 const CATEGORY_CONFIG: Record<SkillCategory, { icon: string; label: string; color: string }> = {
@@ -287,7 +289,7 @@ function CategoryTab({
   );
 }
 
-export function SkillsPanel({ isOpen, onClose }: SkillsPanelProps) {
+export function SkillsPanel({ isOpen, onClose, worldId, playerId }: SkillsPanelProps) {
   const [skillsData, setSkillsData] = useState<SkillsResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -306,13 +308,13 @@ export function SkillsPanel({ isOpen, onClose }: SkillsPanelProps) {
 
   // Fetch skills on open
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && worldId && playerId) {
       setLoading(true);
       setError(null);
       setSelectedSkill(null);
       setActiveCategory("combat");
       api
-        .getSkills()
+        .getSkills(worldId, playerId)
         .then((data) => {
           setSkillsData(data);
           // Select first skill in first category
@@ -324,7 +326,7 @@ export function SkillsPanel({ isOpen, onClose }: SkillsPanelProps) {
         .catch((e) => setError(e.message))
         .finally(() => setLoading(false));
     }
-  }, [isOpen]);
+  }, [isOpen, worldId, playerId]);
 
   // Update selected skill when category changes
   useEffect(() => {

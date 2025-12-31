@@ -1629,6 +1629,6 @@ export interface SkillsResponse {
 }
 
 // Get player's skills
-export async function getSkills(): Promise<SkillsResponse> {
-  return fetchAPI<SkillsResponse>("/characters/skills");
+export async function getSkills(worldId: string, playerId: string): Promise<SkillsResponse> {
+  return fetchAPI<SkillsResponse>(`/infinite/worlds/${worldId}/player/${playerId}/skills`);
 }
