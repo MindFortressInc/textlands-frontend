@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { GameLogEntry } from "@/types/game";
+import type { GameLogEntry, ContentSegment } from "@/types/game";
 import { ReasoningPanel } from "./ReasoningPanel";
 
 interface GameLogProps {
@@ -18,41 +18,75 @@ const typeStyles: Record<GameLogEntry["type"], string> = {
   intimate: "text-[var(--arcane)]",
 };
 
-// Check if a string is quoted dialogue
-function isDialogue(text: string): boolean {
-  return (text.startsWith('"') && text.endsWith('"')) ||
-         (text.startsWith("'") && text.endsWith("'"));
+// Segment type to CSS class mapping
+const segmentStyles: Record<string, string> = {
+  dialogue: "text-[var(--arcane)]",
+  combat_hit: "text-[var(--crimson)]",
+  combat_miss: "text-[var(--mist)]",
+  combat_effect: "text-[var(--arcane)]",
+  item_gained: "text-[var(--gold)]",
+  item_lost: "text-[var(--crimson)]",
+  item_used: "text-[var(--fog)]",
+  movement: "text-[var(--fog)]",
+  environment: "text-[var(--amber)]",
+  narration: "text-[var(--amber)]",
+};
+
+// Render content segments from backend (preferred)
+function renderSegments(segments: ContentSegment[]): React.ReactNode {
+  return (
+    <span className="block space-y-1">
+      {segments.map((seg, i) => {
+        const style = segmentStyles[seg.type] || "text-[var(--amber)]";
+
+        // Dialogue gets special treatment with speaker
+        if (seg.type === "dialogue" && seg.speaker) {
+          return (
+            <span key={i} className={`block ${style}`}>
+              <span className="font-bold">{seg.speaker}</span>
+              {seg.verb && <span className="text-[var(--mist)]"> {seg.verb}</span>}
+              {": "}
+              {seg.text}
+            </span>
+          );
+        }
+
+        return (
+          <span key={i} className={`block ${style}`}>
+            {seg.text}
+          </span>
+        );
+      })}
+    </span>
+  );
 }
 
-// Parse narrative: dialogue on its own lines, paragraphs spaced
-function renderNarrative(text: string): React.ReactNode {
+// Fallback: parse plain narrative string (legacy support)
+function renderNarrativeFallback(text: string): React.ReactNode {
   const normalized = text.replace(/\r\n/g, '\n');
   const paragraphs = normalized.split(/\n\n+/);
 
   const renderParagraph = (para: string, paraIndex: number) => {
-    // Split on quoted dialogue, keeping the quotes
-    const dialoguePattern = /("[^"]+"|'[^']+')/g;
+    // Split on double-quoted dialogue only (single quotes conflict with apostrophes)
+    const dialoguePattern = /("[^"]+")/g;
     const parts = para.split(dialoguePattern).filter(p => p.length > 0);
 
-    // Build lines: narrative chunks inline, dialogue on own rows
     const lines: { content: string; isDialogue: boolean }[] = [];
     let currentNarrative = '';
 
     for (const part of parts) {
-      if (isDialogue(part)) {
-        // Flush any pending narrative
+      const isDialogue = part.startsWith('"') && part.endsWith('"');
+      if (isDialogue) {
         if (currentNarrative.trim()) {
           lines.push({ content: currentNarrative.trim(), isDialogue: false });
           currentNarrative = '';
         }
         lines.push({ content: part, isDialogue: true });
       } else {
-        // Handle newlines within narrative
         const sublines = part.split('\n');
         for (let i = 0; i < sublines.length; i++) {
           currentNarrative += sublines[i];
           if (i < sublines.length - 1) {
-            // Newline in source - flush current line
             if (currentNarrative.trim()) {
               lines.push({ content: currentNarrative.trim(), isDialogue: false });
             }
@@ -61,7 +95,6 @@ function renderNarrative(text: string): React.ReactNode {
         }
       }
     }
-    // Flush remaining narrative
     if (currentNarrative.trim()) {
       lines.push({ content: currentNarrative.trim(), isDialogue: false });
     }
@@ -95,6 +128,14 @@ function renderNarrative(text: string): React.ReactNode {
   );
 }
 
+// Render narrative: use content_segments if available, fallback to parsing
+function renderNarrative(entry: GameLogEntry): React.ReactNode {
+  if (entry.content_segments && entry.content_segments.length > 0) {
+    return renderSegments(entry.content_segments);
+  }
+  return renderNarrativeFallback(entry.content);
+}
+
 export function GameLog({ entries, showReasoning = false }: GameLogProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -117,7 +158,7 @@ export function GameLog({ entries, showReasoning = false }: GameLogProps) {
             {entry.type === "action" && <span className="text-[var(--mist)]">&gt; </span>}
             {entry.type === "system" && <span className="text-[var(--mist)]">[</span>}
             {entry.type === "narrative" || entry.type === "intimate"
-              ? renderNarrative(entry.content)
+              ? renderNarrative(entry)
               : <span className="whitespace-pre-wrap">{entry.content}</span>
             }
             {entry.type === "system" && <span className="text-[var(--mist)]">]</span>}

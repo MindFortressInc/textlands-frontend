@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { GameLog, CommandInput, CharacterPanel, QuickActions, SuggestedActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal, AuthModal, BillingPanel, InfluenceBadge, LeaderboardModal, CharacterCreationModal, PlayerStatsModal, EntityTimelineModal, WorldTemplatesModal, WorldCreationModal, SocialPanel, ChatPanel, LoadingIndicator, InventoryPanel, CurrencyPanel, SkillsPanel } from "@/components/game";
 import { LoadingView, ErrorView, LandingView, WorldBrowser, InfiniteCampfireView } from "@/components/views";
 import { ThemePicker } from "@/components/ThemePicker";
-import type { Character, GameLogEntry, CharacterOption, ActiveScene as ActiveSceneType, NegotiationRequest, CombatSession, ReasoningInfo, InfiniteWorld, InfiniteCampfireResponse, InfiniteCampfireCharacter, AccountPromptReason, WorldTemplate } from "@/types/game";
+import type { Character, GameLogEntry, CharacterOption, ActiveScene as ActiveSceneType, NegotiationRequest, CombatSession, ReasoningInfo, InfiniteWorld, InfiniteCampfireResponse, InfiniteCampfireCharacter, AccountPromptReason, WorldTemplate, ContentSegment } from "@/types/game";
 import type { RosterCharacter } from "@/lib/api";
 import * as api from "@/lib/api";
 import type { LandGroup, PlayerInfluence, LocationFootprint, LandKey } from "@/lib/api";
@@ -35,11 +35,13 @@ const log = (
   content: string,
   actor?: string,
   reasoning?: ReasoningInfo,
-  action_id?: string
+  action_id?: string,
+  content_segments?: ContentSegment[]
 ): GameLogEntry => ({
   id: `${++logId}`,
   type,
   content,
+  content_segments,
   timestamp: new Date(),
   actor,
   reasoning,
@@ -408,7 +410,7 @@ export default function GamePage() {
           if (!result.nsfw_blocked) {
             setEntries((prev) => [
               ...prev,
-              log("narrative", result.narrative, undefined, result.reasoning, result.action_id),
+              log("narrative", result.narrative, undefined, result.reasoning, result.action_id, result.content_segments),
             ]);
             if (result.suggested_actions?.length) {
               setSuggestions(result.suggested_actions);
@@ -831,7 +833,7 @@ export default function GamePage() {
           // Normal response - add narrative with reasoning if available
           setEntries((prev) => [
             ...prev,
-            log("narrative", result.narrative, undefined, result.reasoning, result.action_id),
+            log("narrative", result.narrative, undefined, result.reasoning, result.action_id, result.content_segments),
           ]);
 
           // Store suggestions for clickable chips

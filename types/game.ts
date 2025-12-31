@@ -173,6 +173,35 @@ export interface CampfireResponse {
 // Account prompt reason types
 export type AccountPromptReason = 'nsfw_unlock' | 'death_recovery' | 'time_limit';
 
+// Content segment types for rich rendering
+export type ContentType =
+  | "dialogue"       // NPC speech
+  | "combat_hit"     // Attack that landed
+  | "combat_miss"    // Attack that missed
+  | "combat_effect"  // Status effects, buffs, debuffs
+  | "item_gained"    // Loot, rewards
+  | "item_lost"      // Dropped, stolen, consumed
+  | "item_used"      // Potion, scroll, tool
+  | "movement"       // Location change
+  | "environment"    // Scene description
+  | "narration";     // General prose
+
+export interface ContentSegment {
+  type: ContentType;
+  text: string;
+  importance: number;     // 1-10 (for SMS truncation)
+  // Type-specific fields
+  speaker?: string;       // dialogue: NPC name
+  verb?: string;          // dialogue: "says", "whispers", "growls"
+  attacker?: string;      // combat: who attacked
+  target?: string;        // combat: who was hit
+  damage?: number;        // combat_hit: damage amount
+  weapon?: string;        // combat: weapon used
+  item_name?: string;     // items: what item
+  quantity?: number;      // items: how many
+  to_location?: string;   // movement: destination
+}
+
 /**
  * State changes from actions.
  * IMPORTANT: All numeric values are DELTAS (add/subtract), not absolute values.
@@ -216,6 +245,7 @@ export interface SystemMessage {
 
 export interface DoActionResponse {
   narrative: string;
+  content_segments?: ContentSegment[];  // Tagged content for rich rendering
   state_changes: StateChanges;
   suggested_actions: string[];
   mood?: string;
@@ -382,6 +412,7 @@ export interface GameLogEntry {
   id: string;
   type: "narrative" | "action" | "combat" | "system" | "dialogue" | "intimate";
   content: string;
+  content_segments?: ContentSegment[];  // Tagged content for rich rendering
   timestamp: Date;
   actor?: string;
   action_id?: string;
