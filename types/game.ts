@@ -173,6 +173,21 @@ export interface CampfireResponse {
 // Account prompt reason types
 export type AccountPromptReason = 'nsfw_unlock' | 'death_recovery' | 'time_limit';
 
+// Entity reference for hover tooltips in narrative
+export type EntityType = "npc" | "location" | "item" | "player";
+
+export interface EntityReference {
+  entity_id: string | null;
+  entity_type: EntityType;
+  name: string;
+  start: number;  // Character offset in narrative (0-indexed)
+  end: number;    // Character offset end (exclusive)
+  role?: string;
+  met_at?: string;
+  relationship?: string;
+  memory?: string;
+}
+
 // Content segment types for rich rendering
 export type ContentType =
   | "dialogue"       // NPC speech
@@ -246,6 +261,7 @@ export interface SystemMessage {
 export interface DoActionResponse {
   narrative: string;
   content_segments?: ContentSegment[];  // Tagged content for rich rendering
+  entity_references?: EntityReference[]; // Entity mentions for hover tooltips
   state_changes: StateChanges;
   suggested_actions: string[];
   mood?: string;
@@ -413,6 +429,7 @@ export interface GameLogEntry {
   type: "narrative" | "action" | "combat" | "system" | "dialogue" | "intimate";
   content: string;
   content_segments?: ContentSegment[];  // Tagged content for rich rendering
+  entity_references?: EntityReference[]; // Entity mentions for hover tooltips
   timestamp: Date;
   actor?: string;
   action_id?: string;

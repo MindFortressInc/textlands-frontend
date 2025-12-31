@@ -1641,6 +1641,67 @@ export async function getSkills(worldId: string, playerId: string): Promise<Skil
   return fetchAPI<SkillsResponse>(`/infinite/worlds/${worldId}/player/${playerId}/skills`);
 }
 
+// ============ PLAYER PROFILE API ============
+
+export interface PlayerProfile {
+  player_id: string;
+  username?: string;
+  display_name?: string;
+}
+
+export interface UsernameResponse {
+  username: string;
+}
+
+export interface PlayerSearchResult {
+  player_id: string;
+  username: string;
+  display_name?: string;
+}
+
+// Get current player's profile
+export async function getPlayerProfile(): Promise<PlayerProfile> {
+  return fetchAPI<PlayerProfile>("/players/me");
+}
+
+// Set username for current player
+export async function setUsername(username: string): Promise<UsernameResponse> {
+  return fetchAPI<UsernameResponse>("/players/me/username", {
+    method: "POST",
+    body: JSON.stringify({ username }),
+  });
+}
+
+// Get current player's username
+export async function getUsername(): Promise<UsernameResponse | null> {
+  try {
+    return await fetchAPI<UsernameResponse>("/players/me/username");
+  } catch {
+    return null;
+  }
+}
+
+// Search players by username prefix
+export async function searchPlayers(query: string): Promise<PlayerSearchResult[]> {
+  const res = await fetchAPI<{ results: PlayerSearchResult[] }>(
+    `/players/search?q=${encodeURIComponent(query)}`
+  );
+  return res.results;
+}
+
+// Get player profile by username
+export async function getPlayerByUsername(username: string): Promise<PlayerProfile> {
+  return fetchAPI<PlayerProfile>(`/players/by-username/${encodeURIComponent(username)}`);
+}
+
+// Send friend request by username
+export async function sendFriendRequestByUsername(username: string): Promise<FriendRequestResponse> {
+  return fetchAPI<FriendRequestResponse>("/friends/request", {
+    method: "POST",
+    body: JSON.stringify({ username }),
+  });
+}
+
 // ============ INVITE/REFERRAL API ============
 
 export interface InviteLinkResponse {

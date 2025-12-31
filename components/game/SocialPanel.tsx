@@ -9,6 +9,7 @@ import type {
   DirectMessage,
   InviteLinkResponse,
   InviteStatsResponse,
+  PlayerSearchResult,
 } from "@/lib/api";
 import type {
   FriendOnlineEvent,
@@ -49,6 +50,10 @@ export function SocialPanel({
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Username state
+  const [username, setUsername] = useState<string | null>(null);
+  const [usernameLoading, setUsernameLoading] = useState(true);
 
   // DM view state
   const [selectedConversation, setSelectedConversation] = useState<{
@@ -92,6 +97,20 @@ export function SocialPanel({
     const interval = setInterval(loadSocialData, 30000);
     return () => clearInterval(interval);
   }, [loadSocialData]);
+
+  // Load username
+  useEffect(() => {
+    if (!playerId) return;
+    setUsernameLoading(true);
+    api.getUsername()
+      .then((res) => setUsername(res?.username || null))
+      .catch(() => setUsername(null))
+      .finally(() => setUsernameLoading(false));
+  }, [playerId]);
+
+  const handleUsernameSet = (newUsername: string) => {
+    setUsername(newUsername);
+  };
 
   // Handle friend coming online
   useEffect(() => {
@@ -422,6 +441,9 @@ export function SocialPanel({
                 offline={offlineFriends}
                 onSelect={openConversation}
                 formatTimeAgo={formatTimeAgo}
+                username={username}
+                usernameLoading={usernameLoading}
+                onUsernameSet={handleUsernameSet}
               />
             )}
             {activeTab === "requests" && (
@@ -507,31 +529,143 @@ function TabButton({
   );
 }
 
+// Username validation helper
+function validateUsername(value: string): string | null {
+  if (value.length < 3) return "Must be at least 3 characters";
+  if (value.length > 30) return "Must be 30 characters or less";
+  if (!/^[a-z]/.test(value)) return "Must start with a letter";
+  if (!/^[a-z][a-z0-9_]*$/.test(value)) return "Only lowercase letters, numbers, underscores";
+  return null;
+}
+
 // Friends tab content
 function FriendsTab({
   online,
   offline,
   onSelect,
   formatTimeAgo,
+  username,
+  usernameLoading,
+  onUsernameSet,
 }: {
   online: Friend[];
   offline: Friend[];
   onSelect: (friend: Friend) => void;
   formatTimeAgo: (date: string) => string;
+  username: string | null;
+  usernameLoading: boolean;
+  onUsernameSet: (username: string) => void;
 }) {
-  if (online.length === 0 && offline.length === 0) {
-    return (
-      <div className="p-4 text-center">
-        <div className="text-[var(--mist)] text-xs mb-2">No friends yet</div>
-        <div className="text-[10px] text-[var(--mist)]">
-          Meet players in-game to add them!
-        </div>
-      </div>
-    );
-  }
+  const [editing, setEditing] = useState(false);
+  const [usernameInput, setUsernameInput] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSave = async () => {
+    const validation = validateUsername(usernameInput);
+    if (validation) {
+      setError(validation);
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await api.setUsername(usernameInput);
+      onUsernameSet(res.username);
+      setEditing(false);
+      setUsernameInput("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to set username");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const startEdit = () => {
+    setUsernameInput(username || "");
+    setEditing(true);
+    setError(null);
+  };
 
   return (
     <div className="stagger-fade-in">
+      {/* Username section */}
+      <div className="px-3 py-2 border-b border-[var(--slate)]">
+        {usernameLoading ? (
+          <div className="text-[10px] text-[var(--mist)] animate-pulse">Loading...</div>
+        ) : editing || !username ? (
+          <div>
+            <div className="text-[10px] text-[var(--mist)] uppercase tracking-wider mb-1.5">
+              {username ? "Change Username" : "Set Your Username"}
+            </div>
+            <div className="flex gap-1">
+              <div className="flex-1 relative">
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[var(--mist)] text-[10px]">@</span>
+                <input
+                  type="text"
+                  value={usernameInput}
+                  onChange={(e) => {
+                    setUsernameInput(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""));
+                    setError(null);
+                  }}
+                  onKeyDown={(e) => e.key === "Enter" && handleSave()}
+                  placeholder="username"
+                  disabled={saving}
+                  maxLength={30}
+                  className="w-full pl-5 pr-2 py-1.5 text-[10px] bg-[var(--void)] border border-[var(--slate)] rounded text-[var(--text)] placeholder-[var(--mist)] focus:border-[var(--amber-dim)] focus:outline-none disabled:opacity-50"
+                />
+              </div>
+              <button
+                onClick={handleSave}
+                disabled={!usernameInput.trim() || saving}
+                className="px-2 py-1 text-[10px] bg-[var(--stone)] border border-[var(--slate)] rounded text-[var(--mist)] hover:text-[var(--amber)] hover:border-[var(--amber-dim)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {saving ? "..." : "Save"}
+              </button>
+              {username && (
+                <button
+                  onClick={() => { setEditing(false); setError(null); }}
+                  disabled={saving}
+                  className="px-2 py-1 text-[10px] bg-[var(--stone)] border border-[var(--slate)] rounded text-[var(--mist)] hover:text-[var(--crimson)] hover:border-[var(--crimson)] disabled:opacity-50 transition-colors"
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
+            {error && (
+              <div className="text-[10px] text-[var(--crimson)] mt-1">{error}</div>
+            )}
+            <div className="text-[9px] text-[var(--mist)] mt-1">
+              3-30 chars, starts with letter, lowercase only
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-[10px] text-[var(--mist)] uppercase tracking-wider">Your Username</div>
+              <div className="text-xs text-[var(--amber)]">@{username}</div>
+            </div>
+            <button
+              onClick={startEdit}
+              className="px-2 py-1 text-[10px] bg-[var(--stone)] border border-[var(--slate)] rounded text-[var(--mist)] hover:text-[var(--amber)] hover:border-[var(--amber-dim)] transition-colors"
+            >
+              Edit
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Empty state */}
+      {online.length === 0 && offline.length === 0 && (
+        <div className="p-4 text-center">
+          <div className="text-[var(--mist)] text-xs mb-2">No friends yet</div>
+          <div className="text-[10px] text-[var(--mist)]">
+            Use the Invite tab to add friends!
+          </div>
+        </div>
+      )}
+
       {/* Online friends */}
       {online.length > 0 && (
         <div>
@@ -759,6 +893,16 @@ function InviteTab({ worldId }: { worldId?: string }) {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
+  // Player search state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<PlayerSearchResult[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [sendingRequest, setSendingRequest] = useState<string | null>(null);
+  const [searchStatus, setSearchStatus] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+
   // Email invite state
   const [email, setEmail] = useState("");
   const [sendingEmail, setSendingEmail] = useState(false);
@@ -793,6 +937,46 @@ function InviteTab({ worldId }: { worldId?: string }) {
     }
     loadInviteData();
   }, [worldId]);
+
+  // Debounced player search
+  useEffect(() => {
+    if (!searchQuery.trim() || searchQuery.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const results = await api.searchPlayers(searchQuery.trim());
+        setSearchResults(results.slice(0, 5));
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const sendFriendRequest = async (username: string) => {
+    setSendingRequest(username);
+    setSearchStatus(null);
+    try {
+      await api.sendFriendRequestByUsername(username);
+      setSearchStatus({ type: "success", message: `Request sent to @${username}` });
+      setSearchResults((prev) => prev.filter((r) => r.username !== username));
+      setSearchQuery("");
+    } catch (err) {
+      setSearchStatus({
+        type: "error",
+        message: err instanceof Error ? err.message : "Failed to send request",
+      });
+    } finally {
+      setSendingRequest(null);
+    }
+  };
 
   const copyLink = async () => {
     if (!inviteData?.invite_url) return;
@@ -884,6 +1068,62 @@ function InviteTab({ worldId }: { worldId?: string }) {
 
   return (
     <div className="p-3 space-y-4 stagger-fade-in">
+      {/* Add Friend by Username */}
+      <div>
+        <div className="text-[10px] text-[var(--mist)] uppercase tracking-wider mb-1.5">
+          Add Friend by Username
+        </div>
+        <div className="relative">
+          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[var(--mist)] text-[10px]">@</span>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""));
+              setSearchStatus(null);
+            }}
+            placeholder="search username..."
+            className="w-full pl-5 pr-2 py-1.5 text-[10px] bg-[var(--void)] border border-[var(--slate)] rounded text-[var(--text)] placeholder-[var(--mist)] focus:border-[var(--amber-dim)] focus:outline-none"
+          />
+        </div>
+        {searching && (
+          <div className="text-[10px] text-[var(--mist)] mt-1 animate-pulse">Searching...</div>
+        )}
+        {searchResults.length > 0 && (
+          <div className="mt-1 border border-[var(--slate)] rounded overflow-hidden">
+            {searchResults.map((result) => (
+              <div
+                key={result.player_id}
+                className="flex items-center justify-between px-2 py-1.5 bg-[var(--stone)] border-b border-[var(--slate)] last:border-0"
+              >
+                <span className="text-[10px] text-[var(--fog)]">@{result.username}</span>
+                <button
+                  onClick={() => sendFriendRequest(result.username)}
+                  disabled={sendingRequest === result.username}
+                  className="px-2 py-0.5 text-[10px] bg-[var(--amber-dim)] text-[var(--text)] rounded hover:bg-[var(--amber)] disabled:opacity-50 transition-colors"
+                >
+                  {sendingRequest === result.username ? "..." : "+"}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        {searchQuery.length >= 2 && !searching && searchResults.length === 0 && (
+          <div className="text-[10px] text-[var(--mist)] mt-1">No players found</div>
+        )}
+        {searchStatus && (
+          <div
+            className={`text-[10px] mt-1 ${
+              searchStatus.type === "success"
+                ? "text-green-500"
+                : "text-[var(--crimson)]"
+            }`}
+          >
+            {searchStatus.message}
+          </div>
+        )}
+      </div>
+
       {/* Stats */}
       {stats && stats.total_referrals > 0 && (
         <div className="text-center pb-2 border-b border-[var(--slate)]">
