@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { Character } from "@/types/game";
 import type { PlayerInfluence } from "@/lib/api";
 import { InfluenceBadge } from "./InfluenceBadge";
@@ -27,18 +27,32 @@ function MiniBar({ current, max, color }: { current: number; max: number; color:
 
 export function MobileStats({ character, zoneName, influence, onLeaderboardClick, keyboardVisible }: MobileStatsProps) {
   const [expanded, setExpanded] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Auto-collapse when keyboard opens
+  useEffect(() => {
+    if (keyboardVisible && expanded) {
+      setExpanded(false);
+    }
+  }, [keyboardVisible, expanded]);
+
+  // Ensure stats bar stays visible when keyboard opens
+  useEffect(() => {
+    if (keyboardVisible && containerRef.current) {
+      // Scroll the stats bar into view at the top
+      containerRef.current.scrollIntoView({ block: "start", behavior: "instant" });
+    }
+  }, [keyboardVisible]);
 
   if (!character) return null;
 
   const stats = character.stats || { hp: 0, max_hp: 100, mana: 0, max_mana: 50, gold: 0, xp: 0, level: 1 };
 
-  // Fixed positioning when mobile keyboard is visible (below header ~44px)
-  // Also collapse expanded state when keyboard is open to save space
-  const fixedStyles = keyboardVisible ? 'fixed top-[44px] left-0 right-0 z-30' : '';
-  const showExpanded = expanded && !keyboardVisible;
-
   return (
-    <div className={`md:hidden bg-[var(--shadow)] border-b border-[var(--slate)] shrink-0 ${fixedStyles}`}>
+    <div
+      ref={containerRef}
+      className="md:hidden bg-[var(--shadow)] border-b border-[var(--slate)] shrink-0"
+    >
       {/* Collapsed bar - always visible */}
       <div
         onClick={() => !keyboardVisible && setExpanded(!expanded)}
@@ -81,7 +95,7 @@ export function MobileStats({ character, zoneName, influence, onLeaderboardClick
       </div>
 
       {/* Expanded details */}
-      {showExpanded && (
+      {expanded && !keyboardVisible && (
         <div className="px-3 pb-3 pt-1 border-t border-[var(--slate)] animate-slide-down">
           <div className="grid grid-cols-2 gap-3 text-sm">
             {/* Left column - stats */}

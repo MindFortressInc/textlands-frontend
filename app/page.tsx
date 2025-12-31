@@ -176,7 +176,7 @@ export default function GamePage() {
   const [inputFocused, setInputFocused] = useState(false);
 
   // Detect mobile keyboard visibility
-  const keyboardVisible = useKeyboardVisible();
+  const { isVisible: keyboardVisible } = useKeyboardVisible();
 
   // WebSocket real-time events
   const [lastZoneMessage, setLastZoneMessage] = useState<ChatMessageEvent | null>(null);
@@ -1302,8 +1302,8 @@ export default function GamePage() {
         playerId={playerId}
       />
 
-      {/* Header - fixed when mobile keyboard is visible */}
-      <header className={`bg-[var(--shadow)] border-b border-[var(--slate)] px-3 py-2 md:px-4 flex items-center justify-between shrink-0 pt-[max(0.5rem,env(safe-area-inset-top))] z-40 ${keyboardVisible ? 'fixed top-0 left-0 right-0 md:relative' : ''}`}>
+      {/* Header - stays in document flow, shrink-0 prevents flex squishing */}
+      <header className="bg-[var(--shadow)] border-b border-[var(--slate)] px-3 py-2 md:px-4 flex items-center justify-between shrink-0 pt-[max(0.5rem,env(safe-area-inset-top))] z-40">
         <div className="flex items-center gap-2">
           <button
             onClick={leaveWorld}
@@ -1398,11 +1398,6 @@ export default function GamePage() {
         />
       )}
 
-      {/* Spacer when header/stats are fixed (keyboard visible) */}
-      {keyboardVisible && !activeScene && !activeCombat && (
-        <div className="h-[88px] shrink-0 md:hidden" />
-      )}
-
       {/* Main content */}
       <div className="flex-1 flex overflow-hidden min-h-0">
         {activeCombat ? (
@@ -1430,7 +1425,7 @@ export default function GamePage() {
         ) : (
           /* Normal Game Interface */
           <div className="flex-1 flex flex-col min-w-0">
-            <GameLog entries={entries} showReasoning={showReasoning} />
+            <GameLog entries={entries} showReasoning={showReasoning} keyboardVisible={keyboardVisible} />
             <LoadingIndicator show={processing} />
             <SuggestedActions
               suggestions={suggestions}

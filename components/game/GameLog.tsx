@@ -7,6 +7,7 @@ import { ReasoningPanel } from "./ReasoningPanel";
 interface GameLogProps {
   entries: GameLogEntry[];
   showReasoning?: boolean;
+  keyboardVisible?: boolean;
 }
 
 const typeStyles: Record<GameLogEntry["type"], string> = {
@@ -136,15 +137,38 @@ function renderNarrative(entry: GameLogEntry): React.ReactNode {
   return renderNarrativeFallback(entry.content);
 }
 
-export function GameLog({ entries, showReasoning = false }: GameLogProps) {
+export function GameLog({ entries, showReasoning = false, keyboardVisible = false }: GameLogProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const prevKeyboardVisible = useRef(keyboardVisible);
 
+  // Scroll to bottom when entries change
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (containerRef.current) {
+      containerRef.current.scrollTop = containerRef.current.scrollHeight;
+    }
   }, [entries]);
 
+  // Scroll to bottom when keyboard opens (keeps recent narrative visible)
+  useEffect(() => {
+    // Only trigger on keyboard becoming visible (not on close)
+    if (keyboardVisible && !prevKeyboardVisible.current && containerRef.current) {
+      // Wait for keyboard animation to complete
+      const timer = setTimeout(() => {
+        if (containerRef.current) {
+          containerRef.current.scrollTop = containerRef.current.scrollHeight;
+        }
+      }, 350);
+      return () => clearTimeout(timer);
+    }
+    prevKeyboardVisible.current = keyboardVisible;
+  }, [keyboardVisible]);
+
   return (
-    <div className="flex-1 overflow-y-auto p-3 md:p-4 space-y-2 md:space-y-3 bg-[var(--void)] overscroll-contain">
+    <div
+      ref={containerRef}
+      className="flex-1 overflow-y-auto p-3 md:p-4 space-y-2 md:space-y-3 bg-[var(--void)] overscroll-contain"
+    >
       {entries.length === 0 && (
         <div className="text-[var(--mist)]">Awaiting input...</div>
       )}

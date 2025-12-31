@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, KeyboardEvent } from "react";
+import { useState, useRef, useEffect, KeyboardEvent, useCallback } from "react";
 
 interface CommandInputProps {
   onSubmit: (command: string) => void;
@@ -19,10 +19,30 @@ export function CommandInput({
   const [history, setHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!disabled) inputRef.current?.focus();
   }, [disabled]);
+
+  // Handle focus with controlled scroll behavior
+  const handleFocus = useCallback(() => {
+    onFocusChange?.(true);
+
+    // On mobile, delay scroll to let keyboard animation settle
+    // Then scroll the input container into view without hiding header
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile && containerRef.current) {
+      setTimeout(() => {
+        // Use scrollIntoView with block: "end" to keep input at bottom
+        // This prevents scrolling the header out of view
+        containerRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "end",
+        });
+      }, 300); // Wait for keyboard animation
+    }
+  }, [onFocusChange]);
 
   const handleSubmit = () => {
     const trimmed = command.trim();
@@ -57,7 +77,10 @@ export function CommandInput({
   };
 
   return (
-    <div className="bg-[var(--shadow)] border-t border-[var(--slate)] p-3 md:p-3 flex items-center gap-2 shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+    <div
+      ref={containerRef}
+      className="bg-[var(--shadow)] border-t border-[var(--slate)] p-3 md:p-3 flex items-center gap-2 shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+    >
       <span className="text-[var(--amber)] font-bold text-lg md:text-base">&gt;</span>
       <input
         ref={inputRef}
@@ -68,7 +91,7 @@ export function CommandInput({
           setHistoryIndex(-1);
         }}
         onKeyDown={handleKeyDown}
-        onFocus={() => onFocusChange?.(true)}
+        onFocus={handleFocus}
         onBlur={() => onFocusChange?.(false)}
         disabled={disabled}
         placeholder={placeholder}
