@@ -10,6 +10,7 @@ interface MobileStatsProps {
   zoneName?: string;
   influence?: PlayerInfluence | null;
   onLeaderboardClick?: () => void;
+  keyboardVisible?: boolean;
 }
 
 function MiniBar({ current, max, color }: { current: number; max: number; color: string }) {
@@ -24,19 +25,24 @@ function MiniBar({ current, max, color }: { current: number; max: number; color:
   );
 }
 
-export function MobileStats({ character, zoneName, influence, onLeaderboardClick }: MobileStatsProps) {
+export function MobileStats({ character, zoneName, influence, onLeaderboardClick, keyboardVisible }: MobileStatsProps) {
   const [expanded, setExpanded] = useState(false);
 
   if (!character) return null;
 
   const stats = character.stats || { hp: 0, max_hp: 100, mana: 0, max_mana: 50, gold: 0, xp: 0, level: 1 };
 
+  // Fixed positioning when mobile keyboard is visible (below header ~44px)
+  // Also collapse expanded state when keyboard is open to save space
+  const fixedStyles = keyboardVisible ? 'fixed top-[44px] left-0 right-0 z-30' : '';
+  const showExpanded = expanded && !keyboardVisible;
+
   return (
-    <div className="md:hidden bg-[var(--shadow)] border-b border-[var(--slate)] shrink-0">
+    <div className={`md:hidden bg-[var(--shadow)] border-b border-[var(--slate)] shrink-0 ${fixedStyles}`}>
       {/* Collapsed bar - always visible */}
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full px-3 py-2 flex items-center gap-3 active:bg-[var(--stone)] transition-colors"
+      <div
+        onClick={() => !keyboardVisible && setExpanded(!expanded)}
+        className={`w-full px-3 py-2 flex items-center gap-3 transition-colors ${!keyboardVisible ? 'active:bg-[var(--stone)] cursor-pointer' : ''}`}
       >
         {/* Character name */}
         <span className="text-[var(--amber)] font-bold text-sm shrink-0">
@@ -63,17 +69,19 @@ export function MobileStats({ character, zoneName, influence, onLeaderboardClick
           </span>
         </div>
 
-        {/* Expand indicator */}
-        <span
-          className="text-[var(--mist)] text-xs transition-transform duration-200"
-          style={{ transform: expanded ? "rotate(180deg)" : "rotate(0deg)" }}
-        >
-          ▼
-        </span>
-      </button>
+        {/* Expand indicator - hide when keyboard visible */}
+        {!keyboardVisible && (
+          <span
+            className="text-[var(--mist)] text-xs transition-transform duration-200"
+            style={{ transform: expanded ? "rotate(180deg)" : "rotate(0deg)" }}
+          >
+            ▼
+          </span>
+        )}
+      </div>
 
       {/* Expanded details */}
-      {expanded && (
+      {showExpanded && (
         <div className="px-3 pb-3 pt-1 border-t border-[var(--slate)] animate-slide-down">
           <div className="grid grid-cols-2 gap-3 text-sm">
             {/* Left column - stats */}

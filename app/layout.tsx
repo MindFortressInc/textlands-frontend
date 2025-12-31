@@ -12,7 +12,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export const metadata: Metadata = {
   title: "Textlands",
-  description: "AI Text MMO",
+  description: "A Living Text MMO",
   icons: {
     icon: "/favicon.svg",
     apple: "/favicon.svg",

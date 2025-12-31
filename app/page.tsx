@@ -11,6 +11,7 @@ import type { LandGroup, PlayerInfluence, LocationFootprint, LandKey } from "@/l
 import type { PlayerWorldStats } from "@/types/game";
 import { safeStorage } from "@/lib/errors";
 import { useWebSocket } from "@/lib/useWebSocket";
+import { useKeyboardVisible } from "@/lib/useKeyboardVisible";
 import { useUIStrings } from "@/contexts/UIStringsContext";
 import { useGame } from "@/contexts/GameContext";
 import { useSession } from "@/contexts/SessionContext";
@@ -173,6 +174,9 @@ export default function GamePage() {
 
   // Mobile input focus state (hides quick actions when typing)
   const [inputFocused, setInputFocused] = useState(false);
+
+  // Detect mobile keyboard visibility
+  const keyboardVisible = useKeyboardVisible();
 
   // WebSocket real-time events
   const [lastZoneMessage, setLastZoneMessage] = useState<ChatMessageEvent | null>(null);
@@ -1298,8 +1302,8 @@ export default function GamePage() {
         playerId={playerId}
       />
 
-      {/* Header */}
-      <header className="bg-[var(--shadow)] border-b border-[var(--slate)] px-3 py-2 md:px-4 flex items-center justify-between shrink-0 pt-[max(0.5rem,env(safe-area-inset-top))]">
+      {/* Header - fixed when mobile keyboard is visible */}
+      <header className={`bg-[var(--shadow)] border-b border-[var(--slate)] px-3 py-2 md:px-4 flex items-center justify-between shrink-0 pt-[max(0.5rem,env(safe-area-inset-top))] z-40 ${keyboardVisible ? 'fixed top-0 left-0 right-0 md:relative' : ''}`}>
         <div className="flex items-center gap-2">
           <button
             onClick={leaveWorld}
@@ -1383,14 +1387,20 @@ export default function GamePage() {
         </div>
       </header>
 
-      {/* Mobile stats bar - hidden during active scene or combat */}
+      {/* Mobile stats bar - hidden during active scene or combat, fixed when keyboard visible */}
       {!activeScene && !activeCombat && (
         <MobileStats
           character={character}
           zoneName={zoneName}
           influence={influence}
           onLeaderboardClick={() => setLeaderboardOpen(true)}
+          keyboardVisible={keyboardVisible}
         />
+      )}
+
+      {/* Spacer when header/stats are fixed (keyboard visible) */}
+      {keyboardVisible && !activeScene && !activeCombat && (
+        <div className="h-[88px] shrink-0 md:hidden" />
       )}
 
       {/* Main content */}

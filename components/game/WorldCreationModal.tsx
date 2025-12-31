@@ -117,7 +117,7 @@ export function WorldCreationModal({
               disabled={creating}
             />
             <p className="text-[var(--text-dim)] text-xs mt-1">
-              The AI will generate rules, tone, and lore from your description.
+              Rules, tone, and lore will be generated from your description.
             </p>
           </div>
 

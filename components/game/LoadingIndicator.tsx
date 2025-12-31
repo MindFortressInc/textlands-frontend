@@ -14,7 +14,7 @@ const GAME_TIPS = [
   "Type 'look' to examine your surroundings...",
   "NPCs react based on your past interactions...",
   "The world evolves even when you're away...",
-  "Be creative - the AI adapts to you...",
+  "Be creative - Textlands adapts to you...",
   "Some secrets require patience to uncover...",
   "Your character's story is yours to write...",
   "Other players leave traces in the world...",
