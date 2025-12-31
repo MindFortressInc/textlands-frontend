@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { GameLog, CommandInput, CharacterPanel, QuickActions, SuggestedActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal, AuthModal, BillingPanel, InfluenceBadge, LeaderboardModal, CharacterCreationModal, PlayerStatsModal, EntityTimelineModal, WorldTemplatesModal, WorldCreationModal, SocialPanel, ChatPanel, LoadingIndicator, InventoryPanel, CurrencyPanel, SkillsPanel } from "@/components/game";
 import { LoadingView, ErrorView, LandingView, WorldBrowser, InfiniteCampfireView } from "@/components/views";
 import { ThemePicker } from "@/components/ThemePicker";
-import type { Character, GameLogEntry, CharacterOption, ActiveScene as ActiveSceneType, NegotiationRequest, CombatSession, ReasoningInfo, InfiniteWorld, InfiniteCampfireResponse, InfiniteCampfireCharacter, AccountPromptReason, WorldTemplate, ContentSegment } from "@/types/game";
+import type { Character, GameLogEntry, CharacterOption, ActiveScene as ActiveSceneType, NegotiationRequest, CombatSession, ReasoningInfo, InfiniteWorld, InfiniteCampfireResponse, InfiniteCampfireCharacter, AccountPromptReason, WorldTemplate, ContentSegment, EntityReference } from "@/types/game";
 import type { RosterCharacter } from "@/lib/api";
 import * as api from "@/lib/api";
 import type { LandGroup, PlayerInfluence, LocationFootprint, LandKey } from "@/lib/api";
@@ -37,12 +37,14 @@ const log = (
   actor?: string,
   reasoning?: ReasoningInfo,
   action_id?: string,
-  content_segments?: ContentSegment[]
+  content_segments?: ContentSegment[],
+  entity_references?: EntityReference[]
 ): GameLogEntry => ({
   id: `${++logId}`,
   type,
   content,
   content_segments,
+  entity_references,
   timestamp: new Date(),
   actor,
   reasoning,
@@ -306,6 +308,35 @@ export default function GamePage() {
             return; // Skip landing, go straight to game
           }
 
+          // Fallback: check localStorage for active session (handles refresh when backend session is stale)
+          const storedSession = safeStorage.getJSON<{
+            character_id?: string;
+            character_name?: string;
+            world_id?: string;
+            world_name?: string;
+            player_id?: string;
+          }>("textlands_active_session", {});
+
+          if (storedSession.character_id && storedSession.world_id) {
+            console.log("[Init] Restoring session from localStorage:", storedSession);
+            try {
+              // Re-start the session with stored IDs
+              const { session: newSession, opening_narrative } = await api.startSession({
+                world_id: storedSession.world_id,
+                entity_id: storedSession.character_id,
+              });
+
+              setCurrentSession(newSession);
+              await resumeExistingSession(newSession);
+              safeStorage.removeItem("textlands_pending_session");
+              return; // Skip landing, go straight to game
+            } catch (err) {
+              console.warn("[Init] Failed to restore from localStorage:", err);
+              // Clear stale localStorage session
+              safeStorage.removeItem("textlands_active_session");
+            }
+          }
+
           // Check for pending session from pre-auth (magic link flow)
           // This handles the case where a guest was playing, triggered auth,
           // and now returns as an authenticated user
@@ -426,7 +457,7 @@ export default function GamePage() {
           if (!result.nsfw_blocked) {
             setEntries((prev) => [
               ...prev,
-              log("narrative", result.narrative, undefined, result.reasoning, result.action_id, result.content_segments),
+              log("narrative", result.narrative, undefined, result.reasoning, result.action_id, result.content_segments, result.entity_references),
             ]);
             if (result.suggested_actions?.length) {
               setSuggestions(result.suggested_actions);
@@ -492,7 +523,23 @@ export default function GamePage() {
   // ========== PHASE TRANSITIONS ==========
 
   // Track current session for world switching logic
-  const [currentSession, setCurrentSession] = useState<api.SessionInfo | null>(null);
+  // Persist to localStorage so refresh can recover
+  const [currentSession, setCurrentSessionState] = useState<api.SessionInfo | null>(null);
+
+  const setCurrentSession = useCallback((session: api.SessionInfo | null) => {
+    setCurrentSessionState(session);
+    if (session?.character_id && session?.world_id) {
+      safeStorage.setJSON("textlands_active_session", {
+        character_id: session.character_id,
+        character_name: session.character_name,
+        world_id: session.world_id,
+        world_name: session.world_name,
+        player_id: session.player_id,
+      });
+    } else {
+      safeStorage.removeItem("textlands_active_session");
+    }
+  }, []);
 
   // Save pending session before auth redirect (so we can restore after magic link)
   const savePendingSession = useCallback(() => {
@@ -849,7 +896,7 @@ export default function GamePage() {
           // Normal response - add narrative with reasoning if available
           setEntries((prev) => [
             ...prev,
-            log("narrative", result.narrative, undefined, result.reasoning, result.action_id, result.content_segments),
+            log("narrative", result.narrative, undefined, result.reasoning, result.action_id, result.content_segments, result.entity_references),
           ]);
 
           // Store suggestions for clickable chips

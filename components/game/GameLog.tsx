@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { GameLogEntry, ContentSegment } from "@/types/game";
+import type { GameLogEntry, ContentSegment, EntityReference } from "@/types/game";
 import { ReasoningPanel } from "./ReasoningPanel";
+import { EntityHoverLink } from "./EntityHoverLink";
 
 interface GameLogProps {
   entries: GameLogEntry[];
@@ -32,6 +33,47 @@ const segmentStyles: Record<string, string> = {
   environment: "text-[var(--amber)]",
   narration: "text-[var(--amber)]",
 };
+
+// Render text with entity hover links using start/end offsets
+function renderWithEntities(
+  text: string,
+  refs: EntityReference[]
+): React.ReactNode {
+  if (!refs?.length) return text;
+
+  // Sort by start position to process in order
+  const sorted = [...refs].sort((a, b) => a.start - b.start);
+  const parts: React.ReactNode[] = [];
+  let lastEnd = 0;
+  let keyCounter = 0;
+
+  for (const ref of sorted) {
+    // Skip invalid refs (out of bounds or overlapping)
+    if (ref.start < lastEnd || ref.end > text.length) continue;
+
+    // Text before this entity
+    if (ref.start > lastEnd) {
+      parts.push(text.slice(lastEnd, ref.start));
+    }
+
+    // The entity as a hover link
+    const entityText = text.slice(ref.start, ref.end);
+    parts.push(
+      <EntityHoverLink key={`entity-${keyCounter++}`} entity={ref}>
+        {entityText}
+      </EntityHoverLink>
+    );
+
+    lastEnd = ref.end;
+  }
+
+  // Remaining text after last entity
+  if (lastEnd < text.length) {
+    parts.push(text.slice(lastEnd));
+  }
+
+  return <>{parts}</>;
+}
 
 // Render content segments from backend (preferred)
 function renderSegments(segments: ContentSegment[]): React.ReactNode {
@@ -129,11 +171,17 @@ function renderNarrativeFallback(text: string): React.ReactNode {
   );
 }
 
-// Render narrative: use content_segments if available, fallback to parsing
+// Render narrative: entity_references > content_segments > fallback parsing
 function renderNarrative(entry: GameLogEntry): React.ReactNode {
+  // Entity references take priority - they provide interactive hover links
+  if (entry.entity_references && entry.entity_references.length > 0) {
+    return renderWithEntities(entry.content, entry.entity_references);
+  }
+  // Content segments for structured rendering
   if (entry.content_segments && entry.content_segments.length > 0) {
     return renderSegments(entry.content_segments);
   }
+  // Fallback: parse plain text
   return renderNarrativeFallback(entry.content);
 }
 
