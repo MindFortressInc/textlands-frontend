@@ -29,6 +29,13 @@ async function syncThemeToBackend(themeId: string): Promise<void> {
   }
 }
 
+// Detect system preference and return appropriate default theme
+function getSystemDefaultTheme(): string {
+  if (typeof window === "undefined") return defaultTheme;
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  return prefersDark ? "terminal" : "parchment";
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [themeId, setThemeId] = useState(defaultTheme);
   const theme = themes[themeId] || themes[defaultTheme];
@@ -43,6 +50,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const saved = safeStorage.getItem("textlands-theme");
     if (saved && themes[saved]) {
       setThemeId(saved);
+    } else {
+      // No saved preference - use system default
+      setThemeId(getSystemDefaultTheme());
     }
   }, []);
 

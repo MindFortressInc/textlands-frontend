@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import Link from "next/link";
 import { useUIStrings } from "@/contexts/UIStringsContext";
 import { ThemePicker } from "@/components/ThemePicker";
+import { ThemeChooser, hasChosenTheme } from "@/components/ThemeChooser";
 import { UI, calcDropdownPosition, type DropdownDirection } from "@/lib/ui-config";
 import type { RosterCharacter } from "@/lib/api";
 
@@ -20,6 +21,7 @@ export function LandingView({ onEnter, onLogin, onResumeCharacter, isLoggedIn, r
   const { t } = useUIStrings();
   const [selectedChar, setSelectedChar] = useState<RosterCharacter | null>(null);
   const [showPicker, setShowPicker] = useState(false);
+  const [showThemeChooser, setShowThemeChooser] = useState(false);
   const [openDirection, setOpenDirection] = useState<DropdownDirection>("down");
   const [maxDropdownHeight, setMaxDropdownHeight] = useState<number>(UI.dropdown.characterPickerMaxHeight);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -37,6 +39,26 @@ export function LandingView({ onEnter, onLogin, onResumeCharacter, isLoggedIn, r
     }
     setShowPicker(!showPicker);
   };
+
+  // Handle "Begin Your Journey" - show theme chooser for first-time users
+  const handleBeginJourney = () => {
+    if (!hasChosenTheme()) {
+      setShowThemeChooser(true);
+    } else {
+      onEnter();
+    }
+  };
+
+  // Theme chooser completed - continue to world browser
+  const handleThemeChosen = () => {
+    setShowThemeChooser(false);
+    onEnter();
+  };
+
+  // Show theme chooser overlay
+  if (showThemeChooser) {
+    return <ThemeChooser onComplete={handleThemeChosen} />;
+  }
 
   return (
     <main className="h-dvh flex flex-col items-center justify-center bg-atmospheric p-4 pt-[max(1rem,env(safe-area-inset-top))] animate-fade-in">
@@ -60,7 +82,7 @@ export function LandingView({ onEnter, onLogin, onResumeCharacter, isLoggedIn, r
 
         {/* Primary CTA Button */}
         <button
-          onClick={onEnter}
+          onClick={handleBeginJourney}
           className="group relative px-10 py-4 text-[var(--amber)] font-bold text-base md:text-lg min-h-[52px] bg-[var(--shadow)] border border-[var(--slate)] rounded transition-all duration-200 hover:border-[var(--amber)] hover:bg-[var(--stone)] active:scale-95"
         >
           <span className="relative z-10">
@@ -139,7 +161,7 @@ export function LandingView({ onEnter, onLogin, onResumeCharacter, isLoggedIn, r
           <div className="pt-2">
             <button
               onClick={onLogin}
-              className="text-[var(--slate)] text-xs hover:text-[var(--mist)] transition-colors"
+              className="text-[var(--mist)] text-sm hover:text-[var(--amber)] transition-colors"
             >
               {t("have_account", "Already playing?")} <span className="underline">{t("log_in")}</span>
             </button>
@@ -153,7 +175,7 @@ export function LandingView({ onEnter, onLogin, onResumeCharacter, isLoggedIn, r
       </div>
 
       {/* Nav links */}
-      <div className="absolute bottom-4 left-4 pb-[env(safe-area-inset-bottom)] flex gap-4">
+      <div className="absolute bottom-12 left-4 flex gap-4">
         {isLoggedIn && activeChars.length > 0 && (
           <Link
             href="/characters"
@@ -177,7 +199,7 @@ export function LandingView({ onEnter, onLogin, onResumeCharacter, isLoggedIn, r
       </div>
 
       {/* Theme picker */}
-      <div className="absolute bottom-4 right-4 pb-[env(safe-area-inset-bottom)]">
+      <div className="absolute bottom-12 right-4">
         <ThemePicker />
       </div>
 
