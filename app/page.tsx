@@ -780,32 +780,20 @@ export default function GamePage() {
     setProcessing(true);
 
     try {
-      // Local commands that don't need API
-      if (action === "help") {
-        addLog("system", helpText || t("help_commands"));
-      } else if (action === "leave" && rest[0] === "message") {
-        // Leave a message at current location
-        const messageMatch = command.match(/leave\s+message\s+["'](.+)["']/i);
-        if (messageMatch) {
-          // TODO: When backend provides location_entity_id, call api.leaveLocationMessage
-          addLog("system", t("carve_message"));
-          addLog("narrative", `"${messageMatch[1]}" - ${t("message_seen")}`);
-        } else {
-          addLog("system", t("leave_message_usage"));
-        }
-      } else if (action === "stats") {
+      // Local UI commands - exact match only (not part of phrases like "check my stats")
+      if (cmd === "stats") {
         const s = character.stats || { hp: 0, max_hp: 100, mana: 0, max_mana: 50, gold: 0, xp: 0, level: 1 };
         addLog("system", `${character.name} - Lv.${s.level} ${character.race} ${character.character_class}\nHP: ${s.hp}/${s.max_hp} | MP: ${s.mana}/${s.max_mana} | Gold: ${s.gold} | XP: ${s.xp}`);
-      } else if (action === "inventory") {
+      } else if (cmd === "inventory") {
         setShowInventory(true);
         addLog("system", t("opening_inventory"));
-      } else if (action === "gold" || action === "wallet") {
+      } else if (cmd === "gold" || cmd === "wallet") {
         setShowCurrency(true);
         addLog("system", t("opening_wallet"));
-      } else if (action === "skills") {
+      } else if (cmd === "skills") {
         setShowSkills(true);
         addLog("system", t("opening_skills"));
-      } else if (action === "settings") {
+      } else if (cmd === "settings") {
         setSettingsOpen(true);
         addLog("system", t("opening_settings"));
       } else {
