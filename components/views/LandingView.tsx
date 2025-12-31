@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useUIStrings } from "@/contexts/UIStringsContext";
 import { ThemePicker } from "@/components/ThemePicker";
@@ -28,6 +28,16 @@ export function LandingView({ onEnter, onLogin, onResumeCharacter, isLoggedIn, r
 
   // Filter to active characters only
   const activeChars = roster.filter(c => c.status === "active");
+
+  // Returning player = logged in with at least one character
+  const isReturningPlayer = isLoggedIn && activeChars.length > 0;
+
+  // Auto-select first character for returning players
+  useEffect(() => {
+    if (isReturningPlayer && !selectedChar && activeChars.length > 0) {
+      setSelectedChar(activeChars[0]);
+    }
+  }, [isReturningPlayer, activeChars, selectedChar]);
 
   // Calculate dropdown direction and max height when opening
   const handleTogglePicker = () => {
@@ -68,7 +78,9 @@ export function LandingView({ onEnter, onLogin, onResumeCharacter, isLoggedIn, r
       <div className="text-center space-y-8 max-w-md corner-brackets p-8">
         {/* Title */}
         <div className="space-y-2">
-          <div className="text-[var(--mist)] text-[10px] tracking-[0.5em] uppercase">{t("welcome_to", "Welcome to")}</div>
+          <div className="text-[var(--mist)] text-[10px] tracking-[0.5em] uppercase">
+            {isReturningPlayer ? t("welcome_back", "Welcome back to") : t("welcome_to", "Welcome to")}
+          </div>
           <h1 className="text-[var(--amber)] text-3xl md:text-5xl font-bold tracking-[0.2em] title-glow">
             TEXTLANDS
           </h1>
@@ -80,92 +92,126 @@ export function LandingView({ onEnter, onLogin, onResumeCharacter, isLoggedIn, r
           {t("tagline", "Choose your land. Become your character.")}
         </p>
 
-        {/* Primary CTA Button */}
-        <button
-          onClick={handleBeginJourney}
-          className="group relative px-10 py-4 text-[var(--amber)] font-bold text-base md:text-lg min-h-[52px] bg-[var(--shadow)] border border-[var(--slate)] rounded transition-all duration-200 hover:border-[var(--amber)] hover:bg-[var(--stone)] active:scale-95"
-        >
-          <span className="relative z-10">
-            {t("begin_adventure", "Begin Your Journey")}
-          </span>
-          <span className="absolute inset-0 rounded bg-gradient-to-r from-transparent via-[var(--amber)] to-transparent opacity-0 group-hover:opacity-10 transition-opacity" />
-        </button>
+        {/* RETURNING PLAYER: Primary = Continue journey */}
+        {isReturningPlayer ? (
+          <>
+            {/* Character picker (if multiple) or just show selected */}
+            <div className="space-y-3">
+              {activeChars.length > 1 ? (
+                <div className="relative">
+                  <button
+                    ref={buttonRef}
+                    onClick={handleTogglePicker}
+                    className="w-full px-4 py-3 bg-[var(--shadow)] border border-[var(--slate)] rounded text-left hover:border-[var(--amber-dim)] transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        {selectedChar ? (
+                          <div>
+                            <span className="text-[var(--amber)] font-bold">{selectedChar.character_name}</span>
+                            {selectedChar.occupation && (
+                              <span className="text-[var(--mist)] text-xs ml-2">({selectedChar.occupation})</span>
+                            )}
+                            <span className="text-[var(--text-dim)] text-xs block">{selectedChar.world_name}</span>
+                          </div>
+                        ) : (
+                          <span className="text-[var(--mist)]">{t("select_character", "Select a character...")}</span>
+                        )}
+                      </div>
+                      <span className="text-[var(--mist)]">{showPicker ? "▲" : "▼"}</span>
+                    </div>
+                  </button>
 
-        {/* Secondary: Resume journey (logged-in with characters) */}
-        {isLoggedIn && activeChars.length > 0 && (
-          <div className="space-y-2 pt-2">
-            <div className="text-[var(--slate)] text-[10px] tracking-wide">— {t("or_resume", "or resume your journey")} —</div>
-            <div className="relative">
-              <button
-                ref={buttonRef}
-                onClick={handleTogglePicker}
-                className="w-full px-3 py-2 bg-transparent border border-[var(--slate)]/50 rounded text-left hover:border-[var(--slate)] transition-colors text-sm"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    {selectedChar ? (
-                      <>
-                        <span className="text-[var(--mist)]">{selectedChar.character_name}</span>
-                        <span className="text-[var(--slate)] text-xs ml-2">in {selectedChar.world_name}</span>
-                      </>
-                    ) : (
-                      <span className="text-[var(--slate)]">{t("select_character", "Select a character...")}</span>
-                    )}
-                  </div>
-                  <span className="text-[var(--slate)]">{showPicker ? "▲" : "▼"}</span>
-                </div>
-              </button>
-
-              {/* Dropdown */}
-              {showPicker && (
-                <div
-                  className={`absolute left-0 right-0 bg-[var(--shadow)] border border-[var(--slate)] rounded overflow-y-auto z-10 ${
-                    openDirection === "up" ? "bottom-full mb-1" : "top-full mt-1"
-                  }`}
-                  style={{ maxHeight: maxDropdownHeight }}
-                >
-                  {activeChars.map((char) => (
-                    <button
-                      key={char.id}
-                      onClick={() => {
-                        setSelectedChar(char);
-                        setShowPicker(false);
-                      }}
-                      className="w-full px-4 py-2 text-left hover:bg-[var(--stone)] transition-colors border-b border-[var(--slate)] last:border-b-0"
+                  {/* Dropdown */}
+                  {showPicker && (
+                    <div
+                      className={`absolute left-0 right-0 bg-[var(--shadow)] border border-[var(--slate)] rounded overflow-y-auto z-10 ${
+                        openDirection === "up" ? "bottom-full mb-1" : "top-full mt-1"
+                      }`}
+                      style={{ maxHeight: maxDropdownHeight }}
                     >
-                      <span className="text-[var(--amber)]">{char.character_name}</span>
-                      {char.occupation && (
-                        <span className="text-[var(--mist)] text-xs ml-1">({char.occupation})</span>
-                      )}
-                      <span className="text-[var(--text-dim)] text-xs block">{char.world_name}</span>
-                    </button>
-                  ))}
+                      {activeChars.map((char) => (
+                        <button
+                          key={char.id}
+                          onClick={() => {
+                            setSelectedChar(char);
+                            setShowPicker(false);
+                          }}
+                          className={`w-full px-4 py-3 text-left hover:bg-[var(--stone)] transition-colors border-b border-[var(--slate)] last:border-b-0 ${
+                            selectedChar?.id === char.id ? "bg-[var(--stone)]" : ""
+                          }`}
+                        >
+                          <span className="text-[var(--amber)] font-bold">{char.character_name}</span>
+                          {char.occupation && (
+                            <span className="text-[var(--mist)] text-xs ml-1">({char.occupation})</span>
+                          )}
+                          <span className="text-[var(--text-dim)] text-xs block">{char.world_name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : selectedChar && (
+                /* Single character - just show info */
+                <div className="px-4 py-3 bg-[var(--shadow)] border border-[var(--slate)] rounded text-center">
+                  <span className="text-[var(--amber)] font-bold">{selectedChar.character_name}</span>
+                  {selectedChar.occupation && (
+                    <span className="text-[var(--mist)] text-xs ml-2">({selectedChar.occupation})</span>
+                  )}
+                  <span className="text-[var(--text-dim)] text-xs block">{selectedChar.world_name}</span>
                 </div>
               )}
+
+              {/* Primary CTA: Continue Journey */}
+              <button
+                onClick={() => selectedChar && onResumeCharacter(selectedChar)}
+                disabled={!selectedChar}
+                className="group relative w-full px-10 py-4 text-[var(--amber)] font-bold text-base md:text-lg min-h-[52px] bg-[var(--shadow)] border border-[var(--amber-dim)] rounded transition-all duration-200 hover:border-[var(--amber)] hover:bg-[var(--stone)] active:scale-95 disabled:opacity-50"
+              >
+                <span className="relative z-10">
+                  {t("continue_journey", "Continue Journey")}
+                </span>
+                <span className="absolute inset-0 rounded bg-gradient-to-r from-transparent via-[var(--amber)] to-transparent opacity-0 group-hover:opacity-10 transition-opacity" />
+              </button>
             </div>
 
-            {/* Resume button - only shows when character selected */}
-            {selectedChar && (
+            {/* Secondary: Start new journey */}
+            <div className="pt-2">
+              <div className="text-[var(--slate)] text-[10px] tracking-wide mb-2">— {t("or", "or")} —</div>
               <button
-                onClick={() => onResumeCharacter(selectedChar)}
-                className="w-full px-4 py-2 text-[var(--mist)] text-sm bg-transparent border border-[var(--slate)]/50 rounded transition-all duration-200 hover:border-[var(--slate)] hover:text-[var(--text)] active:scale-95"
+                onClick={handleBeginJourney}
+                className="text-[var(--mist)] text-sm hover:text-[var(--amber)] transition-colors"
               >
-                {t("continue_as", "Continue as")} {selectedChar.character_name}
+                {t("start_new_journey", "Start a new journey")}
               </button>
-            )}
-          </div>
-        )}
-
-        {/* Secondary: Log in (not logged in) */}
-        {!isLoggedIn && (
-          <div className="pt-2">
+            </div>
+          </>
+        ) : (
+          /* NEW PLAYER / GUEST: Primary = Begin Journey */
+          <>
+            {/* Primary CTA Button */}
             <button
-              onClick={onLogin}
-              className="text-[var(--mist)] text-sm hover:text-[var(--amber)] transition-colors"
+              onClick={handleBeginJourney}
+              className="group relative px-10 py-4 text-[var(--amber)] font-bold text-base md:text-lg min-h-[52px] bg-[var(--shadow)] border border-[var(--slate)] rounded transition-all duration-200 hover:border-[var(--amber)] hover:bg-[var(--stone)] active:scale-95"
             >
-              {t("have_account", "Already playing?")} <span className="underline">{t("log_in")}</span>
+              <span className="relative z-10">
+                {t("begin_adventure", "Begin Your Journey")}
+              </span>
+              <span className="absolute inset-0 rounded bg-gradient-to-r from-transparent via-[var(--amber)] to-transparent opacity-0 group-hover:opacity-10 transition-opacity" />
             </button>
-          </div>
+
+            {/* Secondary: Log in (not logged in) */}
+            {!isLoggedIn && (
+              <div className="pt-2">
+                <button
+                  onClick={onLogin}
+                  className="text-[var(--mist)] text-sm hover:text-[var(--amber)] transition-colors"
+                >
+                  {t("have_account", "Already playing?")} <span className="underline">{t("log_in")}</span>
+                </button>
+              </div>
+            )}
+          </>
         )}
 
         {/* Decorative text */}
