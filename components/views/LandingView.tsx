@@ -85,7 +85,7 @@ export function LandingView({ onEnter, onLogin, onLogout, onResumeCharacter, isL
           <h1 className="text-[var(--amber)] text-3xl md:text-5xl font-bold tracking-[0.2em] title-glow">
             TEXTLANDS
           </h1>
-          <div className="text-[var(--mist)] text-[10px] tracking-[0.3em] uppercase">Est. MMXXV</div>
+          <div className="text-[var(--mist)] text-[10px] tracking-[0.3em] uppercase">Est. 2025</div>
         </div>
 
         {/* Tagline */}
