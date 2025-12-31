@@ -57,6 +57,8 @@ export interface SessionInfo {
   world_name: string | null;
   content_settings?: ContentSettings;
   character_count?: number; // Number of active characters (for multi-char select flow)
+  opening_narrative?: string; // Resume narrative from backend
+  suggested_actions?: string[]; // Initial actions on resume
 }
 
 export interface StartSessionRequest {

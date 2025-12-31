@@ -233,12 +233,24 @@ export default function GamePage() {
       equipped: {},
     });
 
-    setZoneName(session.world_name || worldData?.name || "Unknown");
-    setEntries([
-      log("system", `Welcome back, ${session.character_name || "traveler"}.`),
-      log("system", `Resuming in ${session.world_name || "your world"}...`),
-      log("system", "Type 'look' to see your surroundings"),
-    ]);
+    const worldName = session.world_name || worldData?.name || "Unknown";
+    setZoneName(worldName);
+
+    // Use backend narrative if available, otherwise generic welcome
+    if (session.opening_narrative) {
+      setEntries([log("narrative", session.opening_narrative)]);
+    } else {
+      setEntries([
+        log("system", `Welcome back, ${session.character_name || "traveler"}.`),
+        log("narrative", `You return to ${worldName}...`),
+      ]);
+    }
+
+    // Set suggested actions if provided
+    if (session.suggested_actions?.length) {
+      setSuggestions(session.suggested_actions);
+    }
+
     setPhase("game");
   }, []);
 
