@@ -30,4 +30,8 @@ export { LoadingIndicator } from "./LoadingIndicator";
 export { InventoryPanel } from "./InventoryPanel";
 export { CurrencyPanel } from "./CurrencyPanel";
 export { SkillsPanel } from "./SkillsPanel";
+export { SkillXPToastContainer } from "./SkillXPToast";
+export { SkillsTab } from "./SkillsTab";
+export { SkillBar } from "./SkillBar";
+export { FrontierIndicator } from "./FrontierIndicator";
 // Consequence components removed - backend handles via doAction narrative

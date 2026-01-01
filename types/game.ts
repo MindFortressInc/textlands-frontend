@@ -258,6 +258,46 @@ export interface SystemMessage {
   action_button?: { text: string; action: string };
 }
 
+// Skill XP gain from actions
+export interface SkillXPGain {
+  skill_name: string;
+  display_name: string;
+  xp_gained: number;
+  new_level: number;
+  leveled_up: boolean;
+  ability_unlocked?: string;
+}
+
+// Attrition damage in wilderness zones
+export interface AttritionDamage {
+  hp_lost: number;
+  new_hp: number;
+  warning: boolean;
+  force_retreat: boolean;
+}
+
+// Frontier zone status
+export type FrontierZone = "safe" | "frontier" | "wilderness" | "deep_wild";
+export type SettlementLevel = "wild" | "outpost" | "settlement" | "established";
+
+export interface FrontierStatus {
+  zone: FrontierZone;
+  zone_display: string;
+  distance_from_hub: number;
+  settlement_level: SettlementLevel;
+  settlement_activity: number;
+  settlement_progress: {
+    current: number;
+    next_threshold: number | null;
+    percent: number;
+  };
+  danger_info: {
+    difficulty_modifier: number;
+    attrition_range: [number, number] | null;
+    survival_skill_helps: boolean;
+  };
+}
+
 export interface DoActionResponse {
   narrative: string;
   content_segments?: ContentSegment[];  // Tagged content for rich rendering
@@ -285,6 +325,10 @@ export interface DoActionResponse {
   show_save_prompt?: boolean;
   // System message (show as toast)
   system_message?: SystemMessage;
+  // Skill XP gained from this action
+  skill_xp?: SkillXPGain;
+  // Attrition damage in wilderness zones
+  attrition?: AttritionDamage;
 }
 
 // Character types

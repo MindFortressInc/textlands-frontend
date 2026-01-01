@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import type { Character, CharacterProfile } from "@/types/game";
+import type { Character, CharacterProfile, SkillXPGain } from "@/types/game";
 import type { PlayerInfluence, LocationFootprint } from "@/lib/api";
 import { InfluenceBadge } from "./InfluenceBadge";
+import { SkillsTab } from "./SkillsTab";
+import { FrontierIndicator } from "./FrontierIndicator";
 import * as api from "@/lib/api";
 
 interface CharacterPanelProps {
@@ -15,9 +17,12 @@ interface CharacterPanelProps {
   footprints?: LocationFootprint[];
   onLeaveMessage?: (message: string) => Promise<void>;
   loadingFootprints?: boolean;
+  worldId?: string | null;
+  playerId?: string | null;
+  recentXPGain?: SkillXPGain | null;
 }
 
-type TabType = "stats" | "profile";
+type TabType = "stats" | "skills" | "profile";
 
 function StatBar({ current, max, type }: { current: number; max: number; type: "hp" | "mana" | "xp" }) {
   const pct = Math.min(100, Math.max(0, (current / max) * 100));
@@ -209,6 +214,9 @@ export function CharacterPanel({
   footprints,
   onLeaveMessage,
   loadingFootprints,
+  worldId,
+  playerId,
+  recentXPGain,
 }: CharacterPanelProps) {
   const [activeTab, setActiveTab] = useState<TabType>("stats");
   const [profile, setProfile] = useState<CharacterProfile | null>(null);
@@ -270,7 +278,7 @@ export function CharacterPanel({
       <div className="flex border-b border-[var(--slate)]">
         <button
           onClick={() => setActiveTab("stats")}
-          className={`flex-1 px-3 py-2 text-xs uppercase tracking-wider transition-colors ${
+          className={`flex-1 px-2 py-2 text-[10px] uppercase tracking-wider transition-colors ${
             activeTab === "stats"
               ? "text-[var(--amber)] border-b-2 border-[var(--amber)] bg-[var(--stone)]"
               : "text-[var(--mist)] hover:text-[var(--fog)] hover:bg-[var(--stone)]"
@@ -279,8 +287,18 @@ export function CharacterPanel({
           Stats
         </button>
         <button
+          onClick={() => setActiveTab("skills")}
+          className={`flex-1 px-2 py-2 text-[10px] uppercase tracking-wider transition-colors ${
+            activeTab === "skills"
+              ? "text-[var(--amber)] border-b-2 border-[var(--amber)] bg-[var(--stone)]"
+              : "text-[var(--mist)] hover:text-[var(--fog)] hover:bg-[var(--stone)]"
+          }`}
+        >
+          Skills
+        </button>
+        <button
           onClick={() => setActiveTab("profile")}
-          className={`flex-1 px-3 py-2 text-xs uppercase tracking-wider transition-colors ${
+          className={`flex-1 px-2 py-2 text-[10px] uppercase tracking-wider transition-colors ${
             activeTab === "profile"
               ? "text-[var(--amber)] border-b-2 border-[var(--amber)] bg-[var(--stone)]"
               : "text-[var(--mist)] hover:text-[var(--fog)] hover:bg-[var(--stone)]"
@@ -354,6 +372,10 @@ export function CharacterPanel({
             <div className="p-3 border-t border-[var(--slate)] bg-[var(--stone)]">
               <div className="text-[var(--mist)] text-xs">Location</div>
               <div className="text-[var(--fog)]">{zoneName}</div>
+              <FrontierIndicator
+                worldId={worldId || null}
+                playerId={playerId || null}
+              />
             </div>
           )}
 
@@ -425,6 +447,17 @@ export function CharacterPanel({
             </div>
           )}
         </>
+      ) : activeTab === "skills" ? (
+        <div className="flex-1 overflow-y-auto">
+          <SkillsTab
+            worldId={worldId || null}
+            playerId={playerId || null}
+            recentXPGain={recentXPGain ? {
+              skill_name: recentXPGain.skill_name,
+              xp_gained: recentXPGain.xp_gained,
+            } : null}
+          />
+        </div>
       ) : (
         <div className="flex-1 overflow-y-auto">
           {profileError ? (

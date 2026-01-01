@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { GameLog, CommandInput, CharacterPanel, QuickActions, SuggestedActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal, AuthModal, BillingPanel, InfluenceBadge, LeaderboardModal, CharacterCreationModal, PlayerStatsModal, EntityTimelineModal, WorldTemplatesModal, WorldCreationModal, SocialPanel, ChatPanel, LoadingIndicator, InventoryPanel, CurrencyPanel, SkillsPanel } from "@/components/game";
+import { GameLog, CommandInput, CharacterPanel, QuickActions, SuggestedActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal, AuthModal, BillingPanel, InfluenceBadge, LeaderboardModal, CharacterCreationModal, PlayerStatsModal, EntityTimelineModal, WorldTemplatesModal, WorldCreationModal, SocialPanel, ChatPanel, LoadingIndicator, InventoryPanel, CurrencyPanel, SkillsPanel, SkillXPToastContainer } from "@/components/game";
 import { LoadingView, ErrorView, LandingView, WorldBrowser, InfiniteCampfireView } from "@/components/views";
 import { ThemePicker } from "@/components/ThemePicker";
-import type { Character, GameLogEntry, CharacterOption, ActiveScene as ActiveSceneType, NegotiationRequest, CombatSession, ReasoningInfo, InfiniteWorld, InfiniteCampfireResponse, InfiniteCampfireCharacter, AccountPromptReason, WorldTemplate, ContentSegment, EntityReference } from "@/types/game";
+import type { Character, GameLogEntry, CharacterOption, ActiveScene as ActiveSceneType, NegotiationRequest, CombatSession, ReasoningInfo, InfiniteWorld, InfiniteCampfireResponse, InfiniteCampfireCharacter, AccountPromptReason, WorldTemplate, ContentSegment, EntityReference, SkillXPGain } from "@/types/game";
 import type { RosterCharacter } from "@/lib/api";
 import * as api from "@/lib/api";
 import type { LandGroup, PlayerInfluence, LocationFootprint, LandKey } from "@/lib/api";
@@ -173,6 +173,10 @@ export default function GamePage() {
 
   // Skills panel state
   const [showSkills, setShowSkills] = useState(false);
+
+  // Skill XP toast notifications
+  const [skillXPToasts, setSkillXPToasts] = useState<SkillXPGain[]>([]);
+  const [recentXPGain, setRecentXPGain] = useState<SkillXPGain | null>(null);
 
   // Mobile input focus state (hides quick actions when typing)
   const [inputFocused, setInputFocused] = useState(false);
@@ -957,6 +961,24 @@ export default function GamePage() {
             }
           }
 
+          // Handle skill XP gains
+          if (result.skill_xp) {
+            setSkillXPToasts((prev) => [...prev, result.skill_xp!]);
+            setRecentXPGain(result.skill_xp);
+            // Clear recent XP gain after 3 seconds
+            setTimeout(() => setRecentXPGain(null), 3000);
+          }
+
+          // Handle attrition damage in wilderness
+          if (result.attrition) {
+            if (result.attrition.warning) {
+              addLog("system", `⚠ WILDERNESS ATTRITION: -${result.attrition.hp_lost} HP`);
+            }
+            if (result.attrition.force_retreat) {
+              addLog("system", "You are forced to retreat from the wilderness!");
+            }
+          }
+
           if (result.error) {
             addLog("system", result.error);
           }
@@ -1375,6 +1397,12 @@ export default function GamePage() {
         worldId={currentSession?.world_id || null}
         playerId={playerId}
       />
+      <SkillXPToastContainer
+        toasts={skillXPToasts}
+        onDismiss={(index) => {
+          setSkillXPToasts((prev) => prev.filter((_, i) => i !== index));
+        }}
+      />
 
       {/* Header - stays in document flow, shrink-0 prevents flex squishing */}
       <header className="bg-[var(--shadow)] border-b border-[var(--slate)] px-3 py-2 md:px-4 flex items-center justify-between shrink-0 pt-[max(0.5rem,env(safe-area-inset-top))] z-40">
@@ -1534,6 +1562,9 @@ export default function GamePage() {
             footprints={footprints}
             onLeaveMessage={handleLeaveMessage}
             loadingFootprints={loadingFootprints}
+            worldId={selectedWorld?.id}
+            playerId={playerId}
+            recentXPGain={recentXPGain}
           />
           <SocialPanel
             playerId={playerId || undefined}

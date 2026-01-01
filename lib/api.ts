@@ -12,6 +12,7 @@ import type {
   InfiniteCampfireResponse,
   InfiniteCampfireCharacter,
   CharacterProfile,
+  FrontierStatus,
 } from "@/types/game";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
@@ -1639,6 +1640,11 @@ export interface SkillsResponse {
 // Get player's skills
 export async function getSkills(worldId: string, playerId: string): Promise<SkillsResponse> {
   return fetchAPI<SkillsResponse>(`/infinite/worlds/${worldId}/player/${playerId}/skills`);
+}
+
+// Get frontier status for current location
+export async function getFrontierStatus(worldId: string, playerId: string): Promise<FrontierStatus> {
+  return fetchAPI<FrontierStatus>(`/infinite/worlds/${worldId}/player/${playerId}/frontier`);
 }
 
 // ============ PLAYER PROFILE API ============
