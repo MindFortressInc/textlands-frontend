@@ -5,37 +5,30 @@ export interface Theme {
   name: string;
   description: string;
   colors: {
-    void: string;      // Deepest background
-    shadow: string;    // Panel background
-    stone: string;     // Elevated surfaces
-    slate: string;     // Borders
-    text: string;      // Primary text
-    textDim: string;   // Secondary text
-    amber: string;     // Narrative / accent
-    amberDim: string;  // Muted amber
-    crimson: string;   // Combat
-    arcane: string;    // Dialogue / magic
-    mist: string;      // System text
-    // Entity highlight colors for hover tooltips
-    entityNpc: string;      // NPCs/characters
-    entityPlayer: string;   // Other players
-    entityLocation: string; // Places
-    entityItem: string;     // Objects/artifacts
+    void: string;
+    shadow: string;
+    stone: string;
+    slate: string;
+    text: string;
+    textDim: string;
+    amber: string;
+    amberDim: string;
+    crimson: string;
+    arcane: string;
+    mist: string;
+    entityNpc: string;
+    entityPlayer: string;
+    entityLocation: string;
+    entityItem: string;
   };
-  effects: {
-    glow: boolean;         // Text glow effects
-    scanlines: boolean;    // CRT scanline overlay
-    vignette: boolean;     // Edge darkening
-  };
-  font: string;  // Font family
+  font: string;
 }
 
 export const themes: Record<string, Theme> = {
-  // Clean terminal - fast, minimal
   terminal: {
     id: "terminal",
     name: "Terminal",
-    description: "Clean & fast",
+    description: "Dark mode",
     colors: {
       void: "#0a0a0a",
       shadow: "#111111",
@@ -48,98 +41,18 @@ export const themes: Record<string, Theme> = {
       crimson: "#ef4444",
       arcane: "#22d3ee",
       mist: "#6b7280",
-      entityNpc: "#22d3ee",     // cyan
-      entityPlayer: "#f59e0b", // amber
-      entityLocation: "#8b8b8b", // gray
-      entityItem: "#fbbf24",   // gold
+      entityNpc: "#22d3ee",
+      entityPlayer: "#f59e0b",
+      entityLocation: "#8b8b8b",
+      entityItem: "#fbbf24",
     },
-    effects: { glow: false, scanlines: false, vignette: false },
     font: "ui-monospace, 'SF Mono', Menlo, Monaco, monospace",
   },
 
-  // Grimoire - fancy with glows
-  grimoire: {
-    id: "grimoire",
-    name: "Grimoire",
-    description: "Arcane & atmospheric",
-    colors: {
-      void: "#050505",
-      shadow: "#0a0a0a",
-      stone: "#111111",
-      slate: "#1a1a1a",
-      text: "#e5e5e5",
-      textDim: "#a3a3a3",
-      amber: "#fbbf24",
-      amberDim: "#92400e",
-      crimson: "#f87171",
-      arcane: "#67e8f9",
-      mist: "#9ca3af",
-      entityNpc: "#a78bfa",     // purple
-      entityPlayer: "#fbbf24", // gold
-      entityLocation: "#a1887f", // brown
-      entityItem: "#f59e0b",   // amber
-    },
-    effects: { glow: true, scanlines: true, vignette: true },
-    font: "'JetBrains Mono', monospace",
-  },
-
-  // Phosphor - green classic terminal
-  phosphor: {
-    id: "phosphor",
-    name: "Phosphor",
-    description: "Classic green CRT",
-    colors: {
-      void: "#0a0f0a",
-      shadow: "#0f140f",
-      stone: "#141a14",
-      slate: "#1f2a1f",
-      text: "#33ff33",
-      textDim: "#22aa22",
-      amber: "#33ff33",
-      amberDim: "#1a8a1a",
-      crimson: "#ff6633",
-      arcane: "#33ffff",
-      mist: "#559955",
-      entityNpc: "#66ff66",     // bright green
-      entityPlayer: "#aaff55", // lime
-      entityLocation: "#778855", // olive
-      entityItem: "#ccff33",   // yellow-green
-    },
-    effects: { glow: true, scanlines: true, vignette: true },
-    font: "ui-monospace, monospace",
-  },
-
-  // Amber - classic amber terminal
-  amber_crt: {
-    id: "amber_crt",
-    name: "Amber CRT",
-    description: "Warm amber glow",
-    colors: {
-      void: "#0f0a05",
-      shadow: "#14100a",
-      stone: "#1a150f",
-      slate: "#2a2015",
-      text: "#ffbb33",
-      textDim: "#aa8822",
-      amber: "#ffcc44",
-      amberDim: "#885511",
-      crimson: "#ff6644",
-      arcane: "#44ddff",
-      mist: "#998855",
-      entityNpc: "#ff9944",     // orange
-      entityPlayer: "#ffdd55", // yellow
-      entityLocation: "#aa8855", // brown
-      entityItem: "#ffcc33",   // gold
-    },
-    effects: { glow: true, scanlines: true, vignette: true },
-    font: "ui-monospace, monospace",
-  },
-
-  // Parchment - light mode for the heathens
   parchment: {
     id: "parchment",
     name: "Parchment",
-    description: "Light & readable",
+    description: "Light mode",
     colors: {
       void: "#f5f0e6",
       shadow: "#ebe6dc",
@@ -152,39 +65,36 @@ export const themes: Record<string, Theme> = {
       crimson: "#dc2626",
       arcane: "#0891b2",
       mist: "#78716c",
-      entityNpc: "#1e40af",     // blue
-      entityPlayer: "#92400e", // brown
-      entityLocation: "#166534", // green
-      entityItem: "#9a3412",   // rust
+      entityNpc: "#1e40af",
+      entityPlayer: "#92400e",
+      entityLocation: "#166534",
+      entityItem: "#9a3412",
     },
-    effects: { glow: false, scanlines: false, vignette: false },
     font: "'Georgia', serif",
   },
 
-  // Cyberpunk - neon future
-  cyberpunk: {
-    id: "cyberpunk",
-    name: "Cyberpunk",
-    description: "Neon nights",
+  modern: {
+    id: "modern",
+    name: "Modern",
+    description: "iOS native",
     colors: {
-      void: "#0a0a12",
-      shadow: "#0f0f1a",
-      stone: "#141422",
-      slate: "#252538",
-      text: "#e0e0ff",
-      textDim: "#8888aa",
-      amber: "#ff00ff",
-      amberDim: "#880088",
-      crimson: "#ff0044",
-      arcane: "#00ffff",
-      mist: "#6666aa",
-      entityNpc: "#ff00ff",     // magenta
-      entityPlayer: "#00ffff", // cyan
-      entityLocation: "#4488ff", // blue
-      entityItem: "#ff66aa",   // pink
+      void: "#FFFFFF",
+      shadow: "#F9FAFB",
+      stone: "#F3F4F6",
+      slate: "#E5E7EB",
+      text: "#1F2937",
+      textDim: "#6B7280",
+      amber: "#0EA5E9",
+      amberDim: "#0284C7",
+      crimson: "#EF4444",
+      arcane: "#8B5CF6",
+      mist: "#9CA3AF",
+      entityNpc: "#8B5CF6",
+      entityPlayer: "#0EA5E9",
+      entityLocation: "#10B981",
+      entityItem: "#F59E0B",
     },
-    effects: { glow: true, scanlines: true, vignette: true },
-    font: "ui-monospace, monospace",
+    font: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif",
   },
 };
 
@@ -215,9 +125,4 @@ export function applyTheme(theme: Theme): void {
   // Apply font
   root.style.setProperty("--font", theme.font);
   document.body.style.fontFamily = theme.font;
-
-  // Apply effects via classes
-  document.body.classList.toggle("theme-glow", theme.effects.glow);
-  document.body.classList.toggle("theme-scanlines", theme.effects.scanlines);
-  document.body.classList.toggle("theme-vignette", theme.effects.vignette);
 }

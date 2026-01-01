@@ -544,6 +544,209 @@ body {
   border-color: var(--amber-dim);
 }
 
+/* ========== MODERN THEME - iOS NATIVE ========== */
+
+[data-theme="modern"] {
+  /* Softer scrollbars */
+  scrollbar-color: #D1D5DB #FFFFFF;
+}
+
+[data-theme="modern"]::-webkit-scrollbar-track {
+  background: #FFFFFF;
+}
+
+[data-theme="modern"]::-webkit-scrollbar-thumb {
+  background: #D1D5DB;
+  border-radius: 3px;
+}
+
+[data-theme="modern"]::-webkit-scrollbar-thumb:hover {
+  background: #9CA3AF;
+}
+
+/* Modern selection - iOS blue tint */
+[data-theme="modern"] ::selection {
+  background: rgba(14, 165, 233, 0.2);
+  color: #1F2937;
+}
+
+/* Modern suggestion chips - pill buttons like iOS */
+[data-theme="modern"] .suggestion-chip {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  font-weight: 500;
+}
+
+[data-theme="modern"] .suggestion-chip:hover:not(:disabled) {
+  background: #F9FAFB;
+  border-color: #0EA5E9;
+  box-shadow: 0 1px 3px rgba(14, 165, 233, 0.1);
+}
+
+[data-theme="modern"] .suggestion-chip:active:not(:disabled) {
+  background: #F3F4F6;
+  transform: scale(0.98);
+}
+
+[data-theme="modern"] .suggestion-prefix {
+  color: #0EA5E9;
+}
+
+/* Modern quick buttons - clean iOS style */
+[data-theme="modern"] .quick-btn {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="modern"] .quick-btn:hover:not(:disabled) {
+  background: #F9FAFB;
+  border-color: #D1D5DB;
+}
+
+[data-theme="modern"] .quick-btn:active:not(:disabled) {
+  background: #F3F4F6;
+  transform: scale(0.97);
+}
+
+/* Modern genre cards - clean with subtle shadow */
+[data-theme="modern"] .genre-card {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="modern"] .genre-card::before {
+  background: linear-gradient(90deg, transparent, #0EA5E9, transparent);
+}
+
+@media (hover: hover) {
+  [data-theme="modern"] .genre-card:hover {
+    border-color: #0EA5E9;
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.1);
+  }
+}
+
+/* Modern world cards */
+[data-theme="modern"] .world-card {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-left: 3px solid #0284C7;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+@media (hover: hover) {
+  [data-theme="modern"] .world-card:hover {
+    background: #F9FAFB;
+    border-left-color: #0EA5E9;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+}
+
+/* Modern character cards */
+[data-theme="modern"] .character-card {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="modern"] .character-card::after {
+  background: linear-gradient(transparent, rgba(14, 165, 233, 0.03));
+}
+
+@media (hover: hover) {
+  [data-theme="modern"] .character-card:hover {
+    border-color: #0EA5E9;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+}
+
+/* Modern stat bars - clean rounded */
+[data-theme="modern"] .stat-bar {
+  height: 6px;
+  background: #F3F4F6;
+  border: none;
+  border-radius: 3px;
+}
+
+[data-theme="modern"] .stat-bar-fill {
+  border-radius: 3px;
+}
+
+[data-theme="modern"] .hp-bar .stat-bar-fill {
+  background: linear-gradient(90deg, #F87171, #EF4444);
+}
+
+[data-theme="modern"] .mana-bar .stat-bar-fill {
+  background: linear-gradient(90deg, #A78BFA, #8B5CF6);
+}
+
+[data-theme="modern"] .xp-bar .stat-bar-fill {
+  background: linear-gradient(90deg, #38BDF8, #0EA5E9);
+}
+
+/* Modern atmospheric background - clean gradient */
+[data-theme="modern"] .bg-atmospheric {
+  background:
+    linear-gradient(180deg, #FFFFFF 0%, #F9FAFB 100%);
+}
+
+/* Modern campfire text - subtle blue glow */
+[data-theme="modern"] .campfire-text {
+  text-shadow: none;
+}
+
+/* Modern title glow - clean, no pulse */
+[data-theme="modern"] .title-glow {
+  animation: none;
+  text-shadow: none;
+}
+
+/* Modern entity tooltip */
+[data-theme="modern"] .entity-tooltip {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Modern skill toasts */
+[data-theme="modern"] .skill-xp-toast {
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-left: 3px solid var(--skill-color, #0EA5E9);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Modern bounty poster */
+[data-theme="modern"] .bounty-poster {
+  background: #FFFFFF;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="modern"] .bounty-poster::before {
+  background: linear-gradient(90deg, transparent, #0284C7, transparent);
+  border-radius: 12px 12px 0 0;
+}
+
+/* Modern corner brackets - hide them */
+[data-theme="modern"] .corner-brackets::before,
+[data-theme="modern"] .corner-brackets::after {
+  display: none;
+}
+
+/* Modern input styling */
+[data-theme="modern"] .command-input {
+  caret-color: #0EA5E9;
+}
+
 /* Mobile touch feedback */
 @media (max-width: 767px) {
   .suggestion-chip {

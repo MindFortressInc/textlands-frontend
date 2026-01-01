@@ -17,14 +17,14 @@ const PREVIEW_NARRATIVE = `You enter the tavern. A fire crackles in the hearth, 
 const PREVIEW_SUGGESTIONS = ["Order a drink", "Ask about rumors", "Find a seat"];
 
 // Ordered list of themes for the carousel
-const THEME_ORDER = ["terminal", "parchment", "grimoire", "phosphor", "amber_crt", "cyberpunk"];
+const THEME_ORDER = ["terminal", "parchment", "modern"];
 
 // Get starting index based on system preference
 function getStartingIndex(): number {
   if (typeof window === "undefined") return 0;
   const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  // terminal (index 0) for dark, parchment (index 1) for light
-  return prefersDark ? 0 : 1;
+  // terminal (index 0) for dark, modern (index 2) for light (iOS native)
+  return prefersDark ? 0 : 2;
 }
 
 export function ThemeChooser({ onComplete }: ThemeChooserProps) {
@@ -301,26 +301,6 @@ function ThemePreviewCard({ theme, isActive }: { theme: Theme; isActive: boolean
         </div>
       </div>
 
-      {/* Effects indicator */}
-      {(theme.effects.glow || theme.effects.scanlines || theme.effects.vignette) && (
-        <div
-          className="px-4 py-2 flex gap-3"
-          style={{
-            backgroundColor: colors.shadow,
-            borderTop: `1px solid ${colors.slate}`,
-          }}
-        >
-          {theme.effects.glow && (
-            <span style={{ color: colors.mist, fontSize: "9px", letterSpacing: "0.05em" }}>✦ GLOW</span>
-          )}
-          {theme.effects.scanlines && (
-            <span style={{ color: colors.mist, fontSize: "9px", letterSpacing: "0.05em" }}>▤ SCANLINES</span>
-          )}
-          {theme.effects.vignette && (
-            <span style={{ color: colors.mist, fontSize: "9px", letterSpacing: "0.05em" }}>◐ VIGNETTE</span>
-          )}
-        </div>
-      )}
     </div>
   );
 }
