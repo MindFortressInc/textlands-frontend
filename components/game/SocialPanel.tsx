@@ -31,7 +31,7 @@ interface SocialPanelProps {
   onSendDM?: (targetPlayerId: string, content: string) => void;
 }
 
-type Tab = "friends" | "requests" | "messages" | "invite";
+type Tab = "friends" | "messages" | "invite";
 
 export function SocialPanel({
   playerId,
@@ -397,17 +397,10 @@ export function SocialPanel({
         <TabButton
           active={activeTab === "friends"}
           onClick={() => setActiveTab("friends")}
-          badge={onlineFriends.length}
+          badge={requests.length > 0 ? requests.length : onlineFriends.length}
+          badgeColor={requests.length > 0 ? "crimson" : "amber"}
         >
-          Online
-        </TabButton>
-        <TabButton
-          active={activeTab === "requests"}
-          onClick={() => setActiveTab("requests")}
-          badge={requests.length}
-          badgeColor="crimson"
-        >
-          Requests
+          Friends
         </TabButton>
         <TabButton
           active={activeTab === "messages"}
@@ -416,12 +409,6 @@ export function SocialPanel({
           badgeColor="arcane"
         >
           DMs
-        </TabButton>
-        <TabButton
-          active={activeTab === "invite"}
-          onClick={() => setActiveTab("invite")}
-        >
-          Invite
         </TabButton>
       </div>
 
@@ -444,14 +431,10 @@ export function SocialPanel({
                 username={username}
                 usernameLoading={usernameLoading}
                 onUsernameSet={handleUsernameSet}
-              />
-            )}
-            {activeTab === "requests" && (
-              <RequestsTab
                 requests={requests}
-                onAccept={handleAcceptRequest}
-                onDecline={handleDeclineRequest}
-                formatTimeAgo={formatTimeAgo}
+                onAcceptRequest={handleAcceptRequest}
+                onDeclineRequest={handleDeclineRequest}
+                onOpenInvite={() => setActiveTab("invite")}
               />
             )}
             {activeTab === "messages" && (
@@ -467,7 +450,12 @@ export function SocialPanel({
                 formatTimeAgo={formatTimeAgo}
               />
             )}
-            {activeTab === "invite" && <InviteTab worldId={worldId} />}
+            {activeTab === "invite" && (
+              <InviteTab
+                worldId={worldId}
+                onBack={() => setActiveTab("friends")}
+              />
+            )}
           </>
         )}
       </div>
@@ -547,6 +535,10 @@ function FriendsTab({
   username,
   usernameLoading,
   onUsernameSet,
+  requests,
+  onAcceptRequest,
+  onDeclineRequest,
+  onOpenInvite,
 }: {
   online: Friend[];
   offline: Friend[];
@@ -555,6 +547,10 @@ function FriendsTab({
   username: string | null;
   usernameLoading: boolean;
   onUsernameSet: (username: string) => void;
+  requests: FriendRequest[];
+  onAcceptRequest: (id: string) => void;
+  onDeclineRequest: (id: string) => void;
+  onOpenInvite: () => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [usernameInput, setUsernameInput] = useState("");
@@ -656,12 +652,64 @@ function FriendsTab({
         )}
       </div>
 
+      {/* Invite button */}
+      <div className="px-3 py-2 border-b border-[var(--slate)]">
+        <button
+          onClick={onOpenInvite}
+          className="w-full px-3 py-2 text-xs bg-[var(--amber-dim)] text-[var(--text)] rounded hover:bg-[var(--amber)] transition-colors flex items-center justify-center gap-2"
+        >
+          <span>+</span>
+          <span>Invite Friends</span>
+        </button>
+      </div>
+
+      {/* Friend Requests section */}
+      {requests.length > 0 && (
+        <div>
+          <div className="px-3 py-1.5 text-[10px] text-[var(--crimson)] uppercase tracking-wider bg-[var(--stone)] flex items-center justify-between">
+            <span>Requests</span>
+            <span className="min-w-[16px] h-[16px] px-1 text-[9px] font-bold bg-[var(--crimson)] text-white rounded-full flex items-center justify-center">
+              {requests.length > 9 ? "9+" : requests.length}
+            </span>
+          </div>
+          {requests.map((req) => (
+            <div
+              key={req.request_id}
+              className="px-3 py-2 border-b border-[var(--slate)] last:border-0"
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs text-[var(--text)] truncate">
+                  {req.player_name}
+                </span>
+                <span className="text-[10px] text-[var(--mist)]">
+                  {formatTimeAgo(req.requested_at)}
+                </span>
+              </div>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => onAcceptRequest(req.request_id)}
+                  className="flex-1 px-2 py-1 text-[10px] bg-[var(--amber-dim)] text-[var(--text)] rounded hover:bg-[var(--amber)] transition-colors"
+                >
+                  Accept
+                </button>
+                <button
+                  onClick={() => onDeclineRequest(req.request_id)}
+                  className="flex-1 px-2 py-1 text-[10px] bg-[var(--stone)] text-[var(--mist)] border border-[var(--slate)] rounded hover:border-[var(--crimson)] hover:text-[var(--crimson)] transition-colors"
+                >
+                  Decline
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Empty state */}
-      {online.length === 0 && offline.length === 0 && (
+      {online.length === 0 && offline.length === 0 && requests.length === 0 && (
         <div className="p-4 text-center">
           <div className="text-[var(--mist)] text-xs mb-2">No friends yet</div>
           <div className="text-[10px] text-[var(--mist)]">
-            Use the Invite tab to add friends!
+            Invite friends to start playing together!
           </div>
         </div>
       )}
@@ -750,61 +798,6 @@ function FriendRow({
   );
 }
 
-// Requests tab content
-function RequestsTab({
-  requests,
-  onAccept,
-  onDecline,
-  formatTimeAgo,
-}: {
-  requests: FriendRequest[];
-  onAccept: (id: string) => void;
-  onDecline: (id: string) => void;
-  formatTimeAgo: (date: string) => string;
-}) {
-  if (requests.length === 0) {
-    return (
-      <div className="p-4 text-center">
-        <div className="text-[var(--mist)] text-xs">No pending requests</div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="stagger-fade-in">
-      {requests.map((req) => (
-        <div
-          key={req.request_id}
-          className="px-3 py-2 border-b border-[var(--slate)] last:border-0"
-        >
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-[var(--text)] truncate">
-              {req.player_name}
-            </span>
-            <span className="text-[10px] text-[var(--mist)]">
-              {formatTimeAgo(req.requested_at)}
-            </span>
-          </div>
-          <div className="flex gap-1">
-            <button
-              onClick={() => onAccept(req.request_id)}
-              className="flex-1 px-2 py-1 text-[10px] bg-[var(--amber-dim)] text-[var(--text)] rounded hover:bg-[var(--amber)] transition-colors"
-            >
-              Accept
-            </button>
-            <button
-              onClick={() => onDecline(req.request_id)}
-              className="flex-1 px-2 py-1 text-[10px] bg-[var(--stone)] text-[var(--mist)] border border-[var(--slate)] rounded hover:border-[var(--crimson)] hover:text-[var(--crimson)] transition-colors"
-            >
-              Decline
-            </button>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 // Messages tab content
 function MessagesTab({
   conversations,
@@ -887,7 +880,7 @@ function MessagesTab({
 }
 
 // Invite tab content
-function InviteTab({ worldId }: { worldId?: string }) {
+function InviteTab({ worldId, onBack }: { worldId?: string; onBack?: () => void }) {
   const [inviteData, setInviteData] = useState<InviteLinkResponse | null>(null);
   const [stats, setStats] = useState<InviteStatsResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1067,7 +1060,22 @@ function InviteTab({ worldId }: { worldId?: string }) {
   }
 
   return (
-    <div className="p-3 space-y-4 stagger-fade-in">
+    <div className="stagger-fade-in">
+      {/* Header with back button */}
+      {onBack && (
+        <div className="px-3 py-2 border-b border-[var(--slate)] flex items-center gap-2">
+          <button
+            onClick={onBack}
+            className="text-[var(--mist)] hover:text-[var(--text)] transition-colors text-sm"
+            title="Back to Friends"
+          >
+            &lt;
+          </button>
+          <span className="text-xs text-[var(--amber)] font-medium">Invite Friends</span>
+        </div>
+      )}
+
+      <div className="p-3 space-y-4">
       {/* Add Friend by Username */}
       <div>
         <div className="text-[10px] text-[var(--mist)] uppercase tracking-wider mb-1.5">
@@ -1247,6 +1255,7 @@ function InviteTab({ worldId }: { worldId?: string }) {
           Friends will join you in {inviteData.realm_name}
         </div>
       )}
+      </div>
     </div>
   );
 }
