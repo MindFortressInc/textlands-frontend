@@ -2079,3 +2079,125 @@ export async function partyRest(partyId: string): Promise<{ success: boolean; me
     method: "POST",
   });
 }
+
+// ============ PUBLIC WIKI API ============
+// These endpoints return full definitions (no player auth required)
+
+export interface WikiLand {
+  key: string;
+  display_name: string;
+  description: string;
+  loretracker_name: string;
+  categories: Record<LoreCategory, { total: number }>;
+}
+
+export interface WikiEntry {
+  entry_type: LoreCategory;
+  entry_id: string;
+  entry_key: string;
+  display_name: string;
+  tier: string | null;
+  description: string | null;
+  extra: Record<string, unknown>;
+}
+
+export interface WikiPagination {
+  limit: number;
+  offset: number;
+  total: number;
+  has_more: boolean;
+}
+
+export interface WikiEntriesResponse {
+  land_key: string;
+  category: LoreCategory;
+  entries: WikiEntry[];
+  pagination: WikiPagination;
+}
+
+export interface WikiLandSummary {
+  land_key: string;
+  land_display_name: string;
+  loretracker_name: string;
+  categories: Record<LoreCategory, { total: number }>;
+}
+
+// Get all lands for wiki
+export async function getWikiLands(): Promise<WikiLand[]> {
+  return fetchAPI<WikiLand[]>("/wiki/lands");
+}
+
+// Get land summary (content counts)
+export async function getWikiLandSummary(landKey: string): Promise<WikiLandSummary> {
+  return fetchAPI<WikiLandSummary>(`/wiki/${landKey}`);
+}
+
+// Get wiki entries for a category (public, full definitions)
+export async function getWikiEntries(
+  landKey: string,
+  category: LoreCategory,
+  options?: {
+    tier?: string;
+    category?: string;
+    subcategory?: string;
+    complexity?: string;
+    realm?: string;
+    occupation?: string;
+    location_type?: string;
+    limit?: number;
+    offset?: number;
+  }
+): Promise<WikiEntriesResponse> {
+  const params = new URLSearchParams();
+  if (options?.tier) params.set("tier", options.tier);
+  if (options?.category) params.set("category", options.category);
+  if (options?.subcategory) params.set("subcategory", options.subcategory);
+  if (options?.complexity) params.set("complexity", options.complexity);
+  if (options?.realm) params.set("realm", options.realm);
+  if (options?.occupation) params.set("occupation", options.occupation);
+  if (options?.location_type) params.set("location_type", options.location_type);
+  if (options?.limit) params.set("limit", String(options.limit));
+  if (options?.offset) params.set("offset", String(options.offset));
+
+  const query = params.toString();
+  return fetchAPI<WikiEntriesResponse>(`/wiki/${landKey}/${category}${query ? `?${query}` : ""}`);
+}
+
+// Get single wiki entry detail
+export async function getWikiEntry(
+  landKey: string,
+  category: LoreCategory,
+  entryId: string
+): Promise<WikiEntry> {
+  return fetchAPI<WikiEntry>(`/wiki/${landKey}/${category}/${entryId}`);
+}
+
+// Get all skills (global, not land-specific)
+export async function getWikiSkills(options?: {
+  category?: string;
+  complexity?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<WikiEntriesResponse> {
+  const params = new URLSearchParams();
+  if (options?.category) params.set("category", options.category);
+  if (options?.complexity) params.set("complexity", options.complexity);
+  if (options?.limit) params.set("limit", String(options.limit));
+  if (options?.offset) params.set("offset", String(options.offset));
+
+  const query = params.toString();
+  return fetchAPI<WikiEntriesResponse>(`/wiki/skills${query ? `?${query}` : ""}`);
+}
+
+// Get single skill detail
+export async function getWikiSkill(skillName: string): Promise<WikiEntry> {
+  return fetchAPI<WikiEntry>(`/wiki/skills/${skillName}`);
+}
+
+// Get player's discovery status for merging with wiki (requires auth)
+export async function getPlayerDiscoveries(
+  landKey: string,
+  category: LoreCategory
+): Promise<{ discovered_ids: string[] }> {
+  return fetchAPI<{ discovered_ids: string[] }>(`/lore/${landKey}/${category}/discovered`);
+}
