@@ -618,6 +618,31 @@ export interface CharacterProfile {
   recent_events: ProfileEvent[];
 }
 
+// ============ TIME & WEATHER SYSTEM ============
+
+export type TimeOfDay = "dawn" | "morning" | "afternoon" | "evening" | "night" | "twilight" | "underground" | "artificial_day";
+export type Season = "spring" | "summer" | "fall" | "winter" | "wet" | "dry" | "none" | "eternal";
+export type DayCycle = "normal_24hr" | "long_nights" | "long_days" | "eternal_day" | "eternal_night" | "twilight" | "binary_suns";
+
+export interface WorldTimeResponse {
+  year: number;
+  month: number;
+  day: number;
+  hour: number;
+  minute: number;
+  time_of_day: TimeOfDay;
+  season: Season;
+  weather: string;
+  day_cycle: DayCycle;
+  timezone_offset: number;
+  timezone_name?: string;
+  description: string;
+  time_speed: number;
+  next_turning_at?: string;
+  seconds_until_turning?: number;
+  last_turning_at?: string;
+}
+
 // ============ CONSEQUENCE SYSTEM ============
 
 // Bounty on a player for crimes committed

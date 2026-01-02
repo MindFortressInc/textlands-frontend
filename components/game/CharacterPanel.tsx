@@ -6,6 +6,7 @@ import type { PlayerInfluence, LocationFootprint } from "@/lib/api";
 import { InfluenceBadge } from "./InfluenceBadge";
 import { SkillsTab } from "./SkillsTab";
 import { FrontierIndicator } from "./FrontierIndicator";
+import { WorldTimeDisplay } from "./WorldTimeDisplay";
 import * as api from "@/lib/api";
 
 interface CharacterPanelProps {
@@ -376,6 +377,7 @@ export function CharacterPanel({
                 worldId={worldId || null}
                 playerId={playerId || null}
               />
+              {worldId && <WorldTimeDisplay worldId={worldId} />}
             </div>
           )}
 
