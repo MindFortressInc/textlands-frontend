@@ -5,15 +5,16 @@ const nextConfig: NextConfig = {
     return {
       beforeFiles: [
         // wiki.textlands.com -> /wiki/*
+        // Exclude _next, api, and static files
         {
           source: "/",
           has: [{ type: "host", value: "wiki.textlands.com" }],
           destination: "/wiki",
         },
         {
-          source: "/:path*",
+          source: "/:path((?!_next|api|favicon\\.ico).*)",
           has: [{ type: "host", value: "wiki.textlands.com" }],
-          destination: "/wiki/:path*",
+          destination: "/wiki/:path",
         },
         // Also handle wiki.localhost for local dev
         {
@@ -22,9 +23,9 @@ const nextConfig: NextConfig = {
           destination: "/wiki",
         },
         {
-          source: "/:path*",
+          source: "/:path((?!_next|api|favicon\\.ico).*)",
           has: [{ type: "host", value: "wiki.localhost:3000" }],
-          destination: "/wiki/:path*",
+          destination: "/wiki/:path",
         },
       ],
     };
