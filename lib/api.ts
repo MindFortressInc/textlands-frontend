@@ -1074,11 +1074,24 @@ export interface InventoryItem {
   equipped_slot: string | null;
 }
 
+export interface Encumbrance {
+  current_load: number;
+  total_capacity: number;
+  load_percentage: number;
+  encumbrance_level: "normal" | "burdened" | "encumbered" | "overloaded";
+  can_pickup: boolean;
+  base_capacity: number;
+  strength_bonus: number;
+  equipment_bonus: number;
+  party_pool_bonus: number;
+}
+
 export interface InventoryResponse {
   items: InventoryItem[];
   equipped: Record<string, InventoryItem>;
   total_items: number;
   total_value: number;
+  encumbrance?: Encumbrance;
 }
 
 // Get player's inventory
@@ -2083,6 +2096,31 @@ export async function partyRest(partyId: string): Promise<{ success: boolean; me
 // ============ PUBLIC WIKI API ============
 // These endpoints return full definitions (no player auth required)
 
+// Raw API response types
+interface WikiLandRaw {
+  key: string;
+  display_name: string;
+  gold_standard_name: string;
+  gold_standard_symbol: string;
+}
+
+interface WikiLandsResponse {
+  lands: WikiLandRaw[];
+}
+
+interface WikiLandSummaryRaw {
+  land_key: string;
+  land_display_name: string;
+  items_count: number;
+  enemies_count: number;
+  skills_count: number;
+  npcs_count: number;
+  locations_count: number;
+  realms_count: number;
+  discovered_only: boolean;
+}
+
+// Frontend-friendly types
 export interface WikiLand {
   key: string;
   display_name: string;
@@ -2122,14 +2160,63 @@ export interface WikiLandSummary {
   categories: Record<LoreCategory, { total: number }>;
 }
 
+// Land descriptions (not in API, so we provide them)
+const LAND_DESCRIPTIONS: Record<string, string> = {
+  fantasy: "Dragons, magic, and medieval kingdoms await. Forge your legend in a world of swords and sorcery.",
+  scifi: "Traverse the stars, hack neural networks, and uncover the secrets of a cybernetic future.",
+  contemporary: "Navigate the complexities of modern life, from urban mysteries to supernatural phenomena.",
+  historical: "Relive pivotal moments in history, from ancient empires to revolutionary conflicts.",
+  horror: "Face your deepest fears in a world where nightmares are real and survival is never guaranteed.",
+  romance_historical: "Experience tales of passion in historical settings where hearts are won and destinies intertwine.",
+  romance_modern: "Modern romance, drama, and relationships in contemporary settings.",
+};
+
+// Thematic loretracker names
+const LORETRACKER_NAMES: Record<string, string> = {
+  fantasy: "Tome of Lore",
+  scifi: "DataBank",
+  contemporary: "Field Journal",
+  historical: "Chronicle",
+  horror: "The Codex",
+  romance_historical: "Social Register",
+  romance_modern: "Little Black Book",
+};
+
 // Get all lands for wiki
 export async function getWikiLands(): Promise<WikiLand[]> {
-  return fetchAPI<WikiLand[]>("/wiki/lands");
+  const response = await fetchAPI<WikiLandsResponse>("/wiki/lands");
+  return response.lands.map((land) => ({
+    key: land.key,
+    display_name: land.display_name,
+    description: LAND_DESCRIPTIONS[land.key] || "Explore this unique world.",
+    loretracker_name: LORETRACKER_NAMES[land.key] || "Compendium",
+    categories: {
+      items: { total: 0 },
+      enemies: { total: 0 },
+      skills: { total: 0 },
+      npcs: { total: 0 },
+      locations: { total: 0 },
+      realms: { total: 0 },
+    },
+  }));
 }
 
 // Get land summary (content counts)
 export async function getWikiLandSummary(landKey: string): Promise<WikiLandSummary> {
-  return fetchAPI<WikiLandSummary>(`/wiki/${landKey}`);
+  const raw = await fetchAPI<WikiLandSummaryRaw>(`/wiki/${landKey}`);
+  return {
+    land_key: raw.land_key,
+    land_display_name: raw.land_display_name,
+    loretracker_name: LORETRACKER_NAMES[landKey] || "Compendium",
+    categories: {
+      items: { total: raw.items_count },
+      enemies: { total: raw.enemies_count },
+      skills: { total: raw.skills_count },
+      npcs: { total: raw.npcs_count },
+      locations: { total: raw.locations_count },
+      realms: { total: raw.realms_count },
+    },
+  };
 }
 
 // Get wiki entries for a category (public, full definitions)

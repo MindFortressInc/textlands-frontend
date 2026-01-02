@@ -110,12 +110,12 @@ export default function WikiLandPage() {
           <Link href="/wiki" className="wiki-logo">
             <div className="wiki-logo-icon">📖</div>
             <div>
-              <div className="wiki-logo-text">Textlands Codex</div>
+              <div className="wiki-logo-text">Textlands Wiki</div>
             </div>
           </Link>
         </header>
         <main className="wiki-main full-width">
-          <div style={{ textAlign: "center", padding: 64, color: "var(--wiki-mist)" }}>
+          <div style={{ textAlign: "center", padding: 64, color: "var(--mist)" }}>
             {loading ? "Loading..." : "Land not found"}
           </div>
         </main>
@@ -132,7 +132,7 @@ export default function WikiLandPage() {
         <Link href="/wiki" className="wiki-logo">
           <div className="wiki-logo-icon">📖</div>
           <div>
-            <div className="wiki-logo-text">Textlands Codex</div>
+            <div className="wiki-logo-text">Textlands Wiki</div>
           </div>
         </Link>
 
@@ -200,7 +200,7 @@ export default function WikiLandPage() {
             width: 80,
             height: 80,
             background: "var(--wiki-stone)",
-            border: "1px solid var(--wiki-slate)",
+            border: "1px solid var(--slate)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",

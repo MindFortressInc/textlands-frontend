@@ -153,7 +153,7 @@ export default function WikiCategoryPage() {
         <Link href="/wiki" className="wiki-logo">
           <div className="wiki-logo-icon">📖</div>
           <div>
-            <div className="wiki-logo-text">Textlands Codex</div>
+            <div className="wiki-logo-text">Textlands Wiki</div>
           </div>
         </Link>
 
@@ -224,7 +224,7 @@ export default function WikiCategoryPage() {
               alignItems: "center",
               gap: 8,
               padding: "10px 12px",
-              color: "var(--wiki-fog)",
+              color: "var(--text-dim)",
               fontSize: 13,
               cursor: "pointer",
             }}>
@@ -266,11 +266,11 @@ export default function WikiCategoryPage() {
 
         {/* Entry Grid */}
         {loading ? (
-          <div style={{ textAlign: "center", padding: 64, color: "var(--wiki-mist)" }}>
+          <div style={{ textAlign: "center", padding: 64, color: "var(--mist)" }}>
             Loading entries...
           </div>
         ) : filteredEntries.length === 0 ? (
-          <div style={{ textAlign: "center", padding: 64, color: "var(--wiki-mist)" }}>
+          <div style={{ textAlign: "center", padding: 64, color: "var(--mist)" }}>
             No entries found
           </div>
         ) : (
@@ -296,7 +296,7 @@ export default function WikiCategoryPage() {
             gap: 8,
             marginTop: 32,
             paddingTop: 32,
-            borderTop: "1px solid var(--wiki-slate)",
+            borderTop: "1px solid var(--slate)",
           }}>
             <button className="wiki-auth-btn">Previous</button>
             <button className="wiki-auth-btn">Next</button>

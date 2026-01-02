@@ -66,7 +66,7 @@ function SpoilerLock({ onReveal }: { onReveal: () => void }) {
         Entry Not Yet Discovered
       </h2>
       <p style={{
-        color: "var(--wiki-fog)",
+        color: "var(--text-dim)",
         marginBottom: 24,
         maxWidth: 400,
         lineHeight: 1.6,
@@ -78,8 +78,8 @@ function SpoilerLock({ onReveal }: { onReveal: () => void }) {
         style={{
           padding: "12px 24px",
           background: "var(--wiki-stone)",
-          border: "1px solid var(--wiki-slate)",
-          color: "var(--wiki-fog)",
+          border: "1px solid var(--slate)",
+          color: "var(--text-dim)",
           fontFamily: "var(--font-mono)",
           fontSize: 13,
           cursor: "pointer",
@@ -132,7 +132,7 @@ export default function WikiEntryPage() {
         <Link href="/wiki" className="wiki-logo">
           <div className="wiki-logo-icon">📖</div>
           <div>
-            <div className="wiki-logo-text">Textlands Codex</div>
+            <div className="wiki-logo-text">Textlands Wiki</div>
           </div>
         </Link>
 
@@ -183,11 +183,11 @@ export default function WikiEntryPage() {
         </nav>
 
         {loading ? (
-          <div style={{ textAlign: "center", padding: 64, color: "var(--wiki-mist)" }}>
+          <div style={{ textAlign: "center", padding: 64, color: "var(--mist)" }}>
             Loading entry...
           </div>
         ) : !entry ? (
-          <div style={{ textAlign: "center", padding: 64, color: "var(--wiki-mist)" }}>
+          <div style={{ textAlign: "center", padding: 64, color: "var(--mist)" }}>
             Entry not found
           </div>
         ) : isHidden ? (
@@ -282,11 +282,11 @@ export default function WikiEntryPage() {
               <div style={{
                 padding: 16,
                 background: "var(--wiki-stone)",
-                border: "1px solid var(--wiki-slate)",
+                border: "1px solid var(--slate)",
                 fontSize: 13,
-                color: "var(--wiki-mist)",
+                color: "var(--mist)",
               }}>
-                <strong style={{ color: "var(--wiki-fog)" }}>Discovery Hint:</strong>{" "}
+                <strong style={{ color: "var(--text-dim)" }}>Discovery Hint:</strong>{" "}
                 {category === "items" && "Found as loot, purchased from merchants, or crafted."}
                 {category === "enemies" && "Defeat in combat to add to your bestiary."}
                 {category === "skills" && "Gain XP in this skill through related actions."}

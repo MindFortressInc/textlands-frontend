@@ -319,6 +319,16 @@ export function InventoryPanel({ isOpen, onClose }: InventoryPanelProps) {
                 [{inventory.total_items} items]
               </span>
             )}
+            {inventory?.encumbrance && (
+              <span className={`text-xs ${
+                inventory.encumbrance.encumbrance_level === "overloaded" ? "text-[var(--crimson)]" :
+                inventory.encumbrance.encumbrance_level === "encumbered" ? "text-[var(--crimson)]" :
+                inventory.encumbrance.encumbrance_level === "burdened" ? "text-[var(--amber)]" :
+                "text-[var(--mist)]"
+              }`}>
+                {inventory.encumbrance.current_load.toFixed(1)} kg / {inventory.encumbrance.total_capacity.toFixed(1)} kg
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-4">
             <span className="text-[var(--mist)] text-xs hidden sm:block">

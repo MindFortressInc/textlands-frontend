@@ -45,7 +45,7 @@ function SpoilerGate({ onAccept }: { onAccept: () => void }) {
     <div className="wiki-gate">
       <div className="wiki-gate-content">
         <div className="wiki-gate-icon">📖</div>
-        <h1 className="wiki-gate-title">The Textlands Codex</h1>
+        <h1 className="wiki-gate-title">The Textlands Wiki</h1>
         <p className="wiki-gate-text">
           This wiki contains complete information about all items, enemies, skills,
           NPCs, and locations in Textlands. Reading ahead may spoil the joy of discovery.
@@ -65,7 +65,7 @@ function SpoilerGate({ onAccept }: { onAccept: () => void }) {
             Return to Textlands
           </Link>
         </div>
-        <p style={{ marginTop: 24, fontSize: 12, color: "var(--wiki-mist)" }}>
+        <p style={{ marginTop: 24, fontSize: 12, color: "var(--mist)" }}>
           <strong>Tip:</strong> Log in for spoiler-free mode — undiscovered content
           will be hidden until you choose to reveal it.
         </p>
@@ -122,7 +122,7 @@ export default function WikiHomePage() {
         <Link href="/wiki" className="wiki-logo">
           <div className="wiki-logo-icon">📖</div>
           <div>
-            <div className="wiki-logo-text">Textlands Codex</div>
+            <div className="wiki-logo-text">Textlands Wiki</div>
             <div className="wiki-logo-subtitle">The Complete Encyclopedia</div>
           </div>
         </Link>
@@ -155,7 +155,7 @@ export default function WikiHomePage() {
           <h1 className="wiki-page-title" style={{ fontSize: 42, marginBottom: 16 }}>
             Welcome to the Codex
           </h1>
-          <p style={{ fontSize: 18, color: "var(--wiki-fog)", maxWidth: 600, margin: "0 auto", lineHeight: 1.7, fontFamily: "var(--font-lore)" }}>
+          <p style={{ fontSize: 18, color: "var(--text-dim)", maxWidth: 600, margin: "0 auto", lineHeight: 1.7, fontFamily: "var(--font-lore)" }}>
             The complete encyclopedia of Textlands. Browse items, enemies, skills,
             NPCs, and locations across all lands.
           </p>
@@ -172,9 +172,9 @@ export default function WikiHomePage() {
             <div style={{
               padding: "12px 20px",
               background: "var(--wiki-stone)",
-              border: "1px solid var(--wiki-slate)",
+              border: "1px solid var(--slate)",
               fontSize: 13,
-              color: "var(--wiki-fog)",
+              color: "var(--text-dim)",
             }}>
               <span style={{ marginRight: 12 }}>Spoiler-Free Mode</span>
               <label style={{ cursor: "pointer" }}>
@@ -187,7 +187,7 @@ export default function WikiHomePage() {
 
         {/* Land Selection */}
         {loading ? (
-          <div style={{ textAlign: "center", padding: 64, color: "var(--wiki-mist)" }}>
+          <div style={{ textAlign: "center", padding: 64, color: "var(--mist)" }}>
             Loading lands...
           </div>
         ) : (
@@ -206,8 +206,8 @@ export default function WikiHomePage() {
               display: "inline-block",
               padding: "16px 32px",
               background: "var(--wiki-stone)",
-              border: "1px solid var(--wiki-slate)",
-              color: "var(--wiki-fog)",
+              border: "1px solid var(--slate)",
+              color: "var(--text-dim)",
               textDecoration: "none",
               fontSize: 14,
               transition: "all 0.2s ease",
@@ -215,7 +215,7 @@ export default function WikiHomePage() {
           >
             <span style={{ marginRight: 8 }}>◈</span>
             Browse All Skills
-            <span style={{ marginLeft: 8, color: "var(--wiki-mist)" }}>
+            <span style={{ marginLeft: 8, color: "var(--mist)" }}>
               (Universal across all lands)
             </span>
           </Link>
@@ -225,12 +225,12 @@ export default function WikiHomePage() {
         <footer style={{
           marginTop: 80,
           paddingTop: 32,
-          borderTop: "1px solid var(--wiki-slate)",
+          borderTop: "1px solid var(--slate)",
           textAlign: "center",
-          color: "var(--wiki-mist)",
+          color: "var(--mist)",
           fontSize: 12,
         }}>
-          <p>Textlands Codex — The complete game encyclopedia</p>
+          <p>Textlands Wiki — The complete game encyclopedia</p>
           <p style={{ marginTop: 8, opacity: 0.6 }}>
             Content is dynamically generated. Some information may vary based on game updates.
           </p>
