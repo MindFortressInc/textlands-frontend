@@ -5,6 +5,7 @@ import type { Character, CharacterProfile, SkillXPGain } from "@/types/game";
 import type { PlayerInfluence, LocationFootprint } from "@/lib/api";
 import { InfluenceBadge } from "./InfluenceBadge";
 import { SkillsTab } from "./SkillsTab";
+import { LoreTab } from "./LoreTab";
 import { FrontierIndicator } from "./FrontierIndicator";
 import { WorldTimeDisplay } from "./WorldTimeDisplay";
 import * as api from "@/lib/api";
@@ -21,9 +22,10 @@ interface CharacterPanelProps {
   worldId?: string | null;
   playerId?: string | null;
   recentXPGain?: SkillXPGain | null;
+  landKey?: string | null;
 }
 
-type TabType = "stats" | "skills" | "profile";
+type TabType = "stats" | "skills" | "lore" | "profile";
 
 function StatBar({ current, max, type }: { current: number; max: number; type: "hp" | "mana" | "xp" }) {
   const pct = Math.min(100, Math.max(0, (current / max) * 100));
@@ -218,6 +220,7 @@ export function CharacterPanel({
   worldId,
   playerId,
   recentXPGain,
+  landKey,
 }: CharacterPanelProps) {
   const [activeTab, setActiveTab] = useState<TabType>("stats");
   const [profile, setProfile] = useState<CharacterProfile | null>(null);
@@ -296,6 +299,16 @@ export function CharacterPanel({
           }`}
         >
           Skills
+        </button>
+        <button
+          onClick={() => setActiveTab("lore")}
+          className={`flex-1 px-2 py-2 text-[10px] uppercase tracking-wider transition-colors ${
+            activeTab === "lore"
+              ? "text-[var(--amber)] border-b-2 border-[var(--amber)] bg-[var(--stone)]"
+              : "text-[var(--mist)] hover:text-[var(--fog)] hover:bg-[var(--stone)]"
+          }`}
+        >
+          Lore
         </button>
         <button
           onClick={() => setActiveTab("profile")}
@@ -459,6 +472,10 @@ export function CharacterPanel({
               xp_gained: recentXPGain.xp_gained,
             } : null}
           />
+        </div>
+      ) : activeTab === "lore" ? (
+        <div className="flex-1 overflow-y-auto">
+          <LoreTab landKey={landKey || null} />
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto">

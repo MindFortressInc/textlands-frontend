@@ -1104,3 +1104,109 @@ body {
   }
 }
 
+/* ========== PARTY SYSTEM STYLES ========== */
+
+/* Party icon - star */
+.party-icon {
+  color: var(--amber);
+  font-size: 0.875rem;
+  line-height: 1;
+}
+
+/* Player/NPC type icons */
+.player-icon {
+  color: var(--entity-player);
+  font-size: 0.625rem;
+}
+
+.npc-icon {
+  font-size: 0.625rem;
+}
+
+/* Party member card base */
+.party-member-card {
+  position: relative;
+}
+
+/* NPC card hover glow */
+.npc-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--entity-npc);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.npc-card:hover::before {
+  opacity: 0.5;
+}
+
+/* Critical NPC state - leaving/low morale */
+.npc-critical {
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.npc-critical::before {
+  background: var(--crimson) !important;
+  opacity: 0.7 !important;
+  animation: critical-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes critical-pulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 0.3; }
+}
+
+/* Loyalty warning indicator */
+.loyalty-warning {
+  color: var(--crimson);
+  font-weight: bold;
+  animation: loyalty-flash 1s ease-in-out infinite;
+}
+
+@keyframes loyalty-flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Knowledge hint glow */
+.knowledge-hint {
+  animation: knowledge-glow 3s ease-in-out infinite;
+}
+
+@keyframes knowledge-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+  50% { box-shadow: 0 0 8px 0 rgba(245, 158, 11, 0.15); }
+}
+
+/* Modern theme adjustments for party */
+[data-theme="modern"] .party-member-card {
+  background: #FFFFFF;
+}
+
+[data-theme="modern"] .npc-card:hover {
+  background: #F9FAFB;
+}
+
+[data-theme="modern"] .npc-critical {
+  background: rgba(239, 68, 68, 0.05);
+}
+
+[data-theme="modern"] .knowledge-hint {
+  background: rgba(14, 165, 233, 0.05);
+  border-color: rgba(14, 165, 233, 0.2);
+}
+
+/* Reduced motion for party animations */
+@media (prefers-reduced-motion: reduce) {
+  .npc-critical::before,
+  .loyalty-warning,
+  .knowledge-hint {
+    animation: none;
+  }
+}
+

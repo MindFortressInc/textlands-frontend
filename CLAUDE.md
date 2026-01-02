@@ -113,16 +113,12 @@ textlands-frontend/
 
 ## Themes
 
-6 built-in themes stored in localStorage:
+2 themes stored in localStorage:
 
 | Theme | Description |
 |-------|-------------|
-| `terminal` | Clean & fast (default) |
-| `grimoire` | Atmospheric with glows/scanlines |
-| `phosphor` | Classic green CRT |
-| `amber_crt` | Warm amber glow |
+| `terminal` | Dark mode (default) |
 | `parchment` | Light mode |
-| `cyberpunk` | Neon magenta/cyan |
 
 Add new themes in `lib/themes/index.ts`.
 

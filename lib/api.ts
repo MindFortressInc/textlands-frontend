@@ -1776,3 +1776,306 @@ export async function sendSmsInvite(phone: string, realmId?: string): Promise<Se
 export async function getInviteStats(): Promise<InviteStatsResponse> {
   return fetchAPI<InviteStatsResponse>("/invites/stats");
 }
+
+// ============ LORETRACKER API ============
+
+export type LoreCategory = "items" | "enemies" | "skills" | "npcs" | "locations" | "realms";
+
+export interface LoreCategoryCounts {
+  discovered: number;
+  total: number;
+}
+
+export interface LoreSummary {
+  land_key: string;
+  land_display_name: string;
+  loretracker_name: string;
+  categories: Record<LoreCategory, LoreCategoryCounts>;
+  total_kills: number;
+  completion_percent: number;
+  has_received_starter: boolean;
+}
+
+export interface LoreEntry {
+  id: string;
+  display_name: string;
+  category_hint: string | null;
+  tier: string | null;
+  description: string | null;
+  is_discovered: boolean;
+  discovered_at: string | null;
+  discovery_source: string | null;
+  // Enemy-specific
+  kill_count?: number;
+  first_killed_at?: string;
+  last_killed_at?: string;
+}
+
+export interface LoreHierarchySubcategory {
+  name: string;
+  discovered: number;
+  total: number;
+}
+
+export interface LoreHierarchyCategory {
+  name: string;
+  discovered: number;
+  total: number;
+  subcategories: LoreHierarchySubcategory[];
+}
+
+export interface LoreItemsHierarchy {
+  land_key: string;
+  categories: LoreHierarchyCategory[];
+}
+
+export interface LoreEnemiesHierarchy {
+  land_key: string;
+  tiers: LoreHierarchyCategory[];
+}
+
+export interface LoreSkillsHierarchy {
+  land_key: string;
+  categories: LoreHierarchyCategory[];
+}
+
+export interface LoreNpcsHierarchy {
+  land_key: string;
+  realms: LoreHierarchyCategory[];
+}
+
+export interface LoreLocationsHierarchy {
+  land_key: string;
+  realms: LoreHierarchyCategory[];
+}
+
+export interface LoreEntriesResponse {
+  entries: LoreEntry[];
+  total: number;
+  offset: number;
+  limit: number;
+}
+
+export interface LoreEntriesOptions {
+  tier?: string;
+  subcategory?: string;
+  occupation?: string;
+  location_type?: string;
+  realm?: string;
+  sort_by?: "tier" | "level" | "name" | "discovered";
+  show_undiscovered?: boolean;
+  limit?: number;
+  offset?: number;
+}
+
+// Get lore summary for a land
+export async function getLoreSummary(landKey: string): Promise<LoreSummary> {
+  return fetchAPI<LoreSummary>(`/lore/${landKey}`);
+}
+
+// Get lore entries for a category
+export async function getLoreEntries(
+  landKey: string,
+  category: LoreCategory,
+  options?: LoreEntriesOptions
+): Promise<LoreEntriesResponse> {
+  const params = new URLSearchParams();
+  if (options?.tier) params.set("tier", options.tier);
+  if (options?.subcategory) params.set("subcategory", options.subcategory);
+  if (options?.occupation) params.set("occupation", options.occupation);
+  if (options?.location_type) params.set("location_type", options.location_type);
+  if (options?.realm) params.set("realm", options.realm);
+  if (options?.sort_by) params.set("sort_by", options.sort_by);
+  if (options?.show_undiscovered !== undefined) params.set("show_undiscovered", String(options.show_undiscovered));
+  if (options?.limit) params.set("limit", String(options.limit));
+  if (options?.offset) params.set("offset", String(options.offset));
+
+  const query = params.toString();
+  return fetchAPI<LoreEntriesResponse>(`/lore/${landKey}/${category}${query ? `?${query}` : ""}`);
+}
+
+// Get hierarchy for items
+export async function getLoreItemsHierarchy(landKey: string): Promise<LoreItemsHierarchy> {
+  return fetchAPI<LoreItemsHierarchy>(`/lore/${landKey}/items/hierarchy`);
+}
+
+// Get hierarchy for enemies
+export async function getLoreEnemiesHierarchy(landKey: string): Promise<LoreEnemiesHierarchy> {
+  return fetchAPI<LoreEnemiesHierarchy>(`/lore/${landKey}/enemies/hierarchy`);
+}
+
+// Get hierarchy for skills
+export async function getLoreSkillsHierarchy(landKey: string): Promise<LoreSkillsHierarchy> {
+  return fetchAPI<LoreSkillsHierarchy>(`/lore/${landKey}/skills/hierarchy`);
+}
+
+// Get hierarchy for NPCs
+export async function getLoreNpcsHierarchy(landKey: string): Promise<LoreNpcsHierarchy> {
+  return fetchAPI<LoreNpcsHierarchy>(`/lore/${landKey}/npcs/hierarchy`);
+}
+
+// Get hierarchy for locations
+export async function getLoreLocationsHierarchy(landKey: string): Promise<LoreLocationsHierarchy> {
+  return fetchAPI<LoreLocationsHierarchy>(`/lore/${landKey}/locations/hierarchy`);
+}
+
+// Get single lore entry detail
+export async function getLoreEntryDetail(
+  landKey: string,
+  category: LoreCategory,
+  entryId: string
+): Promise<LoreEntry> {
+  return fetchAPI<LoreEntry>(`/lore/${landKey}/${category}/${entryId}`);
+}
+
+// ============ PARTY API ============
+
+export type PartyRole = "tank" | "healer" | "dps" | "support";
+export type BehaviorMode = "ai_controlled" | "player_orders" | "defensive";
+export type LoyaltyLevel = "devoted" | "loyal" | "neutral" | "suspicious" | "leaving";
+
+export interface PartyNpcMember {
+  entity_id: string;
+  name: string;
+  role: PartyRole;
+  hp: number;
+  max_hp: number;
+  hp_percent: number;
+  loyalty: number;
+  morale: number;
+  behavior_mode: BehaviorMode;
+  is_alive: boolean;
+  core_values: string[];
+  recruited_at: string;
+}
+
+export interface PartyPlayerMember {
+  player_id: string;
+  name: string;
+  hp: number;
+  max_hp: number;
+  hp_percent: number;
+  level?: number;
+  is_online: boolean;
+  is_leader: boolean;
+}
+
+export interface PartyNpcDetail {
+  entity_id: string;
+  name: string;
+  loyalty: number;
+  morale: number;
+  identity: {
+    backstory: string;
+    personality: string;
+    motivations: string;
+    appearance: string;
+    speaking_style: string;
+  };
+  standing_orders: StandingOrders;
+  combat_role: PartyRole;
+  abilities: string[];
+  relationship_score: number;
+  relationship_label: LoyaltyLevel;
+  time_in_party_hours: number;
+  knowledge_count: number;
+  has_unshared_knowledge: boolean;
+  recent_loyalty_events: LoyaltyEvent[];
+}
+
+export interface StandingOrders {
+  protect_player_ids?: string[];
+  focus_target_type?: string;
+  avoid_target_type?: string;
+  retreat_threshold?: number;
+  use_abilities?: string[];
+}
+
+export interface LoyaltyEvent {
+  event_type: "loyalty" | "morale";
+  delta: number;
+  reason: string;
+  occurred_at?: string;
+}
+
+export interface Party {
+  id: string;
+  name: string;
+  leader_id: string;
+  member_count: number;
+  max_size: number;
+  players: PartyPlayerMember[];
+  npcs: PartyNpcMember[];
+  created_at: string;
+}
+
+export interface PartyListResponse {
+  party: Party | null;
+  has_party: boolean;
+}
+
+export interface PartyKnowledge {
+  id: string;
+  content: string;
+  source_entity_id: string;
+  source_name: string;
+  shared_at: string;
+  trust_level_required: number;
+  accuracy: number;
+}
+
+// Get current player's party
+export async function getParty(): Promise<PartyListResponse> {
+  return fetchAPI<PartyListResponse>("/party");
+}
+
+// Get party NPC members (brief view)
+export async function getPartyNpcs(): Promise<PartyNpcMember[]> {
+  return fetchAPI<PartyNpcMember[]>("/party/npcs");
+}
+
+// Get NPC detail (rich view)
+export async function getPartyNpcDetail(entityId: string): Promise<PartyNpcDetail> {
+  return fetchAPI<PartyNpcDetail>(`/party/npcs/${entityId}/detail`);
+}
+
+// Set NPC behavior mode
+export async function setNpcBehavior(
+  entityId: string,
+  behaviorMode: BehaviorMode
+): Promise<{ success: boolean }> {
+  return fetchAPI<{ success: boolean }>(`/party/npcs/${entityId}/behavior`, {
+    method: "PATCH",
+    body: JSON.stringify({ behavior_mode: behaviorMode }),
+  });
+}
+
+// Set NPC standing orders
+export async function setNpcOrders(
+  entityId: string,
+  orders: StandingOrders
+): Promise<{ success: boolean }> {
+  return fetchAPI<{ success: boolean }>(`/party/npcs/${entityId}/orders`, {
+    method: "PATCH",
+    body: JSON.stringify(orders),
+  });
+}
+
+// Dismiss NPC from party
+export async function dismissNpc(entityId: string): Promise<{ success: boolean; message: string }> {
+  return fetchAPI<{ success: boolean; message: string }>(`/party/npcs/${entityId}`, {
+    method: "DELETE",
+  });
+}
+
+// Get party's shared knowledge
+export async function getPartyKnowledge(partyId: string): Promise<PartyKnowledge[]> {
+  return fetchAPI<PartyKnowledge[]>(`/party/${partyId}/knowledge`);
+}
+
+// Trigger party rest (knowledge sharing + morale recovery)
+export async function partyRest(partyId: string): Promise<{ success: boolean; message: string }> {
+  return fetchAPI<{ success: boolean; message: string }>(`/party/${partyId}/rest`, {
+    method: "POST",
+  });
+}

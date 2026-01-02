@@ -1565,6 +1565,7 @@ export default function GamePage() {
             worldId={selectedWorld?.id}
             playerId={playerId}
             recentXPGain={recentXPGain}
+            landKey={selectedWorld?.land}
           />
           <SocialPanel
             playerId={playerId || undefined}
