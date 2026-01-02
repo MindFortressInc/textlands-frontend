@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useWiki } from "@/contexts/WikiContext";
+import * as api from "@/lib/api";
 import type { WikiEntry, LoreCategory } from "@/lib/api";
 
 const CATEGORY_CONFIG: Record<LoreCategory, { icon: string; label: string }> = {
@@ -44,55 +45,6 @@ const LAND_NAMES: Record<string, string> = {
   horror: "Horror",
   adults_only: "Romance",
 };
-
-// Mock entry detail
-function getMockEntry(category: LoreCategory, entryId: string): WikiEntry & { lore_text?: string } {
-  const names: Record<string, string> = {
-    items: "Iron Longsword",
-    enemies: "Forest Wolf",
-    skills: "Melee Combat",
-    npcs: "Village Elder",
-    locations: "Ancient Temple",
-    realms: "Thornwood Vale",
-  };
-
-  const descriptions: Record<string, string> = {
-    items: "A well-forged blade of sturdy iron, favored by soldiers and adventurers alike. The edge holds well against most foes.",
-    enemies: "A cunning predator of the woodlands. Wolves hunt in packs, using coordinated tactics to bring down prey larger than themselves.",
-    skills: "The fundamental art of close-quarters combat. Masters can deliver devastating blows and parry incoming attacks with precision.",
-    npcs: "The eldest member of the village council, keeper of traditions and arbiter of disputes. Known for wisdom earned through decades of experience.",
-    locations: "Ruins of a once-great temple, now reclaimed by nature. Strange energies still linger within its crumbling halls.",
-    realms: "A verdant valley surrounded by ancient forests. Home to many villages and the mysterious Thornwood itself.",
-  };
-
-  const loreTexts: Record<string, string> = {
-    items: "The first iron swords were forged in the early days of the realm, when blacksmiths discovered the secrets of smelting. This particular design has been refined over generations, balancing weight and reach for optimal combat effectiveness.",
-    enemies: "Legends speak of a great wolf spirit that once ruled these forests, whose descendants still roam the woodlands today. Some hunters claim the wolves possess an intelligence beyond mere animals, and warn against underestimating them.",
-    skills: "Combat has been practiced since the dawn of civilization. Those who master the blade speak of entering a state of flow, where instinct and training merge into seamless action.",
-    npcs: "Born in simpler times, the Elder has witnessed the rise and fall of kings, the coming of dark omens, and the eternal cycles of the seasons. Their counsel is sought by many who face difficult decisions.",
-    locations: "Before the Cataclysm, this temple was dedicated to the Old Gods. Now it serves as a waypoint for travelers and, some say, a gathering place for those who still practice the old ways.",
-    realms: "Thornwood Vale was founded by settlers fleeing conflict in the eastern lands. Over centuries, it has grown from a handful of homesteads into a thriving region with its own traditions and mysteries.",
-  };
-
-  return {
-    entry_type: category,
-    entry_id: entryId,
-    entry_key: `${category}_${entryId}`,
-    display_name: names[category] || "Unknown Entry",
-    tier: category === "enemies" ? "common" : "uncommon",
-    description: descriptions[category] || "A mysterious entry.",
-    extra: {
-      category: category === "items" ? "weapon" : undefined,
-      subcategory: category === "items" ? "sword" : undefined,
-      damage: category === "items" ? [5, 10] : undefined,
-      level: category === "enemies" ? 5 : undefined,
-      hp: category === "enemies" ? 45 : undefined,
-      occupation: category === "npcs" ? "village_leader" : undefined,
-      location_type: category === "locations" ? "dungeon" : undefined,
-    },
-    lore_text: loreTexts[category],
-  };
-}
 
 function SpoilerLock({ onReveal }: { onReveal: () => void }) {
   return (
@@ -147,22 +99,23 @@ export default function WikiEntryPage() {
 
   const { isLoggedIn, isEntryHidden, unlockEntry } = useWiki();
 
-  const [entry, setEntry] = useState<(WikiEntry & { lore_text?: string }) | null>(null);
+  const [entry, setEntry] = useState<WikiEntry | null>(null);
   const [loading, setLoading] = useState(true);
   const [isHidden, setIsHidden] = useState(false);
 
   const landConfig = LAND_CONFIG[landKey] || LAND_CONFIG.fantasy;
   const categoryConfig = CATEGORY_CONFIG[category] || { icon: "◇", label: category };
 
-  // Load entry
+  // Load entry from API
   useEffect(() => {
     setLoading(true);
-    setTimeout(() => {
-      const mockEntry = getMockEntry(category, entryId);
-      setEntry(mockEntry);
-      setIsHidden(isLoggedIn && isEntryHidden(entryId));
-      setLoading(false);
-    }, 200);
+    api.getWikiEntry(landKey, category, entryId)
+      .then((data) => {
+        setEntry(data);
+        setIsHidden(isLoggedIn && isEntryHidden(entryId));
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, [landKey, category, entryId, isLoggedIn, isEntryHidden]);
 
   const handleReveal = () => {
@@ -315,11 +268,11 @@ export default function WikiEntryPage() {
             )}
 
             {/* Lore */}
-            {entry.lore_text && (
+            {typeof entry.extra?.lore === "string" && (
               <section className="wiki-section">
                 <h2 className="wiki-section-title">Lore</h2>
                 <p className="wiki-lore-text" style={{ fontStyle: "italic" }}>
-                  {entry.lore_text}
+                  {entry.extra.lore}
                 </p>
               </section>
             )}

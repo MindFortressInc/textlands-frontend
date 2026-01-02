@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useWiki } from "@/contexts/WikiContext";
+import * as api from "@/lib/api";
 import type { WikiLand } from "@/lib/api";
 
 // Land configuration with icons and accent colors
@@ -38,94 +39,6 @@ const LAND_CONFIG: Record<string, { icon: string; accent: string; gradient: stri
     gradient: "linear-gradient(135deg, #ec4899 0%, #db2777 100%)",
   },
 };
-
-// Mock data for development (replace with API call)
-const MOCK_LANDS: WikiLand[] = [
-  {
-    key: "fantasy",
-    display_name: "High Fantasy",
-    description: "Dragons, magic, and medieval kingdoms await. Forge your legend in a world of swords and sorcery.",
-    loretracker_name: "Tome of Lore",
-    categories: {
-      items: { total: 500 },
-      enemies: { total: 150 },
-      skills: { total: 22 },
-      npcs: { total: 89 },
-      locations: { total: 34 },
-      realms: { total: 5 },
-    },
-  },
-  {
-    key: "scifi",
-    display_name: "Sci-Fi",
-    description: "Traverse the stars, hack neural networks, and uncover the secrets of a cybernetic future.",
-    loretracker_name: "DataBank",
-    categories: {
-      items: { total: 480 },
-      enemies: { total: 140 },
-      skills: { total: 22 },
-      npcs: { total: 76 },
-      locations: { total: 28 },
-      realms: { total: 4 },
-    },
-  },
-  {
-    key: "contemporary",
-    display_name: "Contemporary",
-    description: "Navigate the complexities of modern life, from urban mysteries to supernatural phenomena hiding in plain sight.",
-    loretracker_name: "Field Journal",
-    categories: {
-      items: { total: 320 },
-      enemies: { total: 95 },
-      skills: { total: 22 },
-      npcs: { total: 110 },
-      locations: { total: 42 },
-      realms: { total: 6 },
-    },
-  },
-  {
-    key: "historical",
-    display_name: "Historical",
-    description: "Relive pivotal moments in history, from ancient empires to revolutionary conflicts.",
-    loretracker_name: "Chronicle",
-    categories: {
-      items: { total: 380 },
-      enemies: { total: 120 },
-      skills: { total: 22 },
-      npcs: { total: 95 },
-      locations: { total: 38 },
-      realms: { total: 5 },
-    },
-  },
-  {
-    key: "horror",
-    display_name: "Horror",
-    description: "Face your deepest fears in a world where nightmares are real and survival is never guaranteed.",
-    loretracker_name: "The Codex",
-    categories: {
-      items: { total: 290 },
-      enemies: { total: 180 },
-      skills: { total: 22 },
-      npcs: { total: 65 },
-      locations: { total: 30 },
-      realms: { total: 4 },
-    },
-  },
-  {
-    key: "adults_only",
-    display_name: "Romance",
-    description: "Experience tales of passion and intrigue, where hearts are won and destinies intertwine.",
-    loretracker_name: "Little Black Book",
-    categories: {
-      items: { total: 180 },
-      enemies: { total: 45 },
-      skills: { total: 22 },
-      npcs: { total: 150 },
-      locations: { total: 35 },
-      realms: { total: 3 },
-    },
-  },
-];
 
 function SpoilerGate({ onAccept }: { onAccept: () => void }) {
   return (
@@ -186,17 +99,15 @@ function LandCard({ land }: { land: WikiLand }) {
 
 export default function WikiHomePage() {
   const { spoilerAccepted, acceptSpoilers, isLoggedIn } = useWiki();
-  const [lands, setLands] = useState<WikiLand[]>(MOCK_LANDS);
-  const [loading, setLoading] = useState(false);
+  const [lands, setLands] = useState<WikiLand[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Fetch lands on mount
   useEffect(() => {
-    // TODO: Uncomment when backend is ready
-    // setLoading(true);
-    // api.getWikiLands()
-    //   .then(setLands)
-    //   .catch(console.error)
-    //   .finally(() => setLoading(false));
+    api.getWikiLands()
+      .then(setLands)
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
 
   // Show spoiler gate if not accepted and not logged in

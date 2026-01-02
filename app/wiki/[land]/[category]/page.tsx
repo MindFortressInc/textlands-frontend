@@ -4,7 +4,8 @@ import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { useWiki } from "@/contexts/WikiContext";
-import type { WikiEntry, WikiEntriesResponse, LoreCategory } from "@/lib/api";
+import * as api from "@/lib/api";
+import type { WikiEntry, LoreCategory } from "@/lib/api";
 
 const CATEGORY_CONFIG: Record<LoreCategory, { icon: string; label: string }> = {
   items: { icon: "⚔", label: "Items" },
@@ -44,32 +45,6 @@ const LAND_NAMES: Record<string, string> = {
   horror: "Horror",
   adults_only: "Romance",
 };
-
-// Mock data generator
-function generateMockEntries(category: LoreCategory, count: number): WikiEntry[] {
-  const tiers = category === "enemies"
-    ? ["minion", "common", "elite", "boss"]
-    : ["common", "uncommon", "rare", "epic", "legendary"];
-
-  const names: Record<string, string[]> = {
-    items: ["Iron Longsword", "Steel Dagger", "Leather Armor", "Health Potion", "Mana Crystal", "Silver Ring", "Enchanted Cloak", "Dragon Scale Shield"],
-    enemies: ["Forest Wolf", "Goblin Scout", "Cave Spider", "Skeleton Warrior", "Dark Mage", "Stone Golem", "Shadow Drake", "Ancient Lich"],
-    skills: ["Melee Combat", "Ranged Combat", "Defense", "Magic", "Stealth", "Persuasion", "Smithing", "Alchemy"],
-    npcs: ["Village Elder", "Traveling Merchant", "Guard Captain", "Mysterious Stranger", "Tavern Keeper", "Healer Sage", "Blacksmith", "Librarian"],
-    locations: ["Ancient Temple", "Dark Forest", "Mountain Pass", "Hidden Cave", "Town Square", "Castle Ruins", "Merchant District", "Harbor"],
-    realms: ["Thornwood Vale", "Dragon's Reach", "The Shattered Isles", "Crimson Desert", "Frozen North"],
-  };
-
-  return Array.from({ length: Math.min(count, 24) }, (_, i) => ({
-    entry_type: category,
-    entry_id: `${category}-${i}`,
-    entry_key: `${category}_${i}`,
-    display_name: names[category]?.[i % names[category].length] || `${category} ${i + 1}`,
-    tier: tiers[Math.floor(Math.random() * tiers.length)],
-    description: "A fascinating entry waiting to be discovered in the world of Textlands.",
-    extra: {},
-  }));
-}
 
 function EntryCard({
   entry,
@@ -145,28 +120,25 @@ export default function WikiCategoryPage() {
   const landConfig = LAND_CONFIG[landKey] || LAND_CONFIG.fantasy;
   const categoryConfig = CATEGORY_CONFIG[category] || { icon: "◇", label: category };
 
-  // Load entries (mock for now)
+  // Load entries from API
   useEffect(() => {
     setLoading(true);
-    // Simulate API delay
-    setTimeout(() => {
-      const mockEntries = generateMockEntries(category, 48);
-      setEntries(mockEntries);
-      setTotal(mockEntries.length);
-      setLoading(false);
-    }, 300);
+    api.getWikiEntries(landKey, category, { tier: tierFilter || undefined, limit: 100 })
+      .then((response) => {
+        setEntries(response.entries);
+        setTotal(response.pagination.total);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
 
     // Load discoveries for logged-in users
     if (isLoggedIn) {
       loadDiscoveries(landKey, category);
     }
-  }, [landKey, category, isLoggedIn, loadDiscoveries]);
+  }, [landKey, category, tierFilter, isLoggedIn, loadDiscoveries]);
 
-  // Filter entries
-  const filteredEntries = useMemo(() => {
-    if (!tierFilter) return entries;
-    return entries.filter((e) => e.tier === tierFilter);
-  }, [entries, tierFilter]);
+  // Entries are already filtered by the API when tierFilter is set
+  const filteredEntries = entries;
 
   // Get unique tiers for filter
   const availableTiers = useMemo(() => {

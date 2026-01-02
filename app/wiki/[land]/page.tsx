@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useWiki } from "@/contexts/WikiContext";
+import * as api from "@/lib/api";
 import type { WikiLandSummary, LoreCategory } from "@/lib/api";
 
 const CATEGORY_CONFIG: Record<LoreCategory, { icon: string; label: string; description: string }> = {
@@ -50,37 +51,6 @@ const LAND_CONFIG: Record<string, { icon: string; accent: string }> = {
   adults_only: { icon: "🌹", accent: "#ec4899" },
 };
 
-// Mock data
-const MOCK_LAND_SUMMARY: Record<string, WikiLandSummary> = {
-  fantasy: {
-    land_key: "fantasy",
-    land_display_name: "High Fantasy",
-    loretracker_name: "Tome of Lore",
-    categories: {
-      items: { total: 500 },
-      enemies: { total: 150 },
-      skills: { total: 22 },
-      npcs: { total: 89 },
-      locations: { total: 34 },
-      realms: { total: 5 },
-    },
-  },
-  scifi: {
-    land_key: "scifi",
-    land_display_name: "Sci-Fi",
-    loretracker_name: "DataBank",
-    categories: {
-      items: { total: 480 },
-      enemies: { total: 140 },
-      skills: { total: 22 },
-      npcs: { total: 76 },
-      locations: { total: 28 },
-      realms: { total: 4 },
-    },
-  },
-  // Add others as needed...
-};
-
 function CategoryCard({
   land,
   category,
@@ -119,19 +89,21 @@ export default function WikiLandPage() {
   const landKey = params.land as string;
   const { isLoggedIn } = useWiki();
 
-  const [summary, setSummary] = useState<WikiLandSummary | null>(
-    MOCK_LAND_SUMMARY[landKey] || null
-  );
-  const [loading, setLoading] = useState(false);
+  const [summary, setSummary] = useState<WikiLandSummary | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const landConfig = LAND_CONFIG[landKey] || LAND_CONFIG.fantasy;
 
-  // TODO: Fetch from API
+  // Fetch from API
   useEffect(() => {
-    // api.getWikiLandSummary(landKey).then(setSummary)
+    setLoading(true);
+    api.getWikiLandSummary(landKey)
+      .then(setSummary)
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, [landKey]);
 
-  if (!summary) {
+  if (loading || !summary) {
     return (
       <>
         <header className="wiki-header">
@@ -144,7 +116,7 @@ export default function WikiLandPage() {
         </header>
         <main className="wiki-main full-width">
           <div style={{ textAlign: "center", padding: 64, color: "var(--wiki-mist)" }}>
-            Land not found
+            {loading ? "Loading..." : "Land not found"}
           </div>
         </main>
       </>
