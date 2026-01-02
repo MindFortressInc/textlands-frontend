@@ -17,6 +17,7 @@ import type {
   FriendRequestReceivedEvent,
   DMReceivedEvent,
 } from "@/lib/useWebSocket";
+import { PartyTab } from "./PartyTab";
 
 interface SocialPanelProps {
   playerId?: string;
@@ -31,7 +32,7 @@ interface SocialPanelProps {
   onSendDM?: (targetPlayerId: string, content: string) => void;
 }
 
-type Tab = "friends" | "messages" | "invite";
+type Tab = "friends" | "messages" | "party" | "invite";
 
 export function SocialPanel({
   playerId,
@@ -410,6 +411,12 @@ export function SocialPanel({
         >
           DMs
         </TabButton>
+        <TabButton
+          active={activeTab === "party"}
+          onClick={() => setActiveTab("party")}
+        >
+          Party
+        </TabButton>
       </div>
 
       {/* Content */}
@@ -449,6 +456,9 @@ export function SocialPanel({
                 }}
                 formatTimeAgo={formatTimeAgo}
               />
+            )}
+            {activeTab === "party" && (
+              <PartyTab playerId={playerId} />
             )}
             {activeTab === "invite" && (
               <InviteTab
