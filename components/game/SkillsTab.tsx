@@ -31,7 +31,9 @@ const CATEGORY_LABELS: Record<SkillCategory, string> = {
   companion: "Companion",
 };
 
-function groupSkillsByCategory(skills: PlayerSkill[]): Record<SkillCategory, PlayerSkill[]> {
+function normalizeSkillsByCategory(
+  skillsByCategory: Record<string, PlayerSkill[]>
+): Record<SkillCategory, PlayerSkill[]> {
   const grouped: Record<SkillCategory, PlayerSkill[]> = {
     combat: [],
     gathering: [],
@@ -42,16 +44,9 @@ function groupSkillsByCategory(skills: PlayerSkill[]): Record<SkillCategory, Pla
     companion: [],
   };
 
-  for (const skill of skills) {
-    const cat = skill.category as SkillCategory;
-    if (grouped[cat]) {
-      grouped[cat].push(skill);
-    }
-  }
-
-  // Sort each category by level descending
   for (const cat of CATEGORY_ORDER) {
-    grouped[cat].sort((a, b) => b.level - a.level);
+    const skills = skillsByCategory[cat] || [];
+    grouped[cat] = [...skills].sort((a, b) => b.level - a.level);
   }
 
   return grouped;
@@ -113,7 +108,9 @@ export function SkillsTab({ worldId, playerId, recentXPGain }: SkillsTabProps) {
     );
   }
 
-  if (!skills || skills.skills.length === 0) {
+  const hasSkills = skills && Object.values(skills.skills_by_category).some(arr => arr.length > 0);
+
+  if (!skills || !hasSkills) {
     return (
       <div className="p-3 text-[var(--mist)] text-xs">
         No skills yet. Take actions to level up!
@@ -121,7 +118,7 @@ export function SkillsTab({ worldId, playerId, recentXPGain }: SkillsTabProps) {
     );
   }
 
-  const grouped = groupSkillsByCategory(skills.skills);
+  const grouped = normalizeSkillsByCategory(skills.skills_by_category);
 
   return (
     <div className="flex flex-col text-xs overflow-hidden">
@@ -135,9 +132,9 @@ export function SkillsTab({ worldId, playerId, recentXPGain }: SkillsTabProps) {
             {skills.total_level}
           </span>
         </div>
-        {skills.highest_skill && (
+        {skills.top_skills.length > 0 && (
           <div className="text-[var(--mist)] text-[10px] mt-1">
-            Highest: {skills.highest_skill}
+            Highest: {skills.top_skills[0].display_name}
           </div>
         )}
       </div>

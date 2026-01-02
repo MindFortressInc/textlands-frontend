@@ -296,15 +296,9 @@ export function SkillsPanel({ isOpen, onClose, worldId, playerId }: SkillsPanelP
   const [activeCategory, setActiveCategory] = useState<SkillCategory>("combat");
   const [selectedSkill, setSelectedSkill] = useState<PlayerSkill | null>(null);
 
-  // Group skills by category
-  const skillsByCategory: Partial<Record<SkillCategory, PlayerSkill[]>> = skillsData?.skills.reduce((acc, skill) => {
-    const cat = skill.category;
-    if (!acc[cat]) acc[cat] = [];
-    acc[cat]!.push(skill);
-    return acc;
-  }, {} as Partial<Record<SkillCategory, PlayerSkill[]>>) || {};
-
-  const categorySkills = skillsByCategory[activeCategory] || [];
+  // Get skills by category from response
+  const skillsByCategory = skillsData?.skills_by_category;
+  const categorySkills = skillsByCategory?.[activeCategory] || [];
 
   // Fetch skills on open
   useEffect(() => {
@@ -318,7 +312,7 @@ export function SkillsPanel({ isOpen, onClose, worldId, playerId }: SkillsPanelP
         .then((data) => {
           setSkillsData(data);
           // Select first skill in first category
-          const combatSkills = data.skills.filter(s => s.category === "combat");
+          const combatSkills = data.skills_by_category?.combat || [];
           if (combatSkills.length > 0) {
             setSelectedSkill(combatSkills[0]);
           }
@@ -466,7 +460,7 @@ export function SkillsPanel({ isOpen, onClose, worldId, playerId }: SkillsPanelP
                     category={cat}
                     active={activeCategory === cat}
                     onClick={() => setActiveCategory(cat)}
-                    skillCount={skillsByCategory[cat]?.length || 0}
+                    skillCount={skillsByCategory?.[cat]?.length || 0}
                   />
                 ))}
               </div>

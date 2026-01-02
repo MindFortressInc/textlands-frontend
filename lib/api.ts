@@ -13,6 +13,7 @@ import type {
   InfiniteCampfireCharacter,
   CharacterProfile,
   FrontierStatus,
+  WorldTimeResponse,
 } from "@/types/game";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
@@ -1296,6 +1297,12 @@ export async function getWorldRegions(worldId: string): Promise<Region[]> {
   return fetchAPI<Region[]>(`/infinite/worlds/${worldId}/regions`);
 }
 
+// Get world time and weather
+export async function getWorldTime(worldId: string, realmId?: string): Promise<WorldTimeResponse> {
+  const params = realmId ? `?realm_id=${realmId}` : "";
+  return fetchAPI<WorldTimeResponse>(`/infinite/worlds/${worldId}/time${params}`);
+}
+
 // Get player's regional wallets
 export async function getPlayerCurrencies(
   worldId: string,
@@ -1628,13 +1635,16 @@ export interface PlayerSkill {
   level: number;
   xp: number;
   xp_to_next: number;
+  progress_percent: number;
   unlocked_abilities: SkillAbility[];
 }
 
 export interface SkillsResponse {
-  skills: PlayerSkill[];
+  player_id: string;
+  world_id: string;
   total_level: number;
-  highest_skill: string | null;
+  skills_by_category: Record<SkillCategory, PlayerSkill[]>;
+  top_skills: PlayerSkill[];
 }
 
 // Get player's skills
