@@ -61,14 +61,10 @@ function SpoilerGate({ onAccept }: { onAccept: () => void }) {
           <button className="wiki-gate-btn primary" onClick={onAccept}>
             I understand, show me everything
           </button>
-          <Link href="/" className="wiki-gate-btn secondary" style={{ textDecoration: "none", textAlign: "center" }}>
-            Return to Textlands
+          <Link href="/?login=1" className="wiki-gate-btn secondary" style={{ textDecoration: "none", textAlign: "center" }}>
+            Log in for spoiler-free mode
           </Link>
         </div>
-        <p style={{ marginTop: 24, fontSize: 12, color: "var(--mist)" }}>
-          <strong>Tip:</strong> Log in for spoiler-free mode — undiscovered content
-          will be hidden until you choose to reveal it.
-        </p>
       </div>
     </div>
   );
