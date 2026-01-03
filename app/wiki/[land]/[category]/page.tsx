@@ -65,21 +65,15 @@ function EntryCard({
 
   if (isHidden) {
     return (
-      <div className="wiki-card hidden">
-        <div className="wiki-card-content" style={{ filter: "blur(8px)" }}>
-          <div className="wiki-card-header">
-            <div className="wiki-card-icon">?</div>
-            <div>
-              <div className="wiki-card-title">?????</div>
-              <div className="wiki-card-meta">Undiscovered</div>
-            </div>
+      <div className="wiki-card wiki-card-hidden">
+        <div className="wiki-card-header">
+          <div className="wiki-card-icon" style={{ opacity: 0.3 }}>🔒</div>
+          <div style={{ flex: 1 }}>
+            <div className="wiki-card-title" style={{ color: "var(--mist)" }}>Undiscovered</div>
+            <div className="wiki-card-meta">{CATEGORY_CONFIG[category]?.label || category}</div>
           </div>
-        </div>
-        <div className="wiki-spoiler-lock">
-          <div className="wiki-spoiler-lock-icon">🔒</div>
-          <div>Not yet discovered</div>
           <button className="wiki-reveal-btn" onClick={onReveal}>
-            Reveal Entry
+            Reveal
           </button>
         </div>
       </div>
