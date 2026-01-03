@@ -17,14 +17,14 @@ const nextConfig: NextConfig = {
         },
       ],
       afterFiles: [
-        // wiki.textlands.com paths -> /wiki/* (after static matching)
+        // wiki.textlands.com paths -> /wiki/* (exclude paths already starting with wiki)
         {
-          source: "/:path*",
+          source: "/:path((?!wiki|_next|api).*)",
           has: [{ type: "host", value: "wiki.textlands.com" }],
           destination: "/wiki/:path*",
         },
         {
-          source: "/:path*",
+          source: "/:path((?!wiki|_next|api).*)",
           has: [{ type: "host", value: "wiki.localhost:3000" }],
           destination: "/wiki/:path*",
         },
