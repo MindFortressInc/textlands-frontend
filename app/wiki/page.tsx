@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { useWiki } from "@/contexts/WikiContext";
 import * as api from "@/lib/api";
-import type { WikiLand } from "@/lib/api";
+import type { WikiLand, LandGroup } from "@/lib/api";
 
 // Land configuration with icons and accent colors
 const LAND_CONFIG: Record<string, { icon: string; accent: string; gradient: string }> = {
@@ -96,15 +96,28 @@ function LandCard({ land, wikiPath }: { land: WikiLand; wikiPath: (path: string)
 export default function WikiHomePage() {
   const { spoilerAccepted, acceptSpoilers, isLoggedIn, wikiPath } = useWiki();
   const [lands, setLands] = useState<WikiLand[]>([]);
+  const [landGroups, setLandGroups] = useState<LandGroup[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch lands on mount
+  // Fetch lands and active land groups on mount
   useEffect(() => {
-    api.getWikiLands()
-      .then(setLands)
+    Promise.all([
+      api.getWikiLands(),
+      api.getInfiniteWorldsGrouped(),
+    ])
+      .then(([wikiLands, groups]) => {
+        setLands(wikiLands);
+        setLandGroups(groups);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
+
+  // Filter to only show active (non-locked) lands
+  const activeLands = useMemo(() => {
+    const activeKeys = new Set(landGroups.filter(g => !g.is_locked).map(g => g.land));
+    return lands.filter(land => activeKeys.has(land.key));
+  }, [lands, landGroups]);
 
   // Show spoiler gate if not accepted and not logged in
   if (!spoilerAccepted && !isLoggedIn) {
@@ -188,14 +201,9 @@ export default function WikiHomePage() {
           </div>
         ) : (
           <div className="wiki-lands-grid">
-            {lands
-              .filter((land) => {
-                const total = Object.values(land.categories).reduce((sum, cat) => sum + cat.total, 0);
-                return total > 0;
-              })
-              .map((land) => (
-                <LandCard key={land.key} land={land} wikiPath={wikiPath} />
-              ))}
+            {activeLands.map((land) => (
+              <LandCard key={land.key} land={land} wikiPath={wikiPath} />
+            ))}
           </div>
         )}
 
