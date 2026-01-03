@@ -8,7 +8,8 @@ import type { WikiLand } from "@/lib/api";
 
 // Active lands for new players (matches game onboarding)
 const ACTIVE_LANDS = new Set(["fantasy", "scifi", "contemporary"]);
-const NSFW_LANDS = new Set(["adults_only"]);
+// Wiki API returns romance_* instead of adults_only
+const NSFW_LANDS = new Set(["romance_historical", "romance_modern", "adults_only"]);
 
 // Land configuration with icons and accent colors
 const LAND_CONFIG: Record<string, { icon: string; accent: string; gradient: string }> = {
