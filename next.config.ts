@@ -12,7 +12,7 @@ const nextConfig: NextConfig = {
           destination: "/wiki",
         },
         {
-          source: "/:path((?!_next|api|favicon\\.ico).*)",
+          source: "/:path((?!_next|api|favicon\\.ico).+)",
           has: [{ type: "host", value: "wiki.textlands.com" }],
           destination: "/wiki/:path",
         },
@@ -23,7 +23,7 @@ const nextConfig: NextConfig = {
           destination: "/wiki",
         },
         {
-          source: "/:path((?!_next|api|favicon\\.ico).*)",
+          source: "/:path((?!_next|api|favicon\\.ico).+)",
           has: [{ type: "host", value: "wiki.localhost:3000" }],
           destination: "/wiki/:path",
         },
