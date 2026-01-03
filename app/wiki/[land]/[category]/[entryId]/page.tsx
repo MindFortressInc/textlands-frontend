@@ -142,7 +142,7 @@ export default function WikiEntryPage() {
             <input
               type="text"
               className="wiki-search-input"
-              placeholder="Search the codex..."
+              placeholder="Search the wiki..."
             />
           </div>
         </div>
@@ -173,7 +173,7 @@ export default function WikiEntryPage() {
       <main className="wiki-main">
         {/* Breadcrumb */}
         <nav className="wiki-breadcrumb">
-          <Link href="/wiki">Codex</Link>
+          <Link href="/wiki">Wiki</Link>
           <span className="wiki-breadcrumb-sep">/</span>
           <Link href={`/wiki/${landKey}`}>{LAND_NAMES[landKey] || landKey}</Link>
           <span className="wiki-breadcrumb-sep">/</span>

@@ -1,12 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 72">
   <text
-    x="50%"
-    y="50%"
-    dominant-baseline="central"
-    text-anchor="middle"
+    x="0"
+    y="56"
     font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
     font-weight="700"
-    font-size="72"
+    font-size="64"
     letter-spacing="0.2em"
     fill="#f59e0b"
   >TEXTLANDS</text>

@@ -243,7 +243,7 @@ export default function WikiCategoryPage() {
       <main className="wiki-main">
         {/* Breadcrumb */}
         <nav className="wiki-breadcrumb">
-          <Link href="/wiki">Codex</Link>
+          <Link href="/wiki">Wiki</Link>
           <span className="wiki-breadcrumb-sep">/</span>
           <Link href={`/wiki/${landKey}`}>{LAND_NAMES[landKey] || landKey}</Link>
           <span className="wiki-breadcrumb-sep">/</span>

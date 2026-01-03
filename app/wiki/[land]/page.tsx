@@ -189,7 +189,7 @@ export default function WikiLandPage() {
       <main className="wiki-main">
         {/* Breadcrumb */}
         <nav className="wiki-breadcrumb">
-          <Link href="/wiki">Codex</Link>
+          <Link href="/wiki">Wiki</Link>
           <span className="wiki-breadcrumb-sep">/</span>
           <span>{summary.land_display_name}</span>
         </nav>

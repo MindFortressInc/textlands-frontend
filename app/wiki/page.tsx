@@ -133,7 +133,7 @@ export default function WikiHomePage() {
             <input
               type="text"
               className="wiki-search-input"
-              placeholder="Search the codex..."
+              placeholder="Search the wiki..."
             />
           </div>
           {isLoggedIn ? (
@@ -153,7 +153,7 @@ export default function WikiHomePage() {
         {/* Hero */}
         <div style={{ textAlign: "center", marginBottom: 48 }}>
           <h1 className="wiki-page-title" style={{ fontSize: 42, marginBottom: 16 }}>
-            Welcome to the Codex
+            Welcome to the Wiki
           </h1>
           <p style={{ fontSize: 18, color: "var(--text-dim)", maxWidth: 600, margin: "0 auto", lineHeight: 1.7, fontFamily: "var(--font-lore)" }}>
             The complete encyclopedia of Textlands. Browse items, enemies, skills,
