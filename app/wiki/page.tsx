@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useWiki } from "@/contexts/WikiContext";
+import { ThemePicker } from "@/components/ThemePicker";
 import * as api from "@/lib/api";
 import type { WikiLand } from "@/lib/api";
 
@@ -99,7 +100,7 @@ function LandCard({ land, wikiPath }: { land: WikiLand; wikiPath: (path: string)
 }
 
 export default function WikiHomePage() {
-  const { spoilerAccepted, acceptSpoilers, isLoggedIn, displayName, logout, wikiPath } = useWiki();
+  const { spoilerAccepted, acceptSpoilers, isLoggedIn, displayName, logout, wikiPath, unlockAll, setUnlockAll } = useWiki();
   const [lands, setLands] = useState<WikiLand[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -141,6 +142,7 @@ export default function WikiHomePage() {
               placeholder="Search the wiki..."
             />
           </div>
+          <ThemePicker />
           {isLoggedIn ? (
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <span style={{ color: "var(--amber)", fontSize: 13 }}>{displayName}</span>
@@ -182,14 +184,19 @@ export default function WikiHomePage() {
           }}>
             <div style={{
               padding: "12px 20px",
-              background: "var(--wiki-stone)",
+              background: "var(--stone)",
               border: "1px solid var(--slate)",
               fontSize: 13,
               color: "var(--text-dim)",
             }}>
               <span style={{ marginRight: 12 }}>Spoiler-Free Mode</span>
               <label style={{ cursor: "pointer" }}>
-                <input type="checkbox" style={{ marginRight: 8 }} />
+                <input
+                  type="checkbox"
+                  checked={!unlockAll}
+                  onChange={(e) => setUnlockAll(!e.target.checked)}
+                  style={{ marginRight: 8 }}
+                />
                 Hide undiscovered content
               </label>
             </div>
@@ -240,7 +247,7 @@ export default function WikiHomePage() {
             style={{
               display: "inline-block",
               padding: "16px 32px",
-              background: "var(--wiki-stone)",
+              background: "var(--stone)",
               border: "1px solid var(--slate)",
               color: "var(--text-dim)",
               textDecoration: "none",

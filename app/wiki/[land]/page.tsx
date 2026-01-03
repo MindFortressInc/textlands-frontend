@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useWiki } from "@/contexts/WikiContext";
+import { ThemePicker } from "@/components/ThemePicker";
 import * as api from "@/lib/api";
 import type { WikiLandSummary, LoreCategory } from "@/lib/api";
 
@@ -147,6 +148,7 @@ export default function WikiLandPage() {
               placeholder={`Search ${summary.land_display_name}...`}
             />
           </div>
+          <ThemePicker />
           {isLoggedIn ? (
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <span style={{ color: "var(--amber)", fontSize: 13 }}>{displayName}</span>

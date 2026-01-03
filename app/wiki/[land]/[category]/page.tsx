@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { useWiki } from "@/contexts/WikiContext";
+import { ThemePicker } from "@/components/ThemePicker";
 import * as api from "@/lib/api";
 import type { WikiEntry, LoreCategory } from "@/lib/api";
 
@@ -162,6 +163,7 @@ export default function WikiCategoryPage() {
               placeholder={`Search ${categoryConfig.label.toLowerCase()}...`}
             />
           </div>
+          <ThemePicker />
           {isLoggedIn ? (
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <span style={{ color: "var(--amber)", fontSize: 13 }}>{displayName}</span>
