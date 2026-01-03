@@ -101,20 +101,28 @@ export default function WikiHomePage() {
 
   // Fetch lands and active land groups on mount
   useEffect(() => {
-    Promise.all([
-      api.getWikiLands(),
-      api.getInfiniteWorldsGrouped(),
-    ])
-      .then(([wikiLands, groups]) => {
+    const loadData = async () => {
+      try {
+        const wikiLands = await api.getWikiLands();
         setLands(wikiLands);
+      } catch (e) {
+        console.error("Failed to load wiki lands:", e);
+      }
+      try {
+        const groups = await api.getInfiniteWorldsGrouped();
         setLandGroups(groups);
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+      } catch (e) {
+        console.error("Failed to load land groups:", e);
+      }
+      setLoading(false);
+    };
+    loadData();
   }, []);
 
   // Filter to only show active (non-locked) lands
   const activeLands = useMemo(() => {
+    // If landGroups hasn't loaded, show all lands as fallback
+    if (landGroups.length === 0) return lands;
     const activeKeys = new Set(landGroups.filter(g => !g.is_locked).map(g => g.land));
     return lands.filter(land => activeKeys.has(land.key));
   }, [lands, landGroups]);
