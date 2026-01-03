@@ -10,12 +10,15 @@ interface SkillBarProps {
 
 const CATEGORY_COLORS: Record<string, string> = {
   combat: "var(--crimson)",
+  magical: "#8b5cf6",
   gathering: "#22c55e",
   crafting: "var(--amber)",
   social: "#a855f7",
   exploration: "var(--arcane)",
   knowledge: "#6366f1",
   companion: "#f472b6",
+  locomotion: "#14b8a6",
+  professional: "#eab308",
 };
 
 export function SkillBar({ skill, compact, showXPGain }: SkillBarProps) {

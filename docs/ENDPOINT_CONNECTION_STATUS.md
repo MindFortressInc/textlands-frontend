@@ -1,6 +1,6 @@
 # TextLands API Endpoint Connection Status
 
-**Last Updated:** 2025-12-28
+**Last Updated:** 2026-01-03
 **Purpose:** Track integration status of all backend API endpoints with frontend
 
 ## Architecture Note
@@ -94,7 +94,7 @@ These are the endpoints the web frontend actually needs.
 
 ---
 
-## Nice-to-Have UI Endpoints (14 total)
+## Nice-to-Have UI Endpoints (15 total)
 
 These have UI but aren't core gameplay. Could be removed to simplify.
 
@@ -122,6 +122,11 @@ These have UI but aren't core gameplay. Could be removed to simplify.
 | GET | `/infinite/entities/{id}/footprints` | `getLocationFootprints()` | CharacterPanel |
 | POST | `/infinite/entities/{id}/messages` | `leaveLocationMessage()` | CharacterPanel |
 | POST | `/infinite/entities/{id}/visit` | `recordLocationVisit()` | Auto by backend |
+
+### Player Skills
+| Method | Endpoint | API Function | UI Component |
+|--------|----------|--------------|--------------|
+| GET | `/infinite/worlds/{id}/player/{id}/skills` | `getSkills()` | SkillsTab, SkillsPanel |
 
 ---
 
@@ -169,21 +174,149 @@ These were deleted in the Dec 2025 cleanup.
 
 ---
 
+## Unwired Backend GET Endpoints (~50 total)
+
+These exist in backend but have no frontend wiring. Decide: wire up or leave for backend/doAction.
+
+### Combat & Boss (10)
+| Endpoint | Purpose | Recommendation |
+|----------|---------|----------------|
+| `GET /combat/paused/{character_id}` | Check for paused combat | ⚠️ Maybe - resume flow |
+| `GET /group-combat/{combat_id}` | Group combat state | ❓ TBD - multiplayer feature |
+| `GET /group-combat/mine` | Player's current group combat | ❓ TBD - multiplayer feature |
+| `GET /group-combat/{combat_id}/npcs` | NPCs in group combat | ❓ TBD - multiplayer feature |
+| `GET /world-boss/active` | List active world bosses | ❓ TBD - world events UI |
+| `GET /world-boss/all` | List all world bosses | ❓ TBD - world events UI |
+| `GET /world-boss/{boss_id}` | Boss details | ❓ TBD - world events UI |
+| `GET /world-boss/{boss_id}/hiscores` | Boss kill leaderboard | ❓ TBD - leaderboards |
+| `GET /world-boss/{boss_id}/kills/recent` | Recent kills of boss | ❓ TBD - world events UI |
+| `GET /world-boss/kills/recent` | All recent boss kills | ❓ TBD - world events UI |
+
+### Travel (3)
+| Endpoint | Purpose | Recommendation |
+|----------|---------|----------------|
+| `GET /travel/status` | Current journey status | ⚠️ Maybe - travel UI |
+| `GET /travel/options` | Available destinations | ⚠️ Maybe - travel UI |
+| `GET /travel/teleport-cost` | Teleport pricing | ⚠️ Maybe - travel UI |
+
+### Pets (4)
+| Endpoint | Purpose | Recommendation |
+|----------|---------|----------------|
+| `GET /pets` | List player's pets | ⚠️ Maybe - pet panel |
+| `GET /pets/{pet_id}` | Pet details | ⚠️ Maybe - pet panel |
+| `GET /pets/{pet_id}/evolution` | Evolution check | ⚠️ Maybe - pet panel |
+| `GET /pets/taming/chances/{creature_id}` | Taming success rate | 🔴 Skip - backend via doAction |
+
+### Bank & Storage (8)
+| Endpoint | Purpose | Recommendation |
+|----------|---------|----------------|
+| `GET /bank/vault` | Vault contents | ⚠️ Maybe - bank UI |
+| `GET /bank/expansion/next` | Next expansion info | ⚠️ Maybe - bank UI |
+| `GET /bank/wealth` | Total wealth | ⚠️ Maybe - stats panel |
+| `GET /bank/check-location` | Banking availability | 🔴 Skip - backend via doAction |
+| `GET /stashes` | Hidden stashes | ⚠️ Maybe - stash UI |
+| `GET /stashes/{stash_id}` | Stash contents | ⚠️ Maybe - stash UI |
+| `GET /stashes/realm/{realm_id}/settings` | Realm stash settings | 🔴 Skip - backend internal |
+| `GET /stashes/container-types` | Container options | 🔴 Skip - backend via doAction |
+
+### Relationships & Intimacy (8)
+| Endpoint | Purpose | Status |
+|----------|---------|--------|
+| `GET /relationships` | All NPC relationships | ✅ Wired - `getRelationships()` |
+| `GET /relationships/{npc_id}` | Relationship with NPC | ✅ Wired - `getRelationship()` |
+| `GET /relationships/{npc_id}/history` | Relationship events | ✅ Wired - `getRelationshipHistory()` |
+| `GET /relationships/{npc_id}/moments` | Special moments | ✅ Wired - `getRelationshipMoments()` |
+| `GET /relationships/by-disposition/{disposition}` | NPCs by disposition | ✅ Wired - `getRelationshipsByDisposition()` |
+| `GET /relationships/{npc_id}/ai-context` | AI context | 🔴 Skip - backend internal |
+| `GET /intimacy/preferences` | Player intimacy prefs | ✅ Wired - `getIntimacyPreferences()` |
+| `GET /intimacy/relationship/{npc_id}` | Intimacy relationship | ✅ Wired - `getIntimacyRelationship()` |
+
+### Party (5)
+| Endpoint | Purpose | Recommendation |
+|----------|---------|----------------|
+| `GET /party/invites/pending` | Pending party invites | ⚠️ Maybe - party UI |
+| `GET /party/{party_id}` | Party details by ID | 🔴 Skip - use /party/mine |
+| `GET /party/world/{world_id}` | All parties in world | 🔴 Skip - multiplayer browser |
+| `GET /party/npcs/recruit/{entity_id}/preview` | Preview NPC before recruit | ⚠️ Maybe - recruitment flow |
+
+### World Info (9)
+| Endpoint | Purpose | Recommendation |
+|----------|---------|----------------|
+| `GET /infinite/worlds/{world_id}/map` | ASCII realm map | ✅ Wired - `getRealmMap()` + MapModal |
+| `GET /infinite/worlds/{world_id}/entities` | World entities | 🔴 Skip - backend internal |
+| `GET /infinite/worlds/{world_id}/calendar` | World calendar | ⚠️ Maybe - world info |
+| `GET /infinite/worlds/{world_id}/summary/offline` | Offline catch-up | ⚠️ Maybe - return player flow |
+| `GET /infinite/worlds/{world_id}/events/recent` | Recent world events | ⚠️ Maybe - world feed |
+| `GET /infinite/worlds/{world_id}/deaths/recent` | Recent deaths | ⚠️ Maybe - world feed |
+| `GET /infinite/lands/stats` | Land population stats | ⚠️ Maybe - land browser |
+| `GET /infinite/desire-options` | Available desire options | ⚠️ Maybe - settings |
+| `GET /infinite/worlds/{world_id}/player/{player_id}/exploration` | Discovery stats | ⚠️ Maybe - stats panel |
+
+### Bounties & Infractions (3)
+| Endpoint | Purpose | Recommendation |
+|----------|---------|----------------|
+| `GET /infinite/worlds/{world_id}/bounties` | Active bounties | ⚠️ Maybe - bounty board |
+| `GET /infinite/worlds/{world_id}/bounties/player/{player_id}` | Player bounties | ⚠️ Maybe - player profile |
+| `GET /infinite/worlds/{world_id}/infractions/player/{player_id}` | Player infractions | ⚠️ Maybe - player profile |
+
+### Hiscores (1)
+| Endpoint | Purpose | Recommendation |
+|----------|---------|----------------|
+| `GET /infinite/hiscores/lands/{land}/tycoons` | Wealth hiscores per land | ⚠️ Maybe - leaderboards |
+
+### Wiki & Content (4)
+| Endpoint | Purpose | Recommendation |
+|----------|---------|----------------|
+| `GET /wiki/search` | Cross-category search | ✅ Wire up - wiki search |
+| `GET /wiki/{land_key}/realms` | List realms | ✅ Wire up - wiki |
+| `GET /wiki/{land_key}/realms/{realm_id}` | Realm details | ✅ Wire up - wiki |
+
+### Drafts (3)
+| Endpoint | Purpose | Recommendation |
+|----------|---------|----------------|
+| `GET /drafts/constants` | Draft creation constants | ⚠️ Maybe - content creation |
+| `GET /drafts` | Player's drafts | ⚠️ Maybe - content creation |
+| `GET /drafts/{draft_id}` | Draft detail | ⚠️ Maybe - content creation |
+
+### Auth & Account (4)
+| Endpoint | Purpose | Recommendation |
+|----------|---------|----------------|
+| `GET /auth/preferences` | Auth preferences | 🔴 Skip - use /session/preferences |
+| `GET /auth/cli/token` | CLI token | 🔴 Skip - CLI only |
+| `GET /auth/cli/authorize` | CLI authorization | 🔴 Skip - CLI only |
+| `GET /invites/code/{code}` | Invite code info | ⚠️ Maybe - invite landing |
+
+### Characters (2)
+| Endpoint | Purpose | Recommendation |
+|----------|---------|----------------|
+| `GET /characters` | List all characters | 🔴 Skip - use /characters/roster |
+| `GET /characters/{character_id}` | Character details | 🔴 Skip - use /characters/me/profile |
+
+### Recommendation Key
+- ✅ **Wire up** - Should add to frontend
+- ⚠️ **Maybe** - Depends on feature priority
+- ❓ **TBD** - Needs design decision
+- 🔴 **Skip** - Leave for backend/doAction or other clients
+
+---
+
 ## Summary Statistics
 
 | Category | Count |
 |----------|-------|
 | 🚀 Core Frontend | 27 |
-| ✅ Nice-to-Have UI | 14 |
+| ✅ Nice-to-Have UI | 15 |
 | 🗑️ Removed | 18 |
-| **Total in api.ts** | **41** |
+| ❓ Unwired (review pending) | ~50 |
+| **Total in api.ts** | **42** |
 
-### Before/After
-| Metric | Before | After |
-|--------|--------|-------|
-| Functions in api.ts | 60 | 42 |
-| Types imported | 27 | 10 |
-| Lines of code | ~755 | ~620 |
+### Unwired Breakdown
+| Recommendation | Count |
+|----------------|-------|
+| ✅ Wired | 8 |
+| ⚠️ Maybe | 27 |
+| ❓ TBD | 8 |
+| 🔴 Skip | 15 |
 
 ---
 
@@ -194,3 +327,14 @@ These were deleted in the Dec 2025 cleanup.
 - Demo mode falls back to canned responses when API unavailable
 - NSFW state bundled in `session.content_settings` - no separate fetch needed
 - Backend pre-filters worlds based on content_settings - no client-side filtering
+
+## Decision Log
+
+| Date | Endpoint(s) | Decision | Reason |
+|------|-------------|----------|--------|
+| 2026-01-03 | Chat paths | Fixed | Wrong prefix (`/chat/` -> `/realtime/chat/`) |
+| 2026-01-03 | Relationships (5) | Wired | NPC relationship panel support |
+| 2026-01-03 | Intimacy (2) | Wired | Intimacy prefs + relationship status |
+| 2026-01-03 | Relationships UI | Added | RelationshipsSection in Profile tab |
+| 2026-01-03 | Realm Map | Wired | `getRealmMap()` + MapModal component |
+| 2026-01-03 | Player Skills | Fixed | `getSkills()` - fixed worldId prop source, type mismatch |

@@ -58,6 +58,7 @@ export interface SessionInfo {
   character_name: string | null;
   world_id: string | null;
   world_name: string | null;
+  land: string | null;
   content_settings?: ContentSettings;
   character_count?: number; // Number of active characters (for multi-char select flow)
   opening_narrative?: string; // Resume narrative from backend
@@ -996,17 +997,17 @@ export async function getZoneChat(zoneId: string, limit = 50): Promise<ChatHisto
 
 // Get land chat history
 export async function getLandChat(landKey: LandKey, limit = 50): Promise<ChatHistoryResponse> {
-  return fetchAPI<ChatHistoryResponse>(`/chat/land/${landKey}?limit=${limit}`);
+  return fetchAPI<ChatHistoryResponse>(`/realtime/chat/land/${landKey}?limit=${limit}`);
 }
 
 // Get global chat history
 export async function getGlobalChat(limit = 50): Promise<ChatHistoryResponse> {
-  return fetchAPI<ChatHistoryResponse>(`/chat/global?limit=${limit}`);
+  return fetchAPI<ChatHistoryResponse>(`/realtime/chat/global?limit=${limit}`);
 }
 
 // Get player's chat subscriptions
 export async function getChatSubscriptions(playerId: string): Promise<ChatSubscriptions> {
-  return fetchAPI<ChatSubscriptions>(`/chat/subscriptions/${playerId}`);
+  return fetchAPI<ChatSubscriptions>(`/realtime/chat/subscriptions/${playerId}`);
 }
 
 // Get players in a zone
@@ -1315,6 +1316,53 @@ export async function getWorldRegions(worldId: string): Promise<Region[]> {
 export async function getWorldTime(worldId: string, realmId?: string): Promise<WorldTimeResponse> {
   const params = realmId ? `?realm_id=${realmId}` : "";
   return fetchAPI<WorldTimeResponse>(`/infinite/worlds/${worldId}/time${params}`);
+}
+
+// ============ REALM MAP ============
+
+export interface MapLocation {
+  entity_id: string;
+  name: string;
+  x: number;
+  y: number;
+  is_current: boolean;
+  is_discovered: boolean;
+  is_safe_zone: boolean;
+  is_hub: boolean;
+  location_type?: string;
+}
+
+export interface MapConnection {
+  from_id: string;
+  to_id: string;
+  relationship_type: string;
+}
+
+export interface RealmMapResponse {
+  realm_id: string;
+  realm_name: string;
+  ascii_map: string;
+  locations: MapLocation[];
+  connections: MapConnection[];
+  width: number;
+  height: number;
+}
+
+// Get ASCII map of the realm
+export async function getRealmMap(
+  worldId: string,
+  options?: {
+    width?: number;
+    height?: number;
+    show_undiscovered?: boolean;
+  }
+): Promise<RealmMapResponse> {
+  const params = new URLSearchParams();
+  if (options?.width) params.set("width", String(options.width));
+  if (options?.height) params.set("height", String(options.height));
+  if (options?.show_undiscovered) params.set("show_undiscovered", "true");
+  const query = params.toString();
+  return fetchAPI<RealmMapResponse>(`/infinite/worlds/${worldId}/map${query ? `?${query}` : ""}`);
 }
 
 // Get player's regional wallets
@@ -1634,13 +1682,7 @@ export async function lookupSessionByEmail(email: string): Promise<EmailLookupRe
 
 // ============ SKILLS API ============
 
-export type SkillCategory = "combat" | "gathering" | "crafting" | "social" | "exploration" | "knowledge" | "companion";
-
-export interface SkillAbility {
-  name: string;
-  description: string;
-  unlocked_at: number;
-}
+export type SkillCategory = "combat" | "magical" | "gathering" | "crafting" | "social" | "exploration" | "knowledge" | "companion" | "locomotion" | "professional";
 
 export interface PlayerSkill {
   skill_name: string;
@@ -1649,8 +1691,8 @@ export interface PlayerSkill {
   level: number;
   xp: number;
   xp_to_next: number;
-  progress_percent: number;
-  unlocked_abilities: SkillAbility[];
+  progress_percent?: number;
+  unlocked_abilities: string[];  // Ability names from backend
 }
 
 export interface SkillsResponse {
@@ -2092,6 +2134,193 @@ export async function partyRest(partyId: string): Promise<{ success: boolean; me
   return fetchAPI<{ success: boolean; message: string }>(`/party/${partyId}/rest`, {
     method: "POST",
   });
+}
+
+// ============ RELATIONSHIPS API ============
+
+export interface RelationshipMetrics {
+  trust: number;
+  respect: number;
+  familiarity: number;
+  debt_balance: number;
+}
+
+export interface RelationshipFlags {
+  is_confidant: boolean;
+  npc_owes_favor: boolean;
+  player_owes_favor: boolean;
+  betrayal_risk: boolean;
+  will_share_secrets: boolean;
+  price_modifier: number;
+}
+
+export interface MemorableMoment {
+  event: string;
+  description?: string;
+  trust_impact: number;
+  respect_impact: number;
+  at?: string;
+}
+
+export interface Relationship {
+  id: string;
+  npc_id: string;
+  npc_name?: string;
+  npc_occupation?: string;
+  relationship_type: string;
+  disposition: "hostile" | "wary" | "neutral" | "friendly" | "loyal";
+  metrics: RelationshipMetrics;
+  flags: RelationshipFlags;
+  memorable_moments: MemorableMoment[];
+  interaction_count: number;
+  last_interaction?: string;
+}
+
+export interface RelationshipSummary {
+  total: number;
+  friends: number;
+  allies: number;
+  confidants: number;
+  rivals: number;
+  enemies: number;
+  mentors: number;
+  npcs_owe_favors: number;
+  player_owes_favors: number;
+  betrayal_risks: number;
+}
+
+export interface RelationshipListResponse {
+  relationships: Relationship[];
+  summary: RelationshipSummary;
+}
+
+export interface RelationshipEvent {
+  id: string;
+  event_type: string;
+  description?: string;
+  trust_change: number;
+  respect_change: number;
+  familiarity_change: number;
+  debt_change: number;
+  occurred_at: string;
+}
+
+export interface RelationshipHistoryResponse {
+  events: RelationshipEvent[];
+}
+
+export interface RelationshipMomentsResponse {
+  moments: MemorableMoment[];
+}
+
+// Get all relationships in a world
+export async function getRelationships(
+  worldId: string,
+  options?: {
+    min_familiarity?: number;
+    relationship_type?: string;
+    limit?: number;
+  }
+): Promise<RelationshipListResponse> {
+  const params = new URLSearchParams({ world_id: worldId });
+  if (options?.min_familiarity !== undefined) params.set("min_familiarity", String(options.min_familiarity));
+  if (options?.relationship_type) params.set("relationship_type", options.relationship_type);
+  if (options?.limit) params.set("limit", String(options.limit));
+  return fetchAPI<RelationshipListResponse>(`/relationships?${params}`);
+}
+
+// Get relationship with a specific NPC
+export async function getRelationship(npcId: string): Promise<Relationship> {
+  return fetchAPI<Relationship>(`/relationships/${npcId}`);
+}
+
+// Get relationship history with an NPC
+export async function getRelationshipHistory(
+  npcId: string,
+  limit = 20
+): Promise<RelationshipHistoryResponse> {
+  return fetchAPI<RelationshipHistoryResponse>(`/relationships/${npcId}/history?limit=${limit}`);
+}
+
+// Get memorable moments with an NPC
+export async function getRelationshipMoments(
+  npcId: string,
+  limit = 10
+): Promise<RelationshipMomentsResponse> {
+  return fetchAPI<RelationshipMomentsResponse>(`/relationships/${npcId}/moments?limit=${limit}`);
+}
+
+// Get NPCs by disposition
+export type Disposition = "hostile" | "wary" | "neutral" | "friendly" | "loyal";
+
+export async function getRelationshipsByDisposition(
+  worldId: string,
+  disposition: Disposition,
+  limit = 20
+): Promise<{ relationships: Relationship[] }> {
+  return fetchAPI<{ relationships: Relationship[] }>(
+    `/relationships/by-disposition/${disposition}?world_id=${worldId}&limit=${limit}`
+  );
+}
+
+// ============ INTIMACY RELATIONSHIPS API ============
+
+export type IntimacyStage =
+  | "unaware"
+  | "curious"
+  | "flirting"
+  | "tension"
+  | "intimate"
+  | "bonded"
+  | "complicated";
+
+export interface RelationshipIntimacy {
+  guest_id: string;
+  npc_id: string;
+  npc_name: string;
+  stage: IntimacyStage;
+  attraction_level: number;
+  chemistry_score: number;
+  emotional_connection: number;
+  physical_comfort: number;
+  negotiated_dynamic?: string;
+  scenes_completed: number;
+  last_scene_at?: string;
+  aftercare_debt: number;
+  refractory_until?: string;
+  emotional_cooldown_until?: string;
+}
+
+export type DynamicRole = "dominant" | "submissive" | "switch" | "undetermined";
+
+export interface IntimacyPreferences {
+  inferred_dynamic: DynamicRole;
+  confidence_scores: Record<string, number>;
+  total_intimate_actions: number;
+  discovered_preferences: string[];
+  hard_limits: string[];
+}
+
+export interface IntimacyStatusResponse {
+  success: boolean;
+  message: string;
+  data?: RelationshipIntimacy | { stage: string; npc_id: string };
+}
+
+export interface IntimacyPreferencesResponse {
+  success: boolean;
+  message: string;
+  data?: IntimacyPreferences;
+}
+
+// Get intimacy relationship status with an NPC
+export async function getIntimacyRelationship(npcId: string): Promise<IntimacyStatusResponse> {
+  return fetchAPI<IntimacyStatusResponse>(`/intimacy/relationship/${npcId}`);
+}
+
+// Get player's inferred intimacy preferences
+export async function getIntimacyPreferences(): Promise<IntimacyPreferencesResponse> {
+  return fetchAPI<IntimacyPreferencesResponse>("/intimacy/preferences");
 }
 
 // ============ PUBLIC WIKI API ============

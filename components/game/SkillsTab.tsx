@@ -13,22 +13,28 @@ interface SkillsTabProps {
 
 const CATEGORY_ORDER: SkillCategory[] = [
   "combat",
+  "magical",
   "gathering",
   "crafting",
   "social",
   "exploration",
   "knowledge",
   "companion",
+  "locomotion",
+  "professional",
 ];
 
 const CATEGORY_LABELS: Record<SkillCategory, string> = {
   combat: "Combat",
+  magical: "Magical",
   gathering: "Gathering",
   crafting: "Crafting",
   social: "Social",
   exploration: "Exploration",
   knowledge: "Knowledge",
   companion: "Companion",
+  locomotion: "Locomotion",
+  professional: "Professional",
 };
 
 function normalizeSkillsByCategory(
@@ -36,12 +42,15 @@ function normalizeSkillsByCategory(
 ): Record<SkillCategory, PlayerSkill[]> {
   const grouped: Record<SkillCategory, PlayerSkill[]> = {
     combat: [],
+    magical: [],
     gathering: [],
     crafting: [],
     social: [],
     exploration: [],
     knowledge: [],
     companion: [],
+    locomotion: [],
+    professional: [],
   };
 
   for (const cat of CATEGORY_ORDER) {

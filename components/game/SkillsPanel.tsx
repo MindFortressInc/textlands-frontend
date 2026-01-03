@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import * as api from "@/lib/api";
-import type { SkillsResponse, PlayerSkill, SkillCategory, SkillAbility } from "@/lib/api";
+import type { SkillsResponse, PlayerSkill, SkillCategory } from "@/lib/api";
 
 interface SkillsPanelProps {
   isOpen: boolean;
@@ -13,16 +13,19 @@ interface SkillsPanelProps {
 
 const CATEGORY_CONFIG: Record<SkillCategory, { icon: string; label: string; color: string }> = {
   combat: { icon: "⚔", label: "COMBAT", color: "var(--crimson)" },
+  magical: { icon: "✦", label: "MAGICAL", color: "#8b5cf6" },
   gathering: { icon: "⛏", label: "GATHER", color: "#22c55e" },
   crafting: { icon: "⚒", label: "CRAFT", color: "var(--amber)" },
   social: { icon: "☆", label: "SOCIAL", color: "var(--arcane)" },
   exploration: { icon: "◈", label: "EXPLOR", color: "#06b6d4" },
-  knowledge: { icon: "◉", label: "KNOWLEDGE", color: "#a855f7" },
+  knowledge: { icon: "◉", label: "KNOW", color: "#a855f7" },
   companion: { icon: "♦", label: "COMPAN", color: "#f472b6" },
+  locomotion: { icon: "⇢", label: "MOVE", color: "#14b8a6" },
+  professional: { icon: "◆", label: "PROF", color: "#eab308" },
 };
 
 const CATEGORY_ORDER: SkillCategory[] = [
-  "combat", "gathering", "crafting", "social", "exploration", "knowledge", "companion"
+  "combat", "magical", "gathering", "crafting", "social", "exploration", "knowledge", "companion", "locomotion", "professional"
 ];
 
 const SKILL_ICONS: Record<string, string> = {
@@ -113,16 +116,10 @@ function SkillRow({
   );
 }
 
-function AbilityCard({ ability }: { ability: SkillAbility }) {
+function AbilityCard({ ability }: { ability: string }) {
   return (
-    <div className="border border-[var(--slate)] bg-[var(--void)] p-2">
-      <div className="flex items-center justify-between">
-        <span className="text-[var(--amber)] font-bold text-xs">{ability.name}</span>
-        <span className="text-[var(--mist)] text-[10px]">LV.{ability.unlocked_at}</span>
-      </div>
-      <div className="text-[var(--fog)] text-[10px] mt-1 leading-relaxed">
-        {ability.description}
-      </div>
+    <div className="border border-[var(--slate)] bg-[var(--void)] px-2 py-1.5">
+      <span className="text-[var(--amber)] font-bold text-xs">{ability}</span>
     </div>
   );
 }
