@@ -1,10 +1,14 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useWiki } from "@/contexts/WikiContext";
 import * as api from "@/lib/api";
-import type { WikiLand, LandGroup } from "@/lib/api";
+import type { WikiLand } from "@/lib/api";
+
+// Active lands for new players (matches game onboarding)
+const ACTIVE_LANDS = new Set(["fantasy", "scifi", "contemporary"]);
+const NSFW_LANDS = new Set(["adults_only"]);
 
 // Land configuration with icons and accent colors
 const LAND_CONFIG: Record<string, { icon: string; accent: string; gradient: string }> = {
@@ -96,36 +100,19 @@ function LandCard({ land, wikiPath }: { land: WikiLand; wikiPath: (path: string)
 export default function WikiHomePage() {
   const { spoilerAccepted, acceptSpoilers, isLoggedIn, wikiPath } = useWiki();
   const [lands, setLands] = useState<WikiLand[]>([]);
-  const [landGroups, setLandGroups] = useState<LandGroup[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch lands and active land groups on mount
+  // Fetch wiki lands on mount
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const wikiLands = await api.getWikiLands();
-        setLands(wikiLands);
-      } catch (e) {
-        console.error("Failed to load wiki lands:", e);
-      }
-      try {
-        const groups = await api.getInfiniteWorldsGrouped();
-        setLandGroups(groups);
-      } catch (e) {
-        console.error("Failed to load land groups:", e);
-      }
-      setLoading(false);
-    };
-    loadData();
+    api.getWikiLands()
+      .then(setLands)
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
 
-  // Filter to only show active (non-locked) lands
-  const activeLands = useMemo(() => {
-    // If landGroups hasn't loaded, show all lands as fallback
-    if (landGroups.length === 0) return lands;
-    const activeKeys = new Set(landGroups.filter(g => !g.is_locked).map(g => g.land));
-    return lands.filter(land => activeKeys.has(land.key));
-  }, [lands, landGroups]);
+  // Split into active, inactive, and NSFW lands
+  const activeLands = lands.filter(l => ACTIVE_LANDS.has(l.key));
+  const nsfwLands = lands.filter(l => NSFW_LANDS.has(l.key));
 
   // Show spoiler gate if not accepted and not logged in
   if (!spoilerAccepted && !isLoggedIn) {
@@ -212,6 +199,30 @@ export default function WikiHomePage() {
             {activeLands.map((land) => (
               <LandCard key={land.key} land={land} wikiPath={wikiPath} />
             ))}
+            {/* NSFW Lands - shown as locked */}
+            {nsfwLands.length > 0 && (
+              <div
+                style={{
+                  padding: 24,
+                  background: "var(--stone)",
+                  border: "1px solid var(--slate)",
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: 16,
+                  opacity: 0.6,
+                }}
+              >
+                <span style={{ fontSize: 24 }}>🔒</span>
+                <div>
+                  <div style={{ color: "var(--mist)", fontWeight: 600, marginBottom: 4 }}>
+                    Adults Only
+                  </div>
+                  <div style={{ color: "var(--slate)", fontSize: 12 }}>
+                    {nsfwLands.length} lands · Log in to verify age
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
