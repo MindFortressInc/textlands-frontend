@@ -1,4 +1,5 @@
 import { WikiProvider } from "@/contexts/WikiContext";
+import { ThemeProvider } from "@/lib/themes/ThemeProvider";
 import "./wiki.css";
 
 export const metadata = {
@@ -8,10 +9,12 @@ export const metadata = {
 
 export default function WikiLayout({ children }: { children: React.ReactNode }) {
   return (
-    <WikiProvider>
-      <div className="wiki-root">
-        {children}
-      </div>
-    </WikiProvider>
+    <ThemeProvider>
+      <WikiProvider>
+        <div className="wiki-root">
+          {children}
+        </div>
+      </WikiProvider>
+    </ThemeProvider>
   );
 }
