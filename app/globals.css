@@ -13,6 +13,8 @@
   --crimson: #ef4444;
   --arcane: #22d3ee;
   --mist: #6b7280;
+  --gold: #fbbf24;
+  --fog: #9ca3af;
   --font: ui-monospace, 'SF Mono', Menlo, Monaco, monospace;
 
   /* Entity highlight colors for hover tooltips */
@@ -38,6 +40,8 @@
   --color-crimson: var(--crimson);
   --color-arcane: var(--arcane);
   --color-mist: var(--mist);
+  --color-gold: var(--gold);
+  --color-fog: var(--fog);
   --color-entity-npc: var(--entity-npc);
   --color-entity-player: var(--entity-player);
   --color-entity-location: var(--entity-location);
@@ -1141,6 +1145,149 @@ body {
   .skill-xp-toast-exit,
   .frontier-pulse,
   .skill-xp-levelup-text {
+    animation: none;
+  }
+}
+
+/* ========== GAME NARRATIVE SEGMENT STYLES ========== */
+
+/* Loot gained pulse animation */
+@keyframes loot-pulse {
+  0%, 100% {
+    opacity: 1;
+    text-shadow: 0 0 0 transparent;
+  }
+  50% {
+    opacity: 0.8;
+    text-shadow: 0 0 8px var(--gold);
+  }
+}
+
+.animate-loot-pulse {
+  animation: loot-pulse 0.6s ease-out 2;
+}
+
+/* Damage floater subtle emphasis */
+.damage-floater {
+  animation: damage-appear 0.3s ease-out;
+}
+
+@keyframes damage-appear {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Speech bubble hover enhancement */
+.speech-bubble {
+  transition: background 0.15s ease;
+}
+
+/* Loot line gained glow */
+.loot-gained {
+  position: relative;
+}
+
+.loot-gained::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 100%;
+  background: var(--gold);
+  opacity: 0;
+  animation: loot-bar-fade 1s ease-out forwards;
+}
+
+@keyframes loot-bar-fade {
+  0% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Combat effect pulse */
+.combat-line .animate-pulse {
+  animation: combat-effect-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes combat-effect-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Environment line atmosphere */
+.environment-line {
+  position: relative;
+}
+
+.environment-line::before {
+  content: '~';
+  position: absolute;
+  left: -8px;
+  color: var(--mist);
+  opacity: 0.3;
+}
+
+/* Movement arrow animation */
+.movement-line span:first-child {
+  display: inline-block;
+  animation: movement-arrow 0.6s ease-out;
+}
+
+@keyframes movement-arrow {
+  from {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+  to {
+    opacity: 0.7;
+    transform: translateX(0);
+  }
+}
+
+/* Modern theme overrides for narrative segments */
+[data-theme="modern"] .speech-bubble {
+  border-left-color: rgba(14, 165, 233, 0.3);
+}
+
+[data-theme="modern"] .speech-bubble:hover {
+  border-left-color: rgba(14, 165, 233, 0.6);
+}
+
+[data-theme="modern"] .combat-line .text-\[var\(--crimson\)\] {
+  color: #EF4444;
+}
+
+[data-theme="modern"] .loot-gained::before {
+  background: #0EA5E9;
+}
+
+[data-theme="modern"] .damage-floater {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .animate-loot-pulse,
+  .damage-floater,
+  .loot-gained::before,
+  .combat-line .animate-pulse,
+  .movement-line span:first-child {
     animation: none;
   }
 }

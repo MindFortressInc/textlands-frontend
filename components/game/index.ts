@@ -1,4 +1,5 @@
 export { GameLog } from "./GameLog";
+export { GameNarrative } from "./GameNarrative";
 export { CommandInput } from "./CommandInput";
 export { CharacterPanel } from "./CharacterPanel";
 export { MobileStats } from "./MobileStats";
