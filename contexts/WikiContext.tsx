@@ -7,9 +7,11 @@ interface WikiContextType {
   spoilerAccepted: boolean;
   acceptSpoilers: () => void;
 
-  // Auth state (simplified)
+  // Auth state
   isLoggedIn: boolean;
   playerId: string | null;
+  displayName: string | null;
+  logout: () => void;
 
   // Discovery state for logged-in users
   discoveries: Set<string>;
@@ -37,6 +39,7 @@ export function WikiProvider({ children }: { children: ReactNode }) {
   const [spoilerAccepted, setSpoilerAccepted] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [playerId, setPlayerId] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState<string | null>(null);
   const [discoveries, setDiscoveries] = useState<Set<string>>(new Set());
   const [unlockedEntries, setUnlockedEntries] = useState<Set<string>>(new Set());
   const [unlockAll, setUnlockAllState] = useState(false);
@@ -70,11 +73,27 @@ export function WikiProvider({ children }: { children: ReactNode }) {
         if (data.player_id && !data.is_guest) {
           setIsLoggedIn(true);
           setPlayerId(data.player_id);
+          setDisplayName(data.display_name || null);
         }
       })
       .catch(() => {
         // Not logged in
       });
+  }, []);
+
+  const logout = useCallback(async () => {
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001"}/session/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch {
+      // Ignore errors
+    }
+    setIsLoggedIn(false);
+    setPlayerId(null);
+    setDisplayName(null);
+    setDiscoveries(new Set());
   }, []);
 
   const acceptSpoilers = useCallback(() => {
@@ -151,6 +170,8 @@ export function WikiProvider({ children }: { children: ReactNode }) {
         acceptSpoilers,
         isLoggedIn,
         playerId,
+        displayName,
+        logout,
         discoveries,
         loadDiscoveries,
         unlockedEntries,

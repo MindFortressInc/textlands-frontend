@@ -99,7 +99,7 @@ function LandCard({ land, wikiPath }: { land: WikiLand; wikiPath: (path: string)
 }
 
 export default function WikiHomePage() {
-  const { spoilerAccepted, acceptSpoilers, isLoggedIn, wikiPath } = useWiki();
+  const { spoilerAccepted, acceptSpoilers, isLoggedIn, displayName, logout, wikiPath } = useWiki();
   const [lands, setLands] = useState<WikiLand[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -142,9 +142,15 @@ export default function WikiHomePage() {
             />
           </div>
           {isLoggedIn ? (
-            <Link href="/" className="wiki-auth-btn">
-              Return to Game
-            </Link>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <span style={{ color: "var(--amber)", fontSize: 13 }}>{displayName}</span>
+              <Link href="/" className="wiki-auth-btn">
+                Return to Game
+              </Link>
+              <button onClick={logout} className="wiki-auth-btn" style={{ background: "transparent" }}>
+                Log Out
+              </button>
+            </div>
           ) : (
             <Link href="/?login=1" className="wiki-auth-btn">
               Log In
