@@ -7,8 +7,10 @@ import { SessionProvider } from "@/contexts/SessionContext";
 import { GameProvider } from "@/contexts/GameContext";
 import { SettingsProvider } from "@/contexts/SettingsContext";
 import { CombatProvider } from "@/contexts/CombatContext";
+import { FloatingEffectsProvider } from "@/contexts/FloatingEffectsContext";
 import { DynamicFavicon } from "@/components/DynamicFavicon";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { FloatingEffectsLayer } from "@/components/effects/FloatingEffectsLayer";
 
 export const metadata: Metadata = {
   title: "Textlands",
@@ -49,10 +51,13 @@ export default function RootLayout({
                 <SessionProvider>
                   <GameProvider>
                     <CombatProvider>
-                      <ThemeProvider>
-                        <DynamicFavicon />
-                        {children}
-                      </ThemeProvider>
+                      <FloatingEffectsProvider>
+                        <ThemeProvider>
+                          <DynamicFavicon />
+                          {children}
+                          <FloatingEffectsLayer />
+                        </ThemeProvider>
+                      </FloatingEffectsProvider>
                     </CombatProvider>
                   </GameProvider>
                 </SessionProvider>

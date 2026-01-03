@@ -17,6 +17,7 @@ import { useGame } from "@/contexts/GameContext";
 import { useSession } from "@/contexts/SessionContext";
 import { useSettings } from "@/contexts/SettingsContext";
 import { useCombat } from "@/contexts/CombatContext";
+import { useFloatingEffects } from "@/contexts/FloatingEffectsContext";
 import Link from "next/link";
 import type {
   ChatMessageEvent,
@@ -129,6 +130,8 @@ export default function GamePage() {
     isInScene,
   } = useCombat();
 
+  const { addEffect } = useFloatingEffects();
+
   // ========== LOCAL UI STATE ==========
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [billingOpen, setBillingOpen] = useState(false);
@@ -215,6 +218,15 @@ export default function GamePage() {
 
   // ========== INITIALIZATION ==========
 
+  // Helper to find a world by ID from landGroups (fallback when API fetch fails)
+  const findWorldInLandGroups = useCallback((worldId: string): InfiniteWorld | null => {
+    for (const group of landGroups) {
+      const found = group.realms.find(r => r.id === worldId);
+      if (found) return found;
+    }
+    return null;
+  }, [landGroups]);
+
   // Resume existing session helper
   const resumeExistingSession = useCallback(async (session: api.SessionInfo) => {
     // Try to get world info for the session
@@ -222,9 +234,12 @@ export default function GamePage() {
     if (session.world_id) {
       try {
         worldData = await api.getInfiniteWorld(session.world_id);
-        setSelectedWorld(worldData);
       } catch {
-        // World may have been deleted, continue with session info only
+        // API fetch failed - try to find world in landGroups cache
+        worldData = findWorldInLandGroups(session.world_id);
+      }
+      if (worldData) {
+        setSelectedWorld(worldData);
       }
     }
 
@@ -258,7 +273,7 @@ export default function GamePage() {
     }
 
     setPhase("game");
-  }, []);
+  }, [findWorldInLandGroups]);
 
   useEffect(() => {
     async function init() {
@@ -606,12 +621,16 @@ export default function GamePage() {
 
       // Try to get world info
       let worldName = char.world_name;
+      let worldData: InfiniteWorld | null = null;
       try {
-        const world = await api.getInfiniteWorld(char.world_id);
-        setSelectedWorld(world);
-        worldName = world.name;
+        worldData = await api.getInfiniteWorld(char.world_id);
       } catch {
-        // World fetch failed, use roster info
+        // API fetch failed - try to find world in landGroups cache
+        worldData = findWorldInLandGroups(char.world_id);
+      }
+      if (worldData) {
+        setSelectedWorld(worldData);
+        worldName = worldData.name;
       }
 
       setZoneName(worldName);
@@ -944,10 +963,58 @@ export default function GamePage() {
             setCharacter(char);
           }
 
+          // ========== FLOATING EFFECTS ==========
+          // HP changes (damage/healing)
+          if (result.state_changes?.hp) {
+            const hpDelta = result.state_changes.hp;
+            const isCritical = Math.abs(hpDelta) >= 20;
+            addEffect({
+              type: hpDelta < 0 ? "damage" : "heal",
+              value: hpDelta,
+              isCritical,
+            });
+          }
+
+          // Gold changes
+          if (result.state_changes?.gold) {
+            addEffect({
+              type: "gold",
+              value: result.state_changes.gold,
+            });
+          }
+
+          // Currency changes (infinite worlds)
+          if (result.state_changes?.currency) {
+            addEffect({
+              type: "gold",
+              value: result.state_changes.currency.amount,
+            });
+          }
+
+          // Loot from content segments
+          if (result.content_segments) {
+            for (const seg of result.content_segments) {
+              if (seg.type === "item_gained" && seg.item_name) {
+                addEffect({
+                  type: "loot",
+                  value: seg.item_name,
+                  quantity: seg.quantity || 1,
+                });
+              }
+            }
+          }
+
           // Update location and fetch footprints if location changed
           if (result.location_entity_id) {
             fetchFootprints(result.location_entity_id);
             if (result.location_name) {
+              // Show location banner if we moved to a new zone (not on initial load)
+              if (zoneName && result.location_name !== zoneName) {
+                addEffect({
+                  type: "location",
+                  value: result.location_name,
+                });
+              }
               setZoneName(result.location_name);
             }
           }
