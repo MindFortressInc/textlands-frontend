@@ -856,25 +856,66 @@ body {
 .entity-tooltip {
   position: absolute;
   z-index: 50;
-  min-width: 180px;
-  max-width: 280px;
+  min-width: 160px;
+  max-width: min(280px, calc(100vw - 24px));
   padding: 0.75rem;
   background: var(--shadow);
   border: 1px solid var(--slate);
   font-size: 0.8125rem;
   line-height: 1.4;
-  pointer-events: none;
   animation: tooltip-fade-in 0.15s ease-out;
+  /* Allow interaction on mobile */
+  pointer-events: auto;
+}
+
+/* Mobile tooltip adjustments */
+.entity-tooltip-mobile {
+  min-width: 200px;
+  max-width: min(320px, calc(100vw - 24px));
+  padding: 1rem;
+  padding-top: 1.5rem;
+  font-size: 0.875rem;
+  border-width: 2px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* Mobile close button */
+.entity-tooltip-close {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  color: var(--text-dim);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.entity-tooltip-close:hover,
+.entity-tooltip-close:active {
+  color: var(--text);
+}
+
+/* Mobile-specific text sizing */
+.entity-tooltip-mobile .entity-tooltip-role,
+.entity-tooltip-mobile .entity-tooltip-detail,
+.entity-tooltip-mobile .entity-tooltip-memory {
+  font-size: 0.8125rem;
 }
 
 @keyframes tooltip-fade-in {
   from {
     opacity: 0;
-    transform: translateY(4px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 

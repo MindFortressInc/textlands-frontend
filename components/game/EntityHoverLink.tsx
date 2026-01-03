@@ -15,9 +15,18 @@ const entityTypeClass: Record<EntityType, string> = {
   item: "entity-item",
 };
 
+type TooltipPosition = {
+  vertical: "above" | "below";
+  horizontal: "left" | "center" | "right";
+};
+
 export function EntityHoverLink({ entity, children }: EntityHoverLinkProps) {
   const [showTooltip, setShowTooltip] = useState(false);
-  const [position, setPosition] = useState<"above" | "below">("above");
+  const [position, setPosition] = useState<TooltipPosition>({
+    vertical: "above",
+    horizontal: "center",
+  });
+  const [isMobile, setIsMobile] = useState(false);
   const linkRef = useRef<HTMLSpanElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const hoverTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -30,16 +39,39 @@ export function EntityHoverLink({ entity, children }: EntityHoverLinkProps) {
 
   const colorClass = entityTypeClass[entity.entity_type] || "entity-npc";
 
-  // Calculate tooltip position
+  // Calculate tooltip position with viewport awareness
   const updatePosition = useCallback(() => {
     if (!linkRef.current || !tooltipRef.current) return;
 
     const linkRect = linkRef.current.getBoundingClientRect();
+    const tooltipWidth = tooltipRef.current.offsetWidth;
     const tooltipHeight = tooltipRef.current.offsetHeight;
-    const spaceAbove = linkRect.top;
-    const minSpaceNeeded = tooltipHeight + 8;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const padding = 12; // Min distance from viewport edge
 
-    setPosition(spaceAbove >= minSpaceNeeded ? "above" : "below");
+    // Vertical positioning
+    const spaceAbove = linkRect.top;
+    const spaceBelow = viewportHeight - linkRect.bottom;
+    const vertical: "above" | "below" =
+      spaceAbove >= tooltipHeight + padding ? "above" : "below";
+
+    // Horizontal positioning - check if centered tooltip would overflow
+    const linkCenterX = linkRect.left + linkRect.width / 2;
+    const halfTooltip = tooltipWidth / 2;
+
+    let horizontal: "left" | "center" | "right" = "center";
+
+    if (linkCenterX - halfTooltip < padding) {
+      // Too close to left edge - align left
+      horizontal = "left";
+    } else if (linkCenterX + halfTooltip > viewportWidth - padding) {
+      // Too close to right edge - align right
+      horizontal = "right";
+    }
+
+    setPosition({ vertical, horizontal });
+    setIsMobile(viewportWidth < 640);
   }, []);
 
   // Handle mouse enter with delay
@@ -70,33 +102,46 @@ export function EntityHoverLink({ entity, children }: EntityHoverLinkProps) {
   const handleClick = useCallback((e: React.MouseEvent) => {
     if (isTouchDevice.current) {
       e.preventDefault();
+      e.stopPropagation();
       setShowTooltip((prev) => !prev);
     }
+  }, []);
+
+  // Close tooltip
+  const closeTooltip = useCallback(() => {
+    setShowTooltip(false);
   }, []);
 
   // Close tooltip when clicking outside (mobile)
   useEffect(() => {
     if (!showTooltip || !isTouchDevice.current) return;
 
-    const handleClickOutside = (e: MouseEvent) => {
+    const handleClickOutside = (e: TouchEvent | MouseEvent) => {
+      const target = e.target as Node;
       if (
         linkRef.current &&
-        !linkRef.current.contains(e.target as Node) &&
+        !linkRef.current.contains(target) &&
         tooltipRef.current &&
-        !tooltipRef.current.contains(e.target as Node)
+        !tooltipRef.current.contains(target)
       ) {
         setShowTooltip(false);
       }
     };
 
+    // Use touchend for mobile - more reliable than click
+    document.addEventListener("touchend", handleClickOutside);
     document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
+    return () => {
+      document.removeEventListener("touchend", handleClickOutside);
+      document.removeEventListener("click", handleClickOutside);
+    };
   }, [showTooltip]);
 
   // Update position when tooltip becomes visible
   useEffect(() => {
     if (showTooltip) {
-      updatePosition();
+      // Small delay to let tooltip render before measuring
+      requestAnimationFrame(updatePosition);
     }
   }, [showTooltip, updatePosition]);
 
@@ -110,12 +155,36 @@ export function EntityHoverLink({ entity, children }: EntityHoverLinkProps) {
   }, []);
 
   // Tooltip positioning styles
-  const tooltipStyle: React.CSSProperties = {
-    left: "50%",
-    transform: "translateX(-50%)",
-    ...(position === "above"
-      ? { bottom: "100%", marginBottom: "6px" }
-      : { top: "100%", marginTop: "6px" }),
+  const getTooltipStyle = (): React.CSSProperties => {
+    const style: React.CSSProperties = {};
+
+    // Vertical
+    if (position.vertical === "above") {
+      style.bottom = "100%";
+      style.marginBottom = "8px";
+    } else {
+      style.top = "100%";
+      style.marginTop = "8px";
+    }
+
+    // Horizontal
+    switch (position.horizontal) {
+      case "left":
+        style.left = "0";
+        style.transform = "none";
+        break;
+      case "right":
+        style.right = "0";
+        style.transform = "none";
+        break;
+      case "center":
+      default:
+        style.left = "50%";
+        style.transform = "translateX(-50%)";
+        break;
+    }
+
+    return style;
   };
 
   const hasDetails = entity.met_at || entity.relationship;
@@ -139,10 +208,22 @@ export function EntityHoverLink({ entity, children }: EntityHoverLinkProps) {
         <div
           ref={tooltipRef}
           id={`tooltip-${entity.entity_id}`}
-          className="entity-tooltip"
-          style={tooltipStyle}
+          className={`entity-tooltip ${isMobile ? "entity-tooltip-mobile" : ""}`}
+          style={getTooltipStyle()}
           role="tooltip"
+          onClick={(e) => e.stopPropagation()}
         >
+          {/* Mobile close button */}
+          {isMobile && (
+            <button
+              className="entity-tooltip-close"
+              onClick={closeTooltip}
+              aria-label="Close tooltip"
+            >
+              ×
+            </button>
+          )}
+
           {/* Name */}
           <div className={`entity-tooltip-name ${colorClass}`}>
             {entity.name}
