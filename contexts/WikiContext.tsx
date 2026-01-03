@@ -41,11 +41,13 @@ export function WikiProvider({ children }: { children: ReactNode }) {
   const [unlockedEntries, setUnlockedEntries] = useState<Set<string>>(new Set());
   const [unlockAll, setUnlockAllState] = useState(false);
   const [isWikiSubdomain, setIsWikiSubdomain] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   // Check if we're on the wiki subdomain
   useEffect(() => {
     const host = window.location.hostname;
     setIsWikiSubdomain(host.startsWith("wiki.") || host === "wiki.localhost");
+    setMounted(true);
   }, []);
 
   // Load spoiler acceptance from localStorage
@@ -124,14 +126,22 @@ export function WikiProvider({ children }: { children: ReactNode }) {
   );
 
   // Path helper: on wiki subdomain, /wiki/foo -> /foo
+  // Detects subdomain by checking if current URL path lacks /wiki prefix
   const wikiPath = useCallback(
     (path: string) => {
-      if (isWikiSubdomain && path.startsWith("/wiki")) {
+      // During SSR or before mount, check if we should strip based on hostname
+      const onSubdomain = typeof window !== "undefined" &&
+        (window.location.hostname.startsWith("wiki.") ||
+         window.location.hostname === "wiki.localhost" ||
+         // Also detect by pathname: if we're at /fantasy (not /wiki/fantasy), we're on subdomain
+         (!window.location.pathname.startsWith("/wiki") && window.location.pathname !== "/"));
+
+      if (onSubdomain && path.startsWith("/wiki")) {
         return path.slice(5) || "/"; // Remove "/wiki" prefix
       }
       return path;
     },
-    [isWikiSubdomain]
+    [] // No deps needed since we check window directly
   );
 
   return (
