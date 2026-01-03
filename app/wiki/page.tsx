@@ -188,9 +188,14 @@ export default function WikiHomePage() {
           </div>
         ) : (
           <div className="wiki-lands-grid">
-            {lands.map((land) => (
-              <LandCard key={land.key} land={land} wikiPath={wikiPath} />
-            ))}
+            {lands
+              .filter((land) => {
+                const total = Object.values(land.categories).reduce((sum, cat) => sum + cat.total, 0);
+                return total > 0;
+              })
+              .map((land) => (
+                <LandCard key={land.key} land={land} wikiPath={wikiPath} />
+              ))}
           </div>
         )}
 
