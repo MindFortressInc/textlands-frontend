@@ -2,9 +2,12 @@
 
 .wiki-root {
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--void);
   color: var(--text);
   font-family: var(--font);
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* ========== HEADER ========== */
@@ -437,60 +440,65 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  padding: 32px;
+  min-height: 100dvh;
+  padding: 24px;
+  box-sizing: border-box;
 }
 
 .wiki-gate-content {
-  max-width: 480px;
+  max-width: 420px;
   text-align: center;
 }
 
 .wiki-gate-icon {
-  font-size: 64px;
-  margin-bottom: 24px;
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.9;
 }
 
 .wiki-gate-title {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 600;
   color: var(--amber);
-  margin: 0 0 16px 0;
+  margin: 0 0 12px 0;
 }
 
 .wiki-gate-text {
-  font-size: 15px;
+  font-size: 14px;
   color: var(--text-dim);
-  line-height: 1.6;
-  margin-bottom: 24px;
+  line-height: 1.5;
+  margin-bottom: 16px;
 }
 
 .wiki-gate-warning {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 16px;
+  gap: 10px;
+  padding: 12px;
   background: var(--stone);
   border: 1px solid var(--slate);
   text-align: left;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-dim);
-  margin-bottom: 24px;
+  margin-bottom: 20px;
+  line-height: 1.4;
 }
 
 .wiki-gate-warning-icon {
   color: var(--amber);
+  flex-shrink: 0;
 }
 
 .wiki-gate-actions {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .wiki-gate-btn {
-  padding: 14px 24px;
+  padding: 12px 20px;
   font-family: inherit;
-  font-size: 14px;
+  font-size: 13px;
   cursor: pointer;
   border: 1px solid var(--slate);
   transition: all 0.2s;
