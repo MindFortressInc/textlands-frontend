@@ -2183,23 +2183,50 @@ const LORETRACKER_NAMES: Record<string, string> = {
   romance_modern: "Little Black Book",
 };
 
-// Get all lands for wiki
+// Get all lands for wiki (with counts)
 export async function getWikiLands(): Promise<WikiLand[]> {
   const response = await fetchAPI<WikiLandsResponse>("/wiki/lands");
-  return response.lands.map((land) => ({
-    key: land.key,
-    display_name: land.display_name,
-    description: LAND_DESCRIPTIONS[land.key] || "Explore this unique world.",
-    loretracker_name: LORETRACKER_NAMES[land.key] || "Compendium",
-    categories: {
-      items: { total: 0 },
-      enemies: { total: 0 },
-      skills: { total: 0 },
-      npcs: { total: 0 },
-      locations: { total: 0 },
-      realms: { total: 0 },
-    },
-  }));
+
+  // Fetch summaries for each land to get counts
+  const landsWithCounts = await Promise.all(
+    response.lands.map(async (land) => {
+      try {
+        const summary = await fetchAPI<WikiLandSummaryRaw>(`/wiki/${land.key}`);
+        return {
+          key: land.key,
+          display_name: land.display_name,
+          description: LAND_DESCRIPTIONS[land.key] || "Explore this unique world.",
+          loretracker_name: LORETRACKER_NAMES[land.key] || "Compendium",
+          categories: {
+            items: { total: summary.items_count },
+            enemies: { total: summary.enemies_count },
+            skills: { total: summary.skills_count },
+            npcs: { total: summary.npcs_count },
+            locations: { total: summary.locations_count },
+            realms: { total: summary.realms_count },
+          },
+        };
+      } catch {
+        // If summary fetch fails, return land with zero counts
+        return {
+          key: land.key,
+          display_name: land.display_name,
+          description: LAND_DESCRIPTIONS[land.key] || "Explore this unique world.",
+          loretracker_name: LORETRACKER_NAMES[land.key] || "Compendium",
+          categories: {
+            items: { total: 0 },
+            enemies: { total: 0 },
+            skills: { total: 0 },
+            npcs: { total: 0 },
+            locations: { total: 0 },
+            realms: { total: 0 },
+          },
+        };
+      }
+    })
+  );
+
+  return landsWithCounts;
 }
 
 // Get land summary (content counts)
