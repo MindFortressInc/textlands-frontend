@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { GameLog, CommandInput, CharacterPanel, QuickActions, SuggestedActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal, AuthModal, BillingPanel, InfluenceBadge, LeaderboardModal, CharacterCreationModal, PlayerStatsModal, EntityTimelineModal, WorldTemplatesModal, WorldCreationModal, SocialPanel, ChatPanel, LoadingIndicator, InventoryPanel, CurrencyPanel, SkillsPanel, SkillXPToastContainer } from "@/components/game";
 import { LoadingView, ErrorView, LandingView, WorldBrowser, InfiniteCampfireView } from "@/components/views";
+import { LowHPOverlay } from "@/components/effects/LowHPOverlay";
 import { ThemePicker } from "@/components/ThemePicker";
 import type { Character, GameLogEntry, CharacterOption, ActiveScene as ActiveSceneType, NegotiationRequest, CombatSession, ReasoningInfo, InfiniteWorld, InfiniteCampfireResponse, InfiniteCampfireCharacter, AccountPromptReason, WorldTemplate, ContentSegment, EntityReference, SkillXPGain } from "@/types/game";
 import type { RosterCharacter } from "@/lib/api";
@@ -235,8 +236,28 @@ export default function GamePage() {
       try {
         worldData = await api.getInfiniteWorld(session.world_id);
       } catch {
-        // API fetch failed - try to find world in landGroups cache
+        // API fetch failed - try landGroups cache, then session.land fallback
         worldData = findWorldInLandGroups(session.world_id);
+        if (!worldData && session.land) {
+          // Create minimal world object from session data
+          worldData = {
+            id: session.world_id,
+            slug: "",
+            name: session.world_name || "Unknown",
+            tagline: "",
+            description: "",
+            creator_id: "",
+            is_public: true,
+            land: session.land,
+            is_nsfw: false,
+            governance: { type: "open" },
+            physics_rules: {},
+            society_rules: {},
+            content_rules: {},
+            tone_rules: {},
+            player_count: 0,
+          } as InfiniteWorld;
+        }
       }
       if (worldData) {
         setSelectedWorld(worldData);
@@ -1364,8 +1385,14 @@ export default function GamePage() {
   }
 
   // Game phase
+  const stats = character?.stats || { hp: 100, max_hp: 100 };
+  const hpPercent = stats.max_hp > 0 ? (stats.hp / stats.max_hp) * 100 : 100;
+
   return (
     <main className="h-dvh flex flex-col bg-[var(--void)]">
+      {/* Low HP warning overlay */}
+      <LowHPOverlay hpPercent={hpPercent} />
+
       {/* Modals */}
       {negotiating && (
         <SceneNegotiation
@@ -1642,7 +1669,7 @@ export default function GamePage() {
             footprints={footprints}
             onLeaveMessage={handleLeaveMessage}
             loadingFootprints={loadingFootprints}
-            worldId={selectedWorld?.id}
+            worldId={currentSession?.world_id || selectedWorld?.id}
             playerId={playerId}
             recentXPGain={recentXPGain}
             landKey={selectedWorld?.land}

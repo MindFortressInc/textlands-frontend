@@ -1398,6 +1398,65 @@ body {
   }
 }
 
+/* ========== LOW HP WARNING OVERLAY ========== */
+
+/* One-time flash when HP drops to critical */
+@keyframes low-hp-flash {
+  0% {
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.35;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.low-hp-flash {
+  animation: low-hp-flash 0.5s ease-out forwards;
+}
+
+/* Persistent pulsing vignette while at critical HP */
+@keyframes low-hp-pulse {
+  0%, 100% {
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.low-hp-vignette {
+  animation: low-hp-pulse 2s ease-in-out infinite;
+}
+
+/* The overlay itself - red vignette gradient */
+.low-hp-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1000;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 40%,
+    rgba(239, 68, 68, 0.15) 70%,
+    rgba(185, 28, 28, 0.4) 100%
+  );
+}
+
+/* Reduced motion - static instead of pulsing */
+@media (prefers-reduced-motion: reduce) {
+  .low-hp-flash {
+    animation: none;
+    opacity: 0.25;
+  }
+  .low-hp-vignette {
+    animation: none;
+    opacity: 0.2;
+  }
+}
+
 /* ========== FLOATING EFFECTS OVERLAY ========== */
 
 /* Damage/heal floater - pop and float up */
