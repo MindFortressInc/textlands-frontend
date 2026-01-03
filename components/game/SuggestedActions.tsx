@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 
 interface SuggestedActionsProps {
   suggestions: string[];
@@ -14,6 +14,7 @@ export function SuggestedActions({
   disabled = false,
 }: SuggestedActionsProps) {
   const [visible, setVisible] = useState(false);
+  const touchedRef = useRef<string | null>(null);
 
   // Trigger stagger animation on mount/suggestions change
   useEffect(() => {
@@ -21,6 +22,31 @@ export function SuggestedActions({
     const timer = setTimeout(() => setVisible(true), 50);
     return () => clearTimeout(timer);
   }, [suggestions]);
+
+  // Handle touch start - track which action was touched
+  const handleTouchStart = useCallback((action: string) => {
+    touchedRef.current = action;
+  }, []);
+
+  // Handle touch end - fire action immediately (fixes iOS double-tap bug)
+  const handleTouchEnd = useCallback((action: string, e: React.TouchEvent) => {
+    if (disabled) return;
+    // Only fire if this is the same action that was touched
+    if (touchedRef.current === action) {
+      e.preventDefault(); // Prevent click from also firing
+      onSelect(action);
+    }
+    touchedRef.current = null;
+  }, [disabled, onSelect]);
+
+  // Handle click for desktop
+  const handleClick = useCallback((action: string) => {
+    if (disabled) return;
+    // Skip if this was already handled by touch
+    if (touchedRef.current === null) {
+      onSelect(action);
+    }
+  }, [disabled, onSelect]);
 
   if (!suggestions.length) return null;
 
@@ -40,7 +66,9 @@ export function SuggestedActions({
         {suggestions.map((action, index) => (
           <button
             key={`${action}-${index}`}
-            onClick={() => !disabled && onSelect(action)}
+            onTouchStart={() => handleTouchStart(action)}
+            onTouchEnd={(e) => handleTouchEnd(action, e)}
+            onClick={() => handleClick(action)}
             disabled={disabled}
             className="suggestion-chip group"
             style={{ "--delay": `${index * 60}ms` } as React.CSSProperties}
