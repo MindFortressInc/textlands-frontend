@@ -52,12 +52,14 @@ function EntryCard({
   category,
   isHidden,
   onReveal,
+  wikiPath,
 }: {
   entry: WikiEntry;
   land: string;
   category: LoreCategory;
   isHidden: boolean;
   onReveal: () => void;
+  wikiPath: (path: string) => string;
 }) {
   const tierConfig = entry.tier ? TIER_CONFIG[entry.tier] : null;
 
@@ -85,7 +87,7 @@ function EntryCard({
   }
 
   return (
-    <Link href={`/wiki/${land}/${category}/${entry.entry_id}`} className="wiki-card">
+    <Link href={wikiPath(`/wiki/${land}/${category}/${entry.entry_id}`)} className="wiki-card">
       <div className="wiki-card-header">
         <div className="wiki-card-icon" style={{ color: tierConfig?.color }}>
           {CATEGORY_CONFIG[category]?.icon || "◇"}
@@ -110,7 +112,7 @@ export default function WikiCategoryPage() {
   const landKey = params.land as string;
   const category = params.category as LoreCategory;
 
-  const { isLoggedIn, isEntryHidden, unlockEntry, unlockAll, setUnlockAll, loadDiscoveries } = useWiki();
+  const { isLoggedIn, isEntryHidden, unlockEntry, unlockAll, setUnlockAll, loadDiscoveries, wikiPath } = useWiki();
 
   const [entries, setEntries] = useState<WikiEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -150,7 +152,7 @@ export default function WikiCategoryPage() {
     <div data-land={landKey}>
       {/* Header */}
       <header className="wiki-header">
-        <Link href="/wiki" className="wiki-logo">
+        <Link href={wikiPath("/wiki")} className="wiki-logo">
           <div className="wiki-logo-icon">📖</div>
           <div>
             <div className="wiki-logo-text">Textlands Wiki</div>
@@ -175,7 +177,7 @@ export default function WikiCategoryPage() {
           <div className="wiki-sidebar-title">Navigation</div>
           <ul className="wiki-nav-list">
             <li className="wiki-nav-item">
-              <Link href={`/wiki/${landKey}`} className="wiki-nav-link">
+              <Link href={wikiPath(`/wiki/${landKey}`)} className="wiki-nav-link">
                 <span className="wiki-nav-icon">←</span>
                 {LAND_NAMES[landKey] || landKey}
               </Link>
@@ -190,7 +192,7 @@ export default function WikiCategoryPage() {
             <ul className="wiki-nav-list">
               <li className="wiki-nav-item">
                 <Link
-                  href={`/wiki/${landKey}/${category}`}
+                  href={wikiPath(`/wiki/${landKey}/${category}`)}
                   className={`wiki-nav-link ${!tierFilter ? "active" : ""}`}
                 >
                   <span className="wiki-nav-icon">◇</span>
@@ -202,7 +204,7 @@ export default function WikiCategoryPage() {
                 return (
                   <li key={tier} className="wiki-nav-item">
                     <Link
-                      href={`/wiki/${landKey}/${category}?tier=${tier}`}
+                      href={wikiPath(`/wiki/${landKey}/${category}?tier=${tier}`)}
                       className={`wiki-nav-link ${tierFilter === tier ? "active" : ""}`}
                     >
                       <span className="wiki-nav-icon" style={{ color: config?.color }}>●</span>
@@ -243,9 +245,9 @@ export default function WikiCategoryPage() {
       <main className="wiki-main">
         {/* Breadcrumb */}
         <nav className="wiki-breadcrumb">
-          <Link href="/wiki">Wiki</Link>
+          <Link href={wikiPath("/wiki")}>Wiki</Link>
           <span className="wiki-breadcrumb-sep">/</span>
-          <Link href={`/wiki/${landKey}`}>{LAND_NAMES[landKey] || landKey}</Link>
+          <Link href={wikiPath(`/wiki/${landKey}`)}>{LAND_NAMES[landKey] || landKey}</Link>
           <span className="wiki-breadcrumb-sep">/</span>
           <span>{categoryConfig.label}</span>
         </nav>
@@ -283,6 +285,7 @@ export default function WikiCategoryPage() {
                 category={category}
                 isHidden={isLoggedIn && isEntryHidden(entry.entry_id)}
                 onReveal={() => unlockEntry(entry.entry_id)}
+                wikiPath={wikiPath}
               />
             ))}
           </div>

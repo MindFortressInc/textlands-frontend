@@ -70,13 +70,13 @@ function SpoilerGate({ onAccept }: { onAccept: () => void }) {
   );
 }
 
-function LandCard({ land }: { land: WikiLand }) {
+function LandCard({ land, wikiPath }: { land: WikiLand; wikiPath: (path: string) => string }) {
   const config = LAND_CONFIG[land.key] || LAND_CONFIG.fantasy;
   const totalEntries = Object.values(land.categories).reduce((sum, cat) => sum + cat.total, 0);
 
   return (
     <Link
-      href={`/wiki/${land.key}`}
+      href={wikiPath(`/wiki/${land.key}`)}
       className="wiki-land-card"
       style={{ "--land-accent": config.accent } as React.CSSProperties}
     >
@@ -94,7 +94,7 @@ function LandCard({ land }: { land: WikiLand }) {
 }
 
 export default function WikiHomePage() {
-  const { spoilerAccepted, acceptSpoilers, isLoggedIn } = useWiki();
+  const { spoilerAccepted, acceptSpoilers, isLoggedIn, wikiPath } = useWiki();
   const [lands, setLands] = useState<WikiLand[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -115,7 +115,7 @@ export default function WikiHomePage() {
     <>
       {/* Header */}
       <header className="wiki-header">
-        <Link href="/wiki" className="wiki-logo">
+        <Link href={wikiPath("/wiki")} className="wiki-logo">
           <div className="wiki-logo-icon">📖</div>
           <div>
             <div className="wiki-logo-text">Textlands Wiki</div>
@@ -189,7 +189,7 @@ export default function WikiHomePage() {
         ) : (
           <div className="wiki-lands-grid">
             {lands.map((land) => (
-              <LandCard key={land.key} land={land} />
+              <LandCard key={land.key} land={land} wikiPath={wikiPath} />
             ))}
           </div>
         )}
@@ -197,7 +197,7 @@ export default function WikiHomePage() {
         {/* Global Skills Link */}
         <div style={{ textAlign: "center", marginTop: 48 }}>
           <Link
-            href="/wiki/skills"
+            href={wikiPath("/wiki/skills")}
             style={{
               display: "inline-block",
               padding: "16px 32px",

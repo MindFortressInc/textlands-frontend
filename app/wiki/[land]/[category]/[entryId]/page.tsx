@@ -97,7 +97,7 @@ export default function WikiEntryPage() {
   const category = params.category as LoreCategory;
   const entryId = params.entryId as string;
 
-  const { isLoggedIn, isEntryHidden, unlockEntry } = useWiki();
+  const { isLoggedIn, isEntryHidden, unlockEntry, wikiPath } = useWiki();
 
   const [entry, setEntry] = useState<WikiEntry | null>(null);
   const [loading, setLoading] = useState(true);
@@ -129,7 +129,7 @@ export default function WikiEntryPage() {
     <div data-land={landKey}>
       {/* Header */}
       <header className="wiki-header">
-        <Link href="/wiki" className="wiki-logo">
+        <Link href={wikiPath("/wiki")} className="wiki-logo">
           <div className="wiki-logo-icon">📖</div>
           <div>
             <div className="wiki-logo-text">Textlands Wiki</div>
@@ -154,13 +154,13 @@ export default function WikiEntryPage() {
           <div className="wiki-sidebar-title">Navigation</div>
           <ul className="wiki-nav-list">
             <li className="wiki-nav-item">
-              <Link href={`/wiki/${landKey}/${category}`} className="wiki-nav-link">
+              <Link href={wikiPath(`/wiki/${landKey}/${category}`)} className="wiki-nav-link">
                 <span className="wiki-nav-icon">←</span>
                 Back to {categoryConfig.label}
               </Link>
             </li>
             <li className="wiki-nav-item">
-              <Link href={`/wiki/${landKey}`} className="wiki-nav-link">
+              <Link href={wikiPath(`/wiki/${landKey}`)} className="wiki-nav-link">
                 <span className="wiki-nav-icon">◇</span>
                 {LAND_NAMES[landKey] || landKey}
               </Link>
@@ -173,11 +173,11 @@ export default function WikiEntryPage() {
       <main className="wiki-main">
         {/* Breadcrumb */}
         <nav className="wiki-breadcrumb">
-          <Link href="/wiki">Wiki</Link>
+          <Link href={wikiPath("/wiki")}>Wiki</Link>
           <span className="wiki-breadcrumb-sep">/</span>
-          <Link href={`/wiki/${landKey}`}>{LAND_NAMES[landKey] || landKey}</Link>
+          <Link href={wikiPath(`/wiki/${landKey}`)}>{LAND_NAMES[landKey] || landKey}</Link>
           <span className="wiki-breadcrumb-sep">/</span>
-          <Link href={`/wiki/${landKey}/${category}`}>{categoryConfig.label}</Link>
+          <Link href={wikiPath(`/wiki/${landKey}/${category}`)}>{categoryConfig.label}</Link>
           <span className="wiki-breadcrumb-sep">/</span>
           <span>{entry?.display_name || "Loading..."}</span>
         </nav>

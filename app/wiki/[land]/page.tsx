@@ -56,17 +56,19 @@ function CategoryCard({
   category,
   count,
   accent,
+  wikiPath,
 }: {
   land: string;
   category: LoreCategory;
   count: number;
   accent: string;
+  wikiPath: (path: string) => string;
 }) {
   const config = CATEGORY_CONFIG[category];
 
   return (
     <Link
-      href={`/wiki/${land}/${category}`}
+      href={wikiPath(`/wiki/${land}/${category}`)}
       className="wiki-card"
       style={{ "--wiki-accent": accent } as React.CSSProperties}
     >
@@ -87,7 +89,7 @@ function CategoryCard({
 export default function WikiLandPage() {
   const params = useParams();
   const landKey = params.land as string;
-  const { isLoggedIn } = useWiki();
+  const { isLoggedIn, wikiPath } = useWiki();
 
   const [summary, setSummary] = useState<WikiLandSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -107,7 +109,7 @@ export default function WikiLandPage() {
     return (
       <>
         <header className="wiki-header">
-          <Link href="/wiki" className="wiki-logo">
+          <Link href={wikiPath("/wiki")} className="wiki-logo">
             <div className="wiki-logo-icon">📖</div>
             <div>
               <div className="wiki-logo-text">Textlands Wiki</div>
@@ -129,7 +131,7 @@ export default function WikiLandPage() {
     <div data-land={landKey}>
       {/* Header */}
       <header className="wiki-header">
-        <Link href="/wiki" className="wiki-logo">
+        <Link href={wikiPath("/wiki")} className="wiki-logo">
           <div className="wiki-logo-icon">📖</div>
           <div>
             <div className="wiki-logo-text">Textlands Wiki</div>
@@ -157,7 +159,7 @@ export default function WikiLandPage() {
           <div className="wiki-sidebar-title">Navigation</div>
           <ul className="wiki-nav-list">
             <li className="wiki-nav-item">
-              <Link href="/wiki" className="wiki-nav-link">
+              <Link href={wikiPath("/wiki")} className="wiki-nav-link">
                 <span className="wiki-nav-icon">←</span>
                 All Lands
               </Link>
@@ -173,7 +175,7 @@ export default function WikiLandPage() {
               const count = summary.categories[cat]?.total || 0;
               return (
                 <li key={cat} className="wiki-nav-item">
-                  <Link href={`/wiki/${landKey}/${cat}`} className="wiki-nav-link">
+                  <Link href={wikiPath(`/wiki/${landKey}/${cat}`)} className="wiki-nav-link">
                     <span className="wiki-nav-icon">{config.icon}</span>
                     {config.label}
                     <span className="wiki-nav-count">{count}</span>
@@ -189,7 +191,7 @@ export default function WikiLandPage() {
       <main className="wiki-main">
         {/* Breadcrumb */}
         <nav className="wiki-breadcrumb">
-          <Link href="/wiki">Wiki</Link>
+          <Link href={wikiPath("/wiki")}>Wiki</Link>
           <span className="wiki-breadcrumb-sep">/</span>
           <span>{summary.land_display_name}</span>
         </nav>
@@ -227,6 +229,7 @@ export default function WikiLandPage() {
               category={cat}
               count={summary.categories[cat]?.total || 0}
               accent={landConfig.accent}
+              wikiPath={wikiPath}
             />
           ))}
         </div>

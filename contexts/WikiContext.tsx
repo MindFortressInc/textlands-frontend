@@ -23,6 +23,9 @@ interface WikiContextType {
 
   // Check if entry should be hidden
   isEntryHidden: (entryId: string) => boolean;
+
+  // Path helper - returns correct path for wiki subdomain vs main domain
+  wikiPath: (path: string) => string;
 }
 
 const WikiContext = createContext<WikiContextType | null>(null);
@@ -37,6 +40,13 @@ export function WikiProvider({ children }: { children: ReactNode }) {
   const [discoveries, setDiscoveries] = useState<Set<string>>(new Set());
   const [unlockedEntries, setUnlockedEntries] = useState<Set<string>>(new Set());
   const [unlockAll, setUnlockAllState] = useState(false);
+  const [isWikiSubdomain, setIsWikiSubdomain] = useState(false);
+
+  // Check if we're on the wiki subdomain
+  useEffect(() => {
+    const host = window.location.hostname;
+    setIsWikiSubdomain(host.startsWith("wiki.") || host === "wiki.localhost");
+  }, []);
 
   // Load spoiler acceptance from localStorage
   useEffect(() => {
@@ -113,6 +123,17 @@ export function WikiProvider({ children }: { children: ReactNode }) {
     [isLoggedIn, unlockAll, discoveries, unlockedEntries]
   );
 
+  // Path helper: on wiki subdomain, /wiki/foo -> /foo
+  const wikiPath = useCallback(
+    (path: string) => {
+      if (isWikiSubdomain && path.startsWith("/wiki")) {
+        return path.slice(5) || "/"; // Remove "/wiki" prefix
+      }
+      return path;
+    },
+    [isWikiSubdomain]
+  );
+
   return (
     <WikiContext.Provider
       value={{
@@ -127,6 +148,7 @@ export function WikiProvider({ children }: { children: ReactNode }) {
         unlockAll,
         setUnlockAll,
         isEntryHidden,
+        wikiPath,
       }}
     >
       {children}
