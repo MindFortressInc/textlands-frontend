@@ -1056,6 +1056,7 @@ export interface Item {
   slot?: "weapon" | "offhand" | "head" | "chest" | "legs" | "feet" | "hands" | "accessory";
   stats: ItemStats;
   effects: Record<string, unknown>;
+  weight: number;
   level_required: number;
   base_value: number;
   can_sell: boolean;

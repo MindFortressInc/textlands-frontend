@@ -92,13 +92,23 @@ function ItemRow({
   );
 }
 
-function ItemDetail({ item }: { item: InventoryItem }) {
+function ItemDetail({
+  item,
+  onAction,
+  actionLoading,
+}: {
+  item: InventoryItem;
+  onAction: (action: string) => void;
+  actionLoading: boolean;
+}) {
   const { item: itemData } = item;
   const tier = itemData.tier;
   const isGlowing = ["rare", "epic", "legendary"].includes(tier);
+  const isEquippable = !!itemData.slot;
+  const isConsumable = itemData.item_type === "consumable";
 
   return (
-    <div className="p-3 space-y-3 font-mono text-sm">
+    <div className="p-3 space-y-3 font-mono text-sm flex flex-col h-full">
       {/* Item Name with ASCII frame */}
       <div className="border border-[var(--slate)] p-2 bg-[var(--void)]">
         <div
@@ -141,6 +151,10 @@ function ItemDetail({ item }: { item: InventoryItem }) {
       {/* Footer Info */}
       <div className="text-xs text-[var(--mist)] space-y-1 pt-2 border-t border-[var(--slate)]">
         <div className="flex justify-between">
+          <span>WEIGHT</span>
+          <span className="text-[var(--fog)]">{itemData.weight.toFixed(1)} kg</span>
+        </div>
+        <div className="flex justify-between">
           <span>VALUE</span>
           <span className="text-[var(--amber)]">{itemData.base_value}g</span>
         </div>
@@ -161,6 +175,35 @@ function ItemDetail({ item }: { item: InventoryItem }) {
             ◆ EQUIPPED ◆
           </div>
         )}
+      </div>
+
+      {/* Action Buttons */}
+      <div className="mt-auto pt-3 border-t border-[var(--slate)] space-y-1.5">
+        {isEquippable && (
+          <button
+            onClick={() => onAction(item.is_equipped ? `unequip ${itemData.name}` : `equip ${itemData.name}`)}
+            disabled={actionLoading}
+            className="w-full py-1.5 text-xs border border-[var(--slate)] bg-[var(--void)] hover:bg-[var(--stone)] hover:border-[var(--amber)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {actionLoading ? "..." : item.is_equipped ? "[UNEQUIP]" : "[EQUIP]"}
+          </button>
+        )}
+        {isConsumable && (
+          <button
+            onClick={() => onAction(`use ${itemData.name}`)}
+            disabled={actionLoading}
+            className="w-full py-1.5 text-xs border border-[var(--arcane)] text-[var(--arcane)] bg-[var(--void)] hover:bg-[var(--arcane)] hover:text-[var(--void)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {actionLoading ? "..." : "[USE]"}
+          </button>
+        )}
+        <button
+          onClick={() => onAction(`drop ${itemData.name}`)}
+          disabled={actionLoading}
+          className="w-full py-1.5 text-xs border border-[var(--crimson)] text-[var(--crimson)] bg-[var(--void)] hover:bg-[var(--crimson)] hover:text-[var(--void)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {actionLoading ? "..." : "[DROP]"}
+        </button>
       </div>
     </div>
   );
@@ -208,7 +251,37 @@ export function InventoryPanel({ isOpen, onClose }: InventoryPanelProps) {
   const [error, setError] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [actionLoading, setActionLoading] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
+
+  const refreshInventory = useCallback(async () => {
+    const data = await api.getInventory();
+    setInventory(data);
+    return data;
+  }, []);
+
+  const handleAction = useCallback(async (action: string) => {
+    setActionLoading(true);
+    try {
+      await api.doAction(action);
+      const data = await refreshInventory();
+      // Update selected item or clear if it was dropped/consumed
+      if (selectedItem) {
+        const updated = data.items.find(i => i.item_id === selectedItem.item_id);
+        if (updated) {
+          setSelectedItem(updated);
+        } else {
+          // Item was removed (dropped/consumed)
+          setSelectedItem(data.items[0] || null);
+          setSelectedIndex(0);
+        }
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Action failed");
+    } finally {
+      setActionLoading(false);
+    }
+  }, [selectedItem, refreshInventory]);
 
   // Fetch inventory on open
   useEffect(() => {
@@ -412,7 +485,7 @@ export function InventoryPanel({ isOpen, onClose }: InventoryPanelProps) {
             {/* Right: Item Detail */}
             <div className="w-64 bg-[var(--shadow)] overflow-y-auto">
               {selectedItem ? (
-                <ItemDetail item={selectedItem} />
+                <ItemDetail item={selectedItem} onAction={handleAction} actionLoading={actionLoading} />
               ) : (
                 <div className="p-4 text-center text-[var(--mist)] text-xs h-full flex items-center justify-center">
                   <div>
