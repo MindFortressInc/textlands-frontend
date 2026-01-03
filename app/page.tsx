@@ -923,11 +923,24 @@ export default function GamePage() {
           }
 
           if (result.character) {
-            // Ensure stats exist (backend may omit in some responses)
-            const char = result.character;
-            if (!char.stats) {
-              char.stats = { hp: 100, max_hp: 100, mana: 50, max_mana: 50, gold: 0, xp: 0, level: 1 };
-            }
+            // Backend returns flat fields (hp, max_hp, mp, max_mp)
+            // Frontend expects nested stats object
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const apiChar = result.character as any;
+            const char: Character = {
+              ...character!,
+              id: apiChar.id || character?.id || "",
+              name: apiChar.name || character?.name || "Unknown",
+              stats: {
+                hp: apiChar.hp ?? character?.stats?.hp ?? 100,
+                max_hp: apiChar.max_hp ?? character?.stats?.max_hp ?? 100,
+                mana: apiChar.mp ?? character?.stats?.mana ?? 50,
+                max_mana: apiChar.max_mp ?? character?.stats?.max_mana ?? 50,
+                gold: apiChar.gold ?? character?.stats?.gold ?? 0,
+                xp: character?.stats?.xp ?? 0,
+                level: character?.stats?.level ?? 1,
+              },
+            };
             setCharacter(char);
           }
 
