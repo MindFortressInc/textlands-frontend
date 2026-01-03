@@ -30,8 +30,8 @@ export function SuggestedActions({
     e.preventDefault();
     handledByTouchRef.current = true;
     onSelect(action);
-    // Reset after a tick to allow click events to check
-    setTimeout(() => { handledByTouchRef.current = false; }, 100);
+    // Reset after 400ms to cover iOS synthetic click delay (~300ms)
+    setTimeout(() => { handledByTouchRef.current = false; }, 400);
   }, [disabled, onSelect]);
 
   // Handle click for desktop only

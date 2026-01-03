@@ -129,6 +129,15 @@ export interface ChatSubscriptionsEvent {
   current_land?: string;
 }
 
+export interface WorldChatterEvent {
+  type: "world_chatter";
+  chatter_type: "gossip" | "news" | "ambiance" | "event";
+  message: string;
+  priority: number;
+  source: "ambient" | "player_event";
+  timestamp: string;
+}
+
 export interface PongEvent {
   type: "pong";
 }
@@ -153,6 +162,7 @@ export type IncomingMessage =
   | DMTypingEvent
   | DMReadReceiptEvent
   | ChatSubscriptionsEvent
+  | WorldChatterEvent
   | PongEvent
   | ErrorEvent;
 
@@ -173,6 +183,7 @@ export interface WebSocketEventHandlers {
   onDMTyping?: (event: DMTypingEvent) => void;
   onDMReadReceipt?: (event: DMReadReceiptEvent) => void;
   onChatSubscriptions?: (event: ChatSubscriptionsEvent) => void;
+  onWorldChatter?: (event: WorldChatterEvent) => void;
   onError?: (event: ErrorEvent) => void;
   onConnect?: () => void;
   onDisconnect?: () => void;
@@ -342,6 +353,9 @@ export function useWebSocket({
             break;
           case "chat_subscriptions":
             h.onChatSubscriptions?.(data);
+            break;
+          case "world_chatter":
+            h.onWorldChatter?.(data);
             break;
           case "error":
             h.onError?.(data);

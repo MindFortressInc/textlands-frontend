@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
-import { GameLog, CommandInput, CharacterPanel, QuickActions, SuggestedActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal, AuthModal, BillingPanel, InfluenceBadge, LeaderboardModal, CharacterCreationModal, PlayerStatsModal, EntityTimelineModal, WorldTemplatesModal, WorldCreationModal, SocialPanel, ChatPanel, LoadingIndicator, InventoryPanel, CurrencyPanel, SkillsPanel, SkillXPToastContainer } from "@/components/game";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { GameLog, CommandInput, CharacterPanel, QuickActions, SuggestedActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal, AuthModal, BillingPanel, InfluenceBadge, LeaderboardModal, CharacterCreationModal, PlayerStatsModal, EntityTimelineModal, WorldTemplatesModal, WorldCreationModal, SocialPanel, ChatPanel, LoadingIndicator, InventoryPanel, CurrencyPanel, SkillsPanel, SkillXPToastContainer, WorldChatter } from "@/components/game";
 import { LoadingView, ErrorView, LandingView, WorldBrowser, InfiniteCampfireView } from "@/components/views";
 import { LowHPOverlay } from "@/components/effects/LowHPOverlay";
 import { ThemePicker } from "@/components/ThemePicker";
@@ -28,6 +28,7 @@ import type {
   FriendOfflineEvent,
   FriendRequestReceivedEvent,
   DMReceivedEvent,
+  WorldChatterEvent,
 } from "@/lib/useWebSocket";
 
 // ========== HELPERS ==========
@@ -185,6 +186,9 @@ export default function GamePage() {
   // Mobile input focus state (hides quick actions when typing)
   const [inputFocused, setInputFocused] = useState(false);
 
+  // Synchronous guard to prevent duplicate action submissions (state is async)
+  const processingRef = useRef(false);
+
   // Detect mobile keyboard visibility
   const { isVisible: keyboardVisible } = useKeyboardVisible();
 
@@ -197,6 +201,35 @@ export default function GamePage() {
   const [lastFriendRequest, setLastFriendRequest] = useState<FriendRequestReceivedEvent | null>(null);
   const [lastDMReceived, setLastDMReceived] = useState<DMReceivedEvent | null>(null);
 
+  // World Chatter state
+  const [chatterMessages, setChatterMessages] = useState<(WorldChatterEvent & { id: string })[]>([]);
+  const [chatterCollapsed, setChatterCollapsed] = useState(false);
+  const [chatterMuted, setChatterMuted] = useState(() => {
+    // Persist mute preference
+    return safeStorage.getItem("textlands_chatter_muted") === "true";
+  });
+  const chatterIdRef = useRef(0);
+
+  // Handle incoming world chatter
+  const handleWorldChatter = useCallback((event: WorldChatterEvent) => {
+    if (chatterMuted) return;
+    const id = `chatter-${++chatterIdRef.current}`;
+    setChatterMessages((prev) => {
+      // Keep last 20 messages
+      const updated = [...prev, { ...event, id }];
+      return updated.slice(-20);
+    });
+  }, [chatterMuted]);
+
+  // Toggle chatter mute (persists to localStorage)
+  const toggleChatterMute = useCallback(() => {
+    setChatterMuted((prev) => {
+      const newVal = !prev;
+      safeStorage.setItem("textlands_chatter_muted", newVal ? "true" : "false");
+      return newVal;
+    });
+  }, []);
+
   // WebSocket connection
   const ws = useWebSocket({
     playerId: phase === "game" ? playerId : null,
@@ -208,6 +241,7 @@ export default function GamePage() {
       onFriendOffline: setLastFriendOffline,
       onFriendRequestReceived: setLastFriendRequest,
       onDMReceived: setLastDMReceived,
+      onWorldChatter: handleWorldChatter,
       onConnect: () => console.log("[WS] Connected"),
       onDisconnect: () => console.log("[WS] Disconnected"),
       onError: (e) => console.error("[WS] Error:", e.message),
@@ -678,6 +712,7 @@ export default function GamePage() {
       setCharacter(null);
       setSelectedWorld(null);
       setEntries([]);
+      setChatterMessages([]); // Clear realm-scoped chatter
 
       // Auth users with characters go to landing (can pick character or start new)
       // Guests/users without characters go to worlds
@@ -692,6 +727,7 @@ export default function GamePage() {
       // Even if backend fails, reset local state
       setCurrentSession(null);
       setCharacter(null);
+      setChatterMessages([]); // Clear realm-scoped chatter
       setPhase("worlds");
     }
     setProcessing(false);
@@ -899,6 +935,10 @@ export default function GamePage() {
 
   const handleCommand = useCallback(async (command: string) => {
     if (!character) return;
+    // Synchronous guard - prevents duplicate submissions before React re-renders
+    if (processingRef.current) return;
+    processingRef.current = true;
+
     addLog("action", command);
     setSuggestions([]); // Clear previous suggestions
 
@@ -1097,6 +1137,7 @@ export default function GamePage() {
       addLog("system", `Error: ${error instanceof Error ? error.message : "Unknown"}`);
     }
 
+    processingRef.current = false;
     setProcessing(false);
   }, [character, addLog, nsfwAutoBlocked, requestAgeVerification, savePromptDismissed, savePendingSession]);
 
@@ -1635,6 +1676,16 @@ export default function GamePage() {
           /* Normal Game Interface */
           <div className="flex-1 flex flex-col min-w-0">
             <GameLog entries={entries} showReasoning={showReasoning} keyboardVisible={keyboardVisible} />
+            {/* World Chatter - desktop only */}
+            <div className="hidden md:block">
+              <WorldChatter
+                messages={chatterMessages}
+                isCollapsed={chatterCollapsed}
+                onToggleCollapse={() => setChatterCollapsed((v) => !v)}
+                onMute={toggleChatterMute}
+                isMuted={chatterMuted}
+              />
+            </div>
             <LoadingIndicator show={processing} />
             <SuggestedActions
               suggestions={suggestions}

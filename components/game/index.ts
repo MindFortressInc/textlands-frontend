@@ -35,4 +35,5 @@ export { SkillXPToastContainer } from "./SkillXPToast";
 export { SkillsTab } from "./SkillsTab";
 export { SkillBar } from "./SkillBar";
 export { FrontierIndicator } from "./FrontierIndicator";
+export { WorldChatter } from "./WorldChatter";
 // Consequence components removed - backend handles via doAction narrative
