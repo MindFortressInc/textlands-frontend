@@ -106,7 +106,7 @@ export default function WikiCategoryPage() {
   const landKey = params.land as string;
   const category = params.category as LoreCategory;
 
-  const { isLoggedIn, isEntryHidden, unlockEntry, unlockAll, setUnlockAll, loadDiscoveries, wikiPath } = useWiki();
+  const { isLoggedIn, displayName, logout, isEntryHidden, unlockEntry, unlockAll, setUnlockAll, loadDiscoveries, wikiPath } = useWiki();
 
   const [entries, setEntries] = useState<WikiEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -162,6 +162,15 @@ export default function WikiCategoryPage() {
               placeholder={`Search ${categoryConfig.label.toLowerCase()}...`}
             />
           </div>
+          {isLoggedIn ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <span style={{ color: "var(--amber)", fontSize: 13 }}>{displayName}</span>
+              <Link href="/" className="wiki-auth-btn">Return to Game</Link>
+              <button onClick={logout} className="wiki-auth-btn" style={{ background: "transparent" }}>Log Out</button>
+            </div>
+          ) : (
+            <Link href="/?login=1" className="wiki-auth-btn">Log In</Link>
+          )}
         </div>
       </header>
 

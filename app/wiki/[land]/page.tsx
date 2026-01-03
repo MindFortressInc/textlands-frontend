@@ -89,7 +89,7 @@ function CategoryCard({
 export default function WikiLandPage() {
   const params = useParams();
   const landKey = params.land as string;
-  const { isLoggedIn, wikiPath } = useWiki();
+  const { isLoggedIn, displayName, logout, wikiPath } = useWiki();
 
   const [summary, setSummary] = useState<WikiLandSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -147,9 +147,15 @@ export default function WikiLandPage() {
               placeholder={`Search ${summary.land_display_name}...`}
             />
           </div>
-          <Link href="/" className="wiki-auth-btn">
-            {isLoggedIn ? "Return to Game" : "Log In"}
-          </Link>
+          {isLoggedIn ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <span style={{ color: "var(--amber)", fontSize: 13 }}>{displayName}</span>
+              <Link href="/" className="wiki-auth-btn">Return to Game</Link>
+              <button onClick={logout} className="wiki-auth-btn" style={{ background: "transparent" }}>Log Out</button>
+            </div>
+          ) : (
+            <Link href="/?login=1" className="wiki-auth-btn">Log In</Link>
+          )}
         </div>
       </header>
 

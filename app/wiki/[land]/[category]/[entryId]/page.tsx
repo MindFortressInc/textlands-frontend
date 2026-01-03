@@ -97,7 +97,7 @@ export default function WikiEntryPage() {
   const category = params.category as LoreCategory;
   const entryId = params.entryId as string;
 
-  const { isLoggedIn, isEntryHidden, unlockEntry, wikiPath } = useWiki();
+  const { isLoggedIn, displayName, logout, isEntryHidden, unlockEntry, wikiPath } = useWiki();
 
   const [entry, setEntry] = useState<WikiEntry | null>(null);
   const [loading, setLoading] = useState(true);
@@ -145,6 +145,15 @@ export default function WikiEntryPage() {
               placeholder="Search the wiki..."
             />
           </div>
+          {isLoggedIn ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <span style={{ color: "var(--amber)", fontSize: 13 }}>{displayName}</span>
+              <Link href="/" className="wiki-auth-btn">Return to Game</Link>
+              <button onClick={logout} className="wiki-auth-btn" style={{ background: "transparent" }}>Log Out</button>
+            </div>
+          ) : (
+            <Link href="/?login=1" className="wiki-auth-btn">Log In</Link>
+          )}
         </div>
       </header>
 
