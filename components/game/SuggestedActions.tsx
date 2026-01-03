@@ -14,7 +14,8 @@ export function SuggestedActions({
   disabled = false,
 }: SuggestedActionsProps) {
   const [visible, setVisible] = useState(false);
-  const touchedRef = useRef<string | null>(null);
+  // Track if action was handled by touch to prevent double-fire
+  const handledByTouchRef = useRef(false);
 
   // Trigger stagger animation on mount/suggestions change
   useEffect(() => {
@@ -23,29 +24,22 @@ export function SuggestedActions({
     return () => clearTimeout(timer);
   }, [suggestions]);
 
-  // Handle touch start - track which action was touched
-  const handleTouchStart = useCallback((action: string) => {
-    touchedRef.current = action;
-  }, []);
-
   // Handle touch end - fire action immediately (fixes iOS double-tap bug)
   const handleTouchEnd = useCallback((action: string, e: React.TouchEvent) => {
     if (disabled) return;
-    // Only fire if this is the same action that was touched
-    if (touchedRef.current === action) {
-      e.preventDefault(); // Prevent click from also firing
-      onSelect(action);
-    }
-    touchedRef.current = null;
+    e.preventDefault();
+    handledByTouchRef.current = true;
+    onSelect(action);
+    // Reset after a tick to allow click events to check
+    setTimeout(() => { handledByTouchRef.current = false; }, 100);
   }, [disabled, onSelect]);
 
-  // Handle click for desktop
+  // Handle click for desktop only
   const handleClick = useCallback((action: string) => {
     if (disabled) return;
-    // Skip if this was already handled by touch
-    if (touchedRef.current === null) {
-      onSelect(action);
-    }
+    // Skip if this was just handled by touch
+    if (handledByTouchRef.current) return;
+    onSelect(action);
   }, [disabled, onSelect]);
 
   if (!suggestions.length) return null;
@@ -66,7 +60,6 @@ export function SuggestedActions({
         {suggestions.map((action, index) => (
           <button
             key={`${action}-${index}`}
-            onTouchStart={() => handleTouchStart(action)}
             onTouchEnd={(e) => handleTouchEnd(action, e)}
             onClick={() => handleClick(action)}
             disabled={disabled}
