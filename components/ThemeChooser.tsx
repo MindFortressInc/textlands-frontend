@@ -161,16 +161,21 @@ export function ThemeChooser({ onComplete }: ThemeChooserProps) {
             const offset = index - currentIndex;
             const isActive = index === currentIndex;
 
+            const isAdjacent = Math.abs(offset) === 1;
+
             return (
               <div
                 key={theme.id}
-                className="absolute w-[85vw] max-w-md transition-all duration-300 ease-out"
+                className={`absolute w-[85vw] max-w-md transition-all duration-300 ease-out ${
+                  isAdjacent ? "cursor-pointer" : ""
+                }`}
                 style={{
                   transform: `translateX(${offset * 105}%) scale(${isActive ? 1 : 0.85}) rotateY(${offset * -5}deg)`,
                   opacity: Math.abs(offset) > 1 ? 0 : isActive ? 1 : 0.5,
                   zIndex: isActive ? 10 : 5 - Math.abs(offset),
-                  pointerEvents: isActive ? "auto" : "none",
+                  pointerEvents: isActive || isAdjacent ? "auto" : "none",
                 }}
+                onClick={isAdjacent ? () => goToIndex(index) : undefined}
               >
                 <ThemePreviewCard theme={theme} isActive={isActive} />
               </div>
@@ -211,7 +216,7 @@ export function ThemeChooser({ onComplete }: ThemeChooserProps) {
         </button>
 
         <p className="text-[var(--slate)] text-[10px] tracking-wide">
-          ← SWIPE OR USE ARROW KEYS →
+          ← SWIPE, CLICK, OR USE ARROW KEYS →
         </p>
       </div>
     </main>
