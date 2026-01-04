@@ -601,7 +601,7 @@ export function CharacterPanel({
           <div className="p-3 space-y-3 flex-1">
             <div>
               <div className="flex justify-between text-xs mb-1">
-                <span className="text-[var(--crimson)]">HP</span>
+                <span className="text-[var(--crimson)]">Health</span>
                 <span className="text-[var(--mist)]">{stats.hp}/{stats.max_hp}</span>
               </div>
               <StatBar current={stats.hp} max={stats.max_hp} type="hp" />
@@ -609,18 +609,10 @@ export function CharacterPanel({
 
             <div>
               <div className="flex justify-between text-xs mb-1">
-                <span className="text-[var(--arcane)]">MP</span>
+                <span className="text-[var(--arcane)]">Magic Points</span>
                 <span className="text-[var(--mist)]">{stats.mana}/{stats.max_mana}</span>
               </div>
               <StatBar current={stats.mana} max={stats.max_mana} type="mana" />
-            </div>
-
-            <div>
-              <div className="flex justify-between text-xs mb-1">
-                <span className="text-[var(--amber)]">XP</span>
-                <span className="text-[var(--mist)]">{stats.xp % 100}/100</span>
-              </div>
-              <StatBar current={stats.xp % 100} max={100} type="xp" />
             </div>
 
             <div className="pt-2 border-t border-[var(--slate)]">

@@ -65,15 +65,15 @@ export function MobileStats({ character, zoneName, influence, onLeaderboardClick
 
         {/* Compact stat bars */}
         <div className="flex-1 flex items-center gap-2">
-          {/* HP */}
+          {/* Health */}
           <div className="flex items-center gap-1.5 flex-1 max-w-20">
-            <span className="text-[var(--crimson)] text-[10px] font-bold">HP</span>
+            <span className="text-[var(--crimson)] text-[10px] font-bold">Health</span>
             <MiniBar current={stats.hp} max={stats.max_hp} color="var(--crimson)" />
           </div>
 
-          {/* MP */}
+          {/* Magic Points */}
           <div className="flex items-center gap-1.5 flex-1 max-w-20">
-            <span className="text-[var(--arcane)] text-[10px] font-bold">MP</span>
+            <span className="text-[var(--arcane)] text-[10px] font-bold">Magic</span>
             <MiniBar current={stats.mana} max={stats.max_mana} color="var(--arcane)" />
           </div>
 
@@ -112,21 +112,11 @@ export function MobileStats({ character, zoneName, influence, onLeaderboardClick
 
               <div>
                 <div className="flex justify-between text-xs mb-1">
-                  <span className="text-[var(--arcane)]">Mana</span>
+                  <span className="text-[var(--arcane)]">Magic Points</span>
                   <span className="text-[var(--mist)] tabular-nums">{stats.mana}/{stats.max_mana}</span>
                 </div>
                 <div className="stat-bar mana-bar">
                   <div className="stat-bar-fill" style={{ width: `${(stats.mana / stats.max_mana) * 100}%` }} />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="text-[var(--amber)]">Experience</span>
-                  <span className="text-[var(--mist)] tabular-nums">{stats.xp % 100}/100</span>
-                </div>
-                <div className="stat-bar xp-bar">
-                  <div className="stat-bar-fill" style={{ width: `${stats.xp % 100}%` }} />
                 </div>
               </div>
             </div>
