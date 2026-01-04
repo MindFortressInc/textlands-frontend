@@ -189,6 +189,9 @@ export default function GamePage() {
   // Synchronous guard to prevent duplicate action submissions (state is async)
   const processingRef = useRef(false);
 
+  // Prevent init from running multiple times (dependency loop fix)
+  const initializedRef = useRef(false);
+
   // Detect mobile keyboard visibility
   const { isVisible: keyboardVisible } = useKeyboardVisible();
 
@@ -331,6 +334,10 @@ export default function GamePage() {
   }, [findWorldInLandGroups]);
 
   useEffect(() => {
+    // Guard against dependency-triggered re-runs (infinite loop fix)
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
     async function init() {
       const healthy = await api.checkHealth();
 
@@ -496,7 +503,8 @@ export default function GamePage() {
     }
 
     init();
-  }, [resumeExistingSession]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run once on mount - resumeExistingSession dependency caused infinite loop
 
   // ========== AGE GATE HANDLERS ==========
 
