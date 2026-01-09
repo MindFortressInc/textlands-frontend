@@ -31,6 +31,7 @@ export { LoadingIndicator } from "./LoadingIndicator";
 export { InventoryPanel } from "./InventoryPanel";
 export { CurrencyPanel } from "./CurrencyPanel";
 export { SkillsPanel } from "./SkillsPanel";
+export { ShadowsPanel } from "./ShadowsPanel";
 export { SkillXPToastContainer } from "./SkillXPToast";
 export { SkillsTab } from "./SkillsTab";
 export { SkillBar } from "./SkillBar";

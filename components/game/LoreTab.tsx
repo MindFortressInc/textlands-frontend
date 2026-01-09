@@ -12,6 +12,7 @@ import type {
   LoreSkillsHierarchy,
   LoreNpcsHierarchy,
   LoreLocationsHierarchy,
+  LoreShadowsHierarchy,
 } from "@/lib/api";
 
 interface LoreTabProps {
@@ -30,11 +31,13 @@ const CATEGORY_CONFIG: Record<LoreCategory, { icon: string; label: string }> = {
   npcs: { icon: "☺", label: "NPCs" },
   locations: { icon: "◎", label: "Places" },
   realms: { icon: "◉", label: "Realms" },
+  shadows: { icon: "◐", label: "Shadows" },
 };
 
 const CATEGORY_ORDER: LoreCategory[] = [
   "items",
   "enemies",
+  "shadows",
   "skills",
   "npcs",
   "locations",
@@ -51,6 +54,11 @@ const TIER_COLORS: Record<string, string> = {
   minion: "var(--mist)",
   elite: "#a855f7",
   boss: "var(--crimson)",
+  // Shadow grades
+  normal: "var(--fog)",
+  knight: "#3b82f6",
+  commander: "var(--amber)",
+  marshal: "var(--crimson)",
 };
 
 function formatDate(dateStr: string | null): string {
@@ -190,6 +198,11 @@ function CategoryView({
               hierarchyData = data.realms;
               break;
             }
+            case "shadows": {
+              const data = await api.getLoreShadowsHierarchy(landKey);
+              hierarchyData = data.grades;
+              break;
+            }
             default:
               hierarchyData = [];
           }
@@ -235,6 +248,9 @@ function CategoryView({
             break;
           case "locations":
             options.realm = activeFilter;
+            break;
+          case "shadows":
+            options.tier = activeFilter; // Shadow grade
             break;
         }
 

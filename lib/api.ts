@@ -1835,7 +1835,7 @@ export async function getInviteStats(): Promise<InviteStatsResponse> {
 
 // ============ LORETRACKER API ============
 
-export type LoreCategory = "items" | "enemies" | "skills" | "npcs" | "locations" | "realms";
+export type LoreCategory = "items" | "enemies" | "skills" | "npcs" | "locations" | "realms" | "shadows";
 
 export interface LoreCategoryCounts {
   discovered: number;
@@ -2433,6 +2433,7 @@ export async function getWikiLands(): Promise<WikiLand[]> {
             npcs: { total: summary.npcs_count },
             locations: { total: summary.locations_count },
             realms: { total: summary.realms_count },
+            shadows: { total: 0 },
           },
         };
       } catch {
@@ -2449,6 +2450,7 @@ export async function getWikiLands(): Promise<WikiLand[]> {
             npcs: { total: 0 },
             locations: { total: 0 },
             realms: { total: 0 },
+            shadows: { total: 0 },
           },
         };
       }
@@ -2472,6 +2474,7 @@ export async function getWikiLandSummary(landKey: string): Promise<WikiLandSumma
       npcs: { total: raw.npcs_count },
       locations: { total: raw.locations_count },
       realms: { total: raw.realms_count },
+      shadows: { total: 0 },
     },
   };
 }
@@ -2544,4 +2547,219 @@ export async function getPlayerDiscoveries(
   category: LoreCategory
 ): Promise<{ discovered_ids: string[] }> {
   return fetchAPI<{ discovered_ids: string[] }>(`/lore/${landKey}/${category}/discovered`);
+}
+
+// ============ SHADOW SOLDIERS API ============
+
+export type ShadowGrade = "normal" | "elite" | "knight" | "commander" | "marshal";
+
+export interface ShadowSoldier {
+  id: string;
+  name: string;
+  original_name: string;
+  original_tier?: string;
+  grade: ShadowGrade;
+  level: number;
+  xp: number;
+  xp_to_next?: number;
+  hp?: number;
+  max_hp?: number;
+  attack_power?: number;
+  defense_power?: number;
+  loyalty?: number;
+  kills: number;
+  deaths?: number;
+  specialty_skill: string;
+  is_in_squad: boolean;
+  is_alive: boolean;
+  is_working?: boolean;
+  can_resurrect?: boolean;
+  promotion_eligible?: boolean;
+  next_grade?: ShadowGrade;
+  minutes_worked?: number;
+  hours_worked?: number;
+  xp_pending?: number;
+  resources_pending?: number;
+  resource_type?: string;
+  identity?: {
+    original_species?: string;
+    original_role?: string;
+    appearance?: string;
+    specialty_skill?: string;
+    combat_style?: string;
+  };
+}
+
+export interface ShadowSquadResponse {
+  shadows: ShadowSoldier[];
+  squad_size: number;
+  max_size: number;
+  total_power: number;
+}
+
+export interface ShadowRealmResponse {
+  shadows: ShadowSoldier[];
+  total_count: number;
+  by_grade: Record<ShadowGrade, number>;
+}
+
+export interface ShadowOverviewResponse {
+  squad: ShadowSoldier[];
+  squad_size: number;
+  max_squad_size: number;
+  squad_total_power: number;
+  working: ShadowSoldier[];
+  working_count: number;
+  total_xp_pending: number;
+  total_resources_pending: Record<string, number>;
+  idle_count: number;
+  work_history_24h: Array<{
+    shadow_id: string;
+    shadow_name: string;
+    skill: string;
+    duration_minutes: number;
+    xp_earned: number;
+    resources_gathered: number;
+    resource_type: string;
+    ended_at: string;
+  }>;
+  xp_earned_24h: number;
+  resources_earned_24h: Record<string, number>;
+}
+
+export interface ShadowExtractRequest {
+  target_entity_id?: string;
+  use_catalyst?: boolean;
+}
+
+export interface ShadowExtractResponse {
+  success: boolean;
+  shadow_id: string | null;
+  shadow_name: string | null;
+  grade: ShadowGrade | null;
+  specialty_skill: string | null;
+  chance_was: number;
+  narrative: string;
+}
+
+export interface ShadowActionResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface ShadowPromoteRequest {
+  new_name?: string;
+}
+
+export interface ShadowPromoteResponse {
+  success: boolean;
+  from_grade: ShadowGrade;
+  to_grade: ShadowGrade;
+  new_name: string | null;
+  narrative: string;
+}
+
+export interface ShadowArmyStats {
+  total_shadows: number;
+  squad_size: number;
+  max_squad_size: number;
+  total_levels: number;
+  total_kills: number;
+  highest_level: number;
+  by_grade: Record<ShadowGrade, number>;
+}
+
+export interface ShadowWorkStatusResponse {
+  working_shadows: ShadowSoldier[];
+  total_working: number;
+  total_xp_pending: number;
+  total_resources_pending: Record<string, number>;
+}
+
+export interface ShadowWorkCollectResponse {
+  shadows_collected: number;
+  total_xp_earned: number;
+  resources_gathered: Record<string, number>;
+  narrative: string;
+}
+
+export interface LoreShadowsHierarchy {
+  land_key: string;
+  total_shadows: number;
+  total_extractions: number;
+  grades: LoreHierarchyCategory[];
+}
+
+// Shadow Soldiers endpoints - all require ?world_id= query param
+export async function getShadowOverview(worldId: string): Promise<ShadowOverviewResponse> {
+  return fetchAPI<ShadowOverviewResponse>(`/shadows/overview?world_id=${worldId}`);
+}
+
+export async function getShadowSquad(worldId: string): Promise<ShadowSquadResponse> {
+  return fetchAPI<ShadowSquadResponse>(`/shadows/squad?world_id=${worldId}`);
+}
+
+export async function getShadowRealm(worldId: string): Promise<ShadowRealmResponse> {
+  return fetchAPI<ShadowRealmResponse>(`/shadows/realm?world_id=${worldId}`);
+}
+
+export async function getShadowDetail(worldId: string, shadowId: string): Promise<ShadowSoldier> {
+  return fetchAPI<ShadowSoldier>(`/shadows/${shadowId}?world_id=${worldId}`);
+}
+
+export async function extractShadow(worldId: string, request?: ShadowExtractRequest): Promise<ShadowExtractResponse> {
+  return fetchAPI<ShadowExtractResponse>(`/shadows/extract?world_id=${worldId}`, {
+    method: "POST",
+    body: JSON.stringify(request || {}),
+  });
+}
+
+export async function summonShadow(worldId: string, shadowId: string): Promise<ShadowActionResponse> {
+  return fetchAPI<ShadowActionResponse>(`/shadows/${shadowId}/summon?world_id=${worldId}`, {
+    method: "POST",
+  });
+}
+
+export async function dismissShadow(worldId: string, shadowId: string): Promise<ShadowActionResponse> {
+  return fetchAPI<ShadowActionResponse>(`/shadows/${shadowId}/dismiss?world_id=${worldId}`, {
+    method: "POST",
+  });
+}
+
+export async function promoteShadow(worldId: string, shadowId: string, request?: ShadowPromoteRequest): Promise<ShadowPromoteResponse> {
+  return fetchAPI<ShadowPromoteResponse>(`/shadows/${shadowId}/promote?world_id=${worldId}`, {
+    method: "POST",
+    body: JSON.stringify(request || {}),
+  });
+}
+
+export async function resurrectShadow(worldId: string, shadowId: string): Promise<ShadowActionResponse> {
+  return fetchAPI<ShadowActionResponse>(`/shadows/${shadowId}/resurrect?world_id=${worldId}`, {
+    method: "POST",
+  });
+}
+
+export async function getShadowArmyStats(worldId: string): Promise<ShadowArmyStats> {
+  return fetchAPI<ShadowArmyStats>(`/shadows/stats/army?world_id=${worldId}`);
+}
+
+export async function getShadowWorkStatus(worldId: string): Promise<ShadowWorkStatusResponse> {
+  return fetchAPI<ShadowWorkStatusResponse>(`/shadows/work/status?world_id=${worldId}`);
+}
+
+export async function startShadowWork(worldId: string): Promise<{ success: boolean; shadows_working: number; message: string }> {
+  return fetchAPI<{ success: boolean; shadows_working: number; message: string }>(`/shadows/work/start?world_id=${worldId}`, {
+    method: "POST",
+  });
+}
+
+export async function collectShadowWork(worldId: string): Promise<ShadowWorkCollectResponse> {
+  return fetchAPI<ShadowWorkCollectResponse>(`/shadows/work/collect?world_id=${worldId}`, {
+    method: "POST",
+  });
+}
+
+// Lore hierarchy for shadows
+export async function getLoreShadowsHierarchy(landKey: string): Promise<LoreShadowsHierarchy> {
+  return fetchAPI<LoreShadowsHierarchy>(`/lore/${landKey}/shadows/hierarchy`);
 }
