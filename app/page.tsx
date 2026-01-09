@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { GameLog, CommandInput, CharacterPanel, QuickActions, SuggestedActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal, AuthModal, BillingPanel, InfluenceBadge, LeaderboardModal, CharacterCreationModal, PlayerStatsModal, EntityTimelineModal, WorldTemplatesModal, WorldCreationModal, SocialPanel, ChatPanel, LoadingIndicator, InventoryPanel, CurrencyPanel, SkillsPanel, SkillXPToastContainer, WorldChatter } from "@/components/game";
+import { GameLog, CommandInput, CharacterPanel, QuickActions, SuggestedActions, MobileStats, SceneNegotiation, ActiveScene, SettingsPanel, CombatPanel, AgeGateModal, AuthModal, BillingPanel, InfluenceBadge, LeaderboardModal, CharacterCreationModal, PlayerStatsModal, EntityTimelineModal, WorldTemplatesModal, WorldCreationModal, SocialPanel, ChatPanel, LoadingIndicator, InventoryPanel, CurrencyPanel, SkillsPanel, ShadowsPanel, SkillXPToastContainer, WorldChatter } from "@/components/game";
 import { LoadingView, ErrorView, LandingView, WorldBrowser, InfiniteCampfireView } from "@/components/views";
 import { LowHPOverlay } from "@/components/effects/LowHPOverlay";
 import { ThemePicker } from "@/components/ThemePicker";
@@ -178,6 +178,9 @@ export default function GamePage() {
 
   // Skills panel state
   const [showSkills, setShowSkills] = useState(false);
+
+  // Shadows panel state
+  const [showShadows, setShowShadows] = useState(false);
 
   // Skill XP toast notifications
   const [skillXPToasts, setSkillXPToasts] = useState<SkillXPGain[]>([]);
@@ -970,6 +973,9 @@ export default function GamePage() {
       } else if (cmd === "skills") {
         setShowSkills(true);
         addLog("system", t("opening_skills"));
+      } else if (cmd === "shadows" || cmd === "shadow army" || cmd === "shadow realm") {
+        setShowShadows(true);
+        addLog("system", "Opening shadow army...");
       } else if (cmd === "settings") {
         setSettingsOpen(true);
         addLog("system", t("opening_settings"));
@@ -1438,7 +1444,7 @@ export default function GamePage() {
   const hpPercent = stats.max_hp > 0 ? (stats.hp / stats.max_hp) * 100 : 100;
 
   return (
-    <main className="h-dvh flex flex-col bg-[var(--void)]">
+    <main className="game-container h-dvh flex flex-col bg-[var(--void)]">
       {/* Low HP warning overlay */}
       <LowHPOverlay hpPercent={hpPercent} />
 
@@ -1553,6 +1559,11 @@ export default function GamePage() {
         worldId={currentSession?.world_id || null}
         playerId={playerId}
       />
+      <ShadowsPanel
+        isOpen={showShadows}
+        onClose={() => setShowShadows(false)}
+        worldId={currentSession?.world_id || null}
+      />
       <SkillXPToastContainer
         toasts={skillXPToasts}
         onDismiss={(index) => {
@@ -1561,11 +1572,11 @@ export default function GamePage() {
       />
 
       {/* Header - stays in document flow, shrink-0 prevents flex squishing */}
-      <header className="bg-[var(--shadow)] border-b border-[var(--slate)] px-3 py-2 md:px-4 flex items-center justify-between shrink-0 pt-[max(0.5rem,env(safe-area-inset-top))] z-40">
-        <div className="flex items-center gap-2">
+      <header className="bg-[var(--shadow)] border-b border-[var(--slate)] px-3 py-2 md:px-4 flex items-center justify-between shrink-0 pt-[max(0.5rem,env(safe-area-inset-top))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] z-40">
+        <div className="flex items-center gap-1 md:gap-2">
           <button
             onClick={leaveWorld}
-            className="text-[var(--mist)] hover:text-[var(--amber)] transition-colors text-sm"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--mist)] hover:text-[var(--amber)] active:text-[var(--amber)] transition-colors text-xl md:text-sm md:min-w-0 md:min-h-0"
             title={t("leave_world")}
           >
             ‹
@@ -1590,7 +1601,7 @@ export default function GamePage() {
           {/* Chat button */}
           <button
             onClick={() => setShowChatPanel(true)}
-            className="text-[var(--mist)] hover:text-[var(--amber)] transition-colors text-sm"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--mist)] hover:text-[var(--amber)] active:text-[var(--amber)] transition-colors text-base md:text-sm md:min-w-0 md:min-h-0"
             title={t("chat")}
           >
             #
@@ -1598,7 +1609,7 @@ export default function GamePage() {
           {/* Social button - mobile only */}
           <button
             onClick={() => setShowSocialPanel(true)}
-            className="text-[var(--mist)] hover:text-[var(--amber)] transition-colors text-sm md:hidden"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--mist)] hover:text-[var(--amber)] active:text-[var(--amber)] transition-colors text-base md:hidden"
             title={t("friends")}
           >
             @
@@ -1617,6 +1628,13 @@ export default function GamePage() {
           >
             ◈
           </button>
+          <button
+            onClick={() => setShowShadows(true)}
+            className="text-[var(--mist)] hover:text-[var(--amber)] transition-colors text-xs hidden sm:block"
+            title="Shadow Army"
+          >
+            ◐
+          </button>
           <Link
             href="/hiscores"
             className="text-[var(--mist)] hover:text-[var(--amber)] transition-colors text-xs hidden sm:block"
@@ -1633,10 +1651,10 @@ export default function GamePage() {
           </button>
           <button
             onClick={() => setSettingsOpen(true)}
-            className="text-[var(--mist)] hover:text-[var(--amber)] transition-colors"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--mist)] hover:text-[var(--amber)] active:text-[var(--amber)] transition-colors md:min-w-0 md:min-h-0"
             title={t("settings")}
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
@@ -1711,6 +1729,7 @@ export default function GamePage() {
             <CommandInput
               onSubmit={handleCommand}
               disabled={processing}
+              processing={processing}
               placeholder={processing ? "..." : t("what_do_you_do")}
               onFocusChange={setInputFocused}
             />
@@ -1753,12 +1772,12 @@ export default function GamePage() {
             onClick={() => setShowSocialPanel(false)}
           />
           {/* Panel */}
-          <div className="absolute top-0 right-0 h-full w-72 bg-[var(--shadow)] border-l border-[var(--slate)] animate-slide-in-right flex flex-col pt-[env(safe-area-inset-top)]">
+          <div className="absolute top-0 right-0 h-full w-72 bg-[var(--shadow)] border-l border-[var(--slate)] animate-slide-in-right flex flex-col pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
             <div className="flex items-center justify-between p-3 border-b border-[var(--slate)]">
               <span className="text-[var(--amber)] font-bold text-sm">{t("friends")}</span>
               <button
                 onClick={() => setShowSocialPanel(false)}
-                className="text-[var(--mist)] hover:text-[var(--text)] text-lg leading-none"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[var(--mist)] hover:text-[var(--text)] active:text-[var(--text)] text-xl leading-none -mr-2"
               >
                 &times;
               </button>

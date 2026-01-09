@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { hapticTap } from "@/lib/haptics";
 
 interface QuickActionsProps {
   onCommand: (command: string) => void;
@@ -21,12 +22,13 @@ export function QuickActions({ onCommand, disabled = false, onTimelineClick, has
 
   const handleAction = (command: string) => {
     if (!disabled) {
+      hapticTap();
       onCommand(command);
     }
   };
 
   return (
-    <div className="md:hidden bg-[var(--shadow)] border-t border-[var(--slate)] shrink-0 overflow-hidden">
+    <div className="quick-actions-container md:hidden bg-[var(--shadow)] border-t border-[var(--slate)] shrink-0 overflow-hidden pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]">
       {/* Collapsed toggle bar */}
       <button
         onClick={() => setExpanded(!expanded)}
@@ -55,30 +57,30 @@ export function QuickActions({ onCommand, disabled = false, onTimelineClick, has
                 key={cmd.command}
                 onClick={() => handleAction(cmd.command)}
                 disabled={disabled}
-                className="flex-1 max-w-16 h-9 flex items-center justify-center gap-1.5
-                  bg-[var(--void)]/50 border border-[var(--slate)]/50 rounded
+                className="flex-1 max-w-20 min-h-[44px] flex items-center justify-center gap-1.5
+                  bg-[var(--void)]/50 border border-[var(--slate)]/50 rounded-lg
                   text-[var(--arcane)] hover:text-[var(--amber)] hover:border-[var(--amber)]/30
                   disabled:opacity-40 disabled:pointer-events-none
                   transition-colors active:bg-[var(--slate)]/30"
                 title={cmd.label}
               >
-                <span className="text-sm">{cmd.icon}</span>
-                <span className="text-[9px] text-[var(--mist)] uppercase tracking-wide">{cmd.label}</span>
+                <span className="text-base">{cmd.icon}</span>
+                <span className="text-[10px] text-[var(--mist)] uppercase tracking-wide">{cmd.label}</span>
               </button>
             ))}
             {onTimelineClick && hasExaminedEntity && (
               <button
                 onClick={onTimelineClick}
                 disabled={disabled}
-                className="flex-1 max-w-16 h-9 flex items-center justify-center gap-1.5
-                  bg-[var(--void)]/50 border border-[var(--amber)]/30 rounded
+                className="flex-1 max-w-20 min-h-[44px] flex items-center justify-center gap-1.5
+                  bg-[var(--void)]/50 border border-[var(--amber)]/30 rounded-lg
                   text-[var(--amber)] hover:border-[var(--amber)]/60
                   disabled:opacity-40 disabled:pointer-events-none
                   transition-colors active:bg-[var(--slate)]/30"
                 title="View entity history"
               >
-                <span className="text-sm">⧗</span>
-                <span className="text-[9px] text-[var(--mist)] uppercase tracking-wide">History</span>
+                <span className="text-base">⧗</span>
+                <span className="text-[10px] text-[var(--mist)] uppercase tracking-wide">History</span>
               </button>
             )}
           </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import type { GameLogEntry } from "@/types/game";
 import { ReasoningPanel } from "./ReasoningPanel";
 import { GameNarrative } from "./GameNarrative";
@@ -24,25 +24,61 @@ export function GameLog({ entries, showReasoning = false, keyboardVisible = fals
   const containerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const prevKeyboardVisible = useRef(keyboardVisible);
+  const prevEntriesLength = useRef(entries.length);
+  // Track if user was at bottom before keyboard change
+  const wasAtBottomRef = useRef(true);
 
-  // Scroll to bottom when entries change
+  // Check if scrolled to bottom (with small tolerance)
+  const isAtBottom = useCallback(() => {
+    if (!containerRef.current) return true;
+    const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
+    return scrollHeight - scrollTop - clientHeight < 50;
+  }, []);
+
+  // Scroll to bottom when NEW entries are added (not just any entry change)
   useEffect(() => {
-    if (containerRef.current) {
-      containerRef.current.scrollTop = containerRef.current.scrollHeight;
+    if (entries.length > prevEntriesLength.current && containerRef.current) {
+      // Only auto-scroll if user was already at/near bottom
+      if (wasAtBottomRef.current) {
+        containerRef.current.scrollTop = containerRef.current.scrollHeight;
+      }
     }
-  }, [entries]);
+    prevEntriesLength.current = entries.length;
+  }, [entries.length]);
 
-  // Scroll to bottom when keyboard opens (keeps recent narrative visible)
+  // Track scroll position to know if we should auto-scroll
   useEffect(() => {
-    // Only trigger on keyboard becoming visible (not on close)
-    if (keyboardVisible && !prevKeyboardVisible.current && containerRef.current) {
-      // Wait for keyboard animation to complete
-      const timer = setTimeout(() => {
-        if (containerRef.current) {
-          containerRef.current.scrollTop = containerRef.current.scrollHeight;
-        }
-      }, 350);
-      return () => clearTimeout(timer);
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      wasAtBottomRef.current = isAtBottom();
+    };
+
+    container.addEventListener("scroll", handleScroll, { passive: true });
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, [isAtBottom]);
+
+  // Preserve scroll position when keyboard opens/closes
+  useEffect(() => {
+    if (keyboardVisible !== prevKeyboardVisible.current && containerRef.current) {
+      // If keyboard is opening and user was at bottom, scroll to bottom after animation
+      if (keyboardVisible && wasAtBottomRef.current) {
+        const timer = setTimeout(() => {
+          if (containerRef.current) {
+            containerRef.current.scrollTop = containerRef.current.scrollHeight;
+          }
+        }, 350);
+        return () => clearTimeout(timer);
+      }
+      // If keyboard is closing and user was at bottom, scroll to bottom
+      if (!keyboardVisible && wasAtBottomRef.current) {
+        requestAnimationFrame(() => {
+          if (containerRef.current) {
+            containerRef.current.scrollTop = containerRef.current.scrollHeight;
+          }
+        });
+      }
     }
     prevKeyboardVisible.current = keyboardVisible;
   }, [keyboardVisible]);
@@ -50,7 +86,7 @@ export function GameLog({ entries, showReasoning = false, keyboardVisible = fals
   return (
     <div
       ref={containerRef}
-      className="flex-1 overflow-y-auto p-3 md:p-4 space-y-2 md:space-y-3 bg-[var(--void)] overscroll-contain"
+      className="game-log-area flex-1 overflow-y-auto p-3 md:p-4 space-y-2 md:space-y-3 bg-[var(--void)] overscroll-contain pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))]"
     >
       {entries.length === 0 && (
         <div className="text-[var(--mist)]">Awaiting input...</div>

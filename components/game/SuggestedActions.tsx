@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
+import { hapticTap } from "@/lib/haptics";
 
 interface SuggestedActionsProps {
   suggestions: string[];
@@ -28,6 +29,7 @@ export function SuggestedActions({
   const handleTouchEnd = useCallback((action: string, e: React.TouchEvent) => {
     if (disabled) return;
     e.preventDefault();
+    hapticTap();
     handledByTouchRef.current = true;
     onSelect(action);
     // Reset after 400ms to cover iOS synthetic click delay (~300ms)
@@ -45,7 +47,7 @@ export function SuggestedActions({
   if (!suggestions.length) return null;
 
   return (
-    <div className="suggestion-container px-3 py-2 border-t border-[var(--slate)] bg-[var(--shadow)]">
+    <div className="suggestions-container suggestion-container px-3 py-2 border-t border-[var(--slate)] bg-[var(--shadow)] pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))]">
       <div className="flex items-center gap-2 mb-2">
         <span className="text-[var(--mist)] text-[10px] tracking-widest uppercase">
           Suggested
