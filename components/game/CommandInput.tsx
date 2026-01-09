@@ -24,6 +24,7 @@ export function CommandInput({
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const cleanupRef = useRef<(() => void) | null>(null);
 
   // Dismiss keyboard
   const dismissKeyboard = useCallback(() => {
@@ -34,30 +35,50 @@ export function CommandInput({
     if (!disabled) inputRef.current?.focus();
   }, [disabled]);
 
-  // Handle focus - iOS keyboard handling
+  // Handle focus - iOS keyboard handling with real-time tracking
   const handleFocus = useCallback(() => {
     setIsFocused(true);
     onFocusChange?.(true);
 
-    // iOS Safari: Ensure input is scrolled into view after keyboard opens
-    // The visualViewport API + dvh should handle most of this,
-    // but we add a fallback scroll to ensure visibility
     const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-    if (isIOS && inputRef.current) {
-      // Wait for keyboard animation to complete
-      setTimeout(() => {
-        inputRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
-      }, 350);
-    }
+    if (!isIOS || !inputRef.current) return;
+
+    // Scroll immediately on focus (before keyboard starts)
+    inputRef.current.scrollIntoView({ behavior: "instant", block: "center" });
+
+    // Track keyboard animation with visualViewport resize events
+    const visualViewport = window.visualViewport;
+    if (!visualViewport) return;
+
+    // Handler to scroll input into view as keyboard animates
+    const scrollToInput = () => {
+      inputRef.current?.scrollIntoView({ behavior: "instant", block: "center" });
+    };
+
+    // Listen for viewport resize during keyboard animation
+    visualViewport.addEventListener("resize", scrollToInput);
+
+    // Clean up listener after keyboard animation completes (~400ms)
+    const timeoutId = setTimeout(() => {
+      visualViewport.removeEventListener("resize", scrollToInput);
+      // Final scroll to ensure input is visible
+      inputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 400);
+
+    // Store cleanup function for blur handler
+    cleanupRef.current = () => {
+      clearTimeout(timeoutId);
+      visualViewport.removeEventListener("resize", scrollToInput);
+    };
   }, [onFocusChange]);
 
-  // Handle blur
+  // Handle blur - clean up any pending scroll listeners
   const handleBlur = useCallback(() => {
     setIsFocused(false);
     onFocusChange?.(false);
+    // Clean up keyboard tracking
+    cleanupRef.current?.();
+    cleanupRef.current = null;
   }, [onFocusChange]);
 
   const handleSubmit = () => {
