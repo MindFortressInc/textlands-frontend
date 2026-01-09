@@ -26,7 +26,7 @@ export function ThemePicker() {
       <button
         ref={buttonRef}
         onClick={handleToggle}
-        className="text-[var(--mist)] hover:text-[var(--text)] text-xs px-2 py-1.5 md:py-1 border border-[var(--slate)] rounded transition-colors active:bg-[var(--stone)]"
+        className="min-h-[44px] md:min-h-0 text-[var(--mist)] hover:text-[var(--text)] active:text-[var(--text)] text-xs px-3 md:px-2 py-2 md:py-1 border border-[var(--slate)] rounded transition-colors active:bg-[var(--stone)] flex items-center justify-center"
       >
         <span className="hidden sm:inline">Theme: </span>
         {availableThemes[themeId]?.name || themeId}

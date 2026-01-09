@@ -51,7 +51,7 @@ export function MobileStats({ character, zoneName, influence, onLeaderboardClick
   return (
     <div
       ref={containerRef}
-      className="md:hidden bg-[var(--shadow)] border-b border-[var(--slate)] shrink-0"
+      className="md:hidden bg-[var(--shadow)] border-b border-[var(--slate)] shrink-0 pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]"
     >
       {/* Collapsed bar - always visible */}
       <div

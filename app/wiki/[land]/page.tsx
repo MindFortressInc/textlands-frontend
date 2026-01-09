@@ -39,9 +39,14 @@ const CATEGORY_CONFIG: Record<LoreCategory, { icon: string; label: string; descr
     label: "Realms",
     description: "Vast territories within this land",
   },
+  shadows: {
+    icon: "◐",
+    label: "Shadows",
+    description: "Shadow soldiers extracted from defeated foes",
+  },
 };
 
-const CATEGORY_ORDER: LoreCategory[] = ["items", "enemies", "skills", "npcs", "locations", "realms"];
+const CATEGORY_ORDER: LoreCategory[] = ["items", "enemies", "shadows", "skills", "npcs", "locations", "realms"];
 
 const LAND_CONFIG: Record<string, { icon: string; accent: string }> = {
   fantasy: { icon: "🏰", accent: "#d4a849" },

@@ -382,6 +382,34 @@ export function useWebSocket({
     };
   }, [playerId, autoConnect, connect, disconnect]);
 
+  // Pause/resume WebSocket based on page visibility (saves battery when backgrounded)
+  useEffect(() => {
+    if (!playerId) return;
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Page is hidden (backgrounded) - disconnect to save battery
+        console.debug("[WebSocket] Page hidden, disconnecting...");
+        clearTimers();
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+          wsRef.current.close(1000, "Page hidden");
+          wsRef.current = null;
+        }
+        setIsConnected(false);
+      } else {
+        // Page is visible (foregrounded) - reconnect
+        console.debug("[WebSocket] Page visible, reconnecting...");
+        reconnectAttempts.current = 0; // Reset attempts on manual reconnect
+        connect();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [playerId, connect, clearTimers]);
+
   const send = useCallback((message: OutgoingMessage) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify(message));

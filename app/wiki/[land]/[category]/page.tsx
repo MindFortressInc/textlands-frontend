@@ -15,6 +15,7 @@ const CATEGORY_CONFIG: Record<LoreCategory, { icon: string; label: string }> = {
   npcs: { icon: "☺", label: "NPCs" },
   locations: { icon: "◎", label: "Locations" },
   realms: { icon: "◉", label: "Realms" },
+  shadows: { icon: "◐", label: "Shadows" },
 };
 
 const TIER_CONFIG: Record<string, { label: string; color: string }> = {

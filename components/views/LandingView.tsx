@@ -234,28 +234,28 @@ export function LandingView({ onEnter, onLogin, onLogout, onResumeCharacter, isL
       </div>
 
       {/* Nav links */}
-      <div className="absolute bottom-12 left-4 flex gap-4">
+      <div className="absolute bottom-[calc(3rem+env(safe-area-inset-bottom))] left-4 flex gap-4">
         <Link
           href="/hiscores"
-          className="text-[var(--mist)] text-xs hover:text-[var(--amber)] transition-colors"
+          className="text-[var(--mist)] text-xs hover:text-[var(--amber)] active:text-[var(--amber)] transition-colors min-h-[44px] flex items-center"
         >
           {t("hiscores")}
         </Link>
         <Link
           href="/recover"
-          className="text-[var(--mist)] text-xs hover:text-[var(--amber)] transition-colors"
+          className="text-[var(--mist)] text-xs hover:text-[var(--amber)] active:text-[var(--amber)] transition-colors min-h-[44px] flex items-center"
         >
           {t("lost_journey")}
         </Link>
       </div>
 
       {/* Theme picker */}
-      <div className="absolute bottom-12 right-4">
+      <div className="absolute bottom-[calc(3rem+env(safe-area-inset-bottom))] right-4">
         <ThemePicker />
       </div>
 
       {/* Decorative bottom line */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-32 h-px bg-gradient-to-r from-transparent via-[var(--amber-dim)] to-transparent opacity-50" />
+      <div className="absolute bottom-[calc(2rem+env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 w-32 h-px bg-gradient-to-r from-transparent via-[var(--amber-dim)] to-transparent opacity-50" />
     </main>
   );
 }
